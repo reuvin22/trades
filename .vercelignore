@@ -1,0 +1,12 @@
+# Admin credentials must never reach a build environment or a deployment.
+trading.json
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+
+# Env values come from Vercel project settings, not from uploaded files.
+.env
+.env.local
+.env.*.local
+
+node_modules
+dist

@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Dark is the product's native look and the default when nothing is stored. */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-deep: #06050f;
+  --glow-a: rgba(93, 63, 168, 0.42);
+  --glow-b: rgba(58, 40, 122, 0.28);
+  --bg-top: #0b0a1b;
+  --panel: rgba(21, 20, 43, 0.72);
+  --panel-solid: #15142b;
+  --panel-inset: rgba(10, 9, 24, 0.6);
+  --sidebar-top: #1d1252;
+  --sidebar-mid: #150e3b;
+  --sidebar-bottom: #0c0926;
+
+  /* Neutral overlays — the tint that separates one layer from the next. */
+  --tint-1: rgba(255, 255, 255, 0.045);
+  --tint-2: rgba(255, 255, 255, 0.075);
+  --tint-3: rgba(255, 255, 255, 0.12);
+
+  /* Lines */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --grid: rgba(255, 255, 255, 0.09);
+
+  /* Type */
+  --text: #eceaf8;
+  --text-strong: #ffffff;
+  --text-dim: #a9a7c4;
+  --text-muted: #7b799a;
+
+  /* Accents */
+  --accent: #7c6cf6;
+  --accent-strong: #8f83ff;
+  --accent-ink: #ffffff;
+  --green: #4ade80;
+  --red: #f2555a;
+  --amber: #f6c66c;
+  --cyan: #3fd8ee;
+
+  /* Charts */
+  --chart-line: #f3f1ff;
+  --chart-glow: rgba(180, 170, 255, 0.4);
+  --chart-fill-top: rgba(201, 198, 255, 0.85);
+  --chart-fill-mid: rgba(143, 134, 239, 0.35);
+  --chart-fill-bottom: rgba(91, 79, 214, 0.04);
+
+  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-deep: #eceaf6;
+  --glow-a: rgba(150, 130, 245, 0.3);
+  --glow-b: rgba(120, 110, 220, 0.16);
+  --bg-top: #f6f5fc;
+  --panel: rgba(255, 255, 255, 0.86);
+  --panel-solid: #ffffff;
+  --panel-inset: rgba(240, 238, 250, 0.85);
+  --sidebar-top: #ffffff;
+  --sidebar-mid: #f3f1fb;
+  --sidebar-bottom: #e8e5f7;
+
+  --tint-1: rgba(31, 24, 78, 0.04);
+  --tint-2: rgba(31, 24, 78, 0.07);
+  --tint-3: rgba(31, 24, 78, 0.11);
+
+  --border: rgba(31, 24, 78, 0.1);
+  --border-strong: rgba(31, 24, 78, 0.2);
+  --grid: rgba(31, 24, 78, 0.13);
+
+  --text: #1b1739;
+  --text-strong: #0e0b26;
+  --text-dim: #4f4a72;
+  --text-muted: #74708f;
+
+  --accent: #6353e8;
+  --accent-strong: #5443dd;
+  --accent-ink: #ffffff;
+  --green: #17914f;
+  --red: #d02c37;
+  --amber: #b7791f;
+  --cyan: #0d8ba4;
+
+  --chart-line: #4b3ecb;
+  --chart-glow: rgba(99, 83, 232, 0.22);
+  --chart-fill-top: rgba(124, 108, 246, 0.42);
+  --chart-fill-mid: rgba(124, 108, 246, 0.18);
+  --chart-fill-bottom: rgba(124, 108, 246, 0.02);
+
+  --shadow-card: 0 14px 34px rgba(38, 30, 96, 0.09);
+  --shadow-pop: 0 14px 34px rgba(38, 30, 96, 0.18);
+}
+
+:root {
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+
+  --font: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tint-3);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}

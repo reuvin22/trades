@@ -1,0 +1,257 @@
+/* --------------------------------------------------------- metric cards -- */
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 18px;
+}
+
+.metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.metric-icon {
+  flex: none;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.metric-value {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.metric-value.is-negative {
+  color: var(--red);
+}
+
+.metric-foot {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.metric-foot .delta {
+  font-size: 11.5px;
+  gap: 4px;
+}
+
+/* ------------------------------------------------------- analytics grid -- */
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* --------------------------------------------------------- rolling card -- */
+
+.rolling-card {
+  padding: 20px 22px 14px;
+}
+
+.rolling-plot {
+  height: 300px;
+}
+
+.rolling-plot .y-axis span {
+  font-size: 9.5px;
+}
+
+.rolling-card .x-axis span {
+  font-size: 10.5px;
+}
+
+.series-legend {
+  display: flex;
+  gap: 16px;
+  flex: none;
+}
+
+.series {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.series::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.series.realized::before {
+  background: var(--chart-line);
+}
+
+.series.benchmark::before {
+  border: 1.5px solid var(--text-muted);
+}
+
+.benchmark-line {
+  stroke: var(--text-muted);
+  opacity: 0.7;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 5;
+}
+
+/* ------------------------------------------------------------ edge card -- */
+
+.edge-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 24px;
+}
+
+.edge-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edge-legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+
+.edge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.edge-label {
+  color: var(--text-dim);
+}
+
+.edge-share {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.donut {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.donut svg {
+  width: 100%;
+  max-width: 170px;
+  height: auto;
+}
+
+.donut circle {
+  fill: none;
+  stroke-width: 15;
+}
+
+.donut-track {
+  stroke: var(--tint-1);
+}
+
+.donut-center {
+  position: absolute;
+  top: calc(50% + 11px);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.donut-center strong {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.donut-center span {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------ trade log -- */
+
+.trades.log {
+  min-width: 620px;
+}
+
+.trades.log td {
+  padding: 13px 16px;
+}
+
+.trades .strategy {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+
+
+
+.result.win {
+  color: var(--green);
+}
+
+.result.loss {
+  color: var(--red);
+}
+
+
+/* ----------------------------------------------------------- responsive -- */
+
+@media (max-width: 1180px) {
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metric-row {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+
+  .donut svg {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-head {
+    flex-direction: column;
+  }
+}
+
+.chart-empty,
+.edge-empty {
+  padding: 46px 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
