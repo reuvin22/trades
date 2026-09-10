@@ -937,3 +937,123 @@
 .stat-value.is-negative {
   color: var(--red);
 }
+
+/* ------------------------------------------------------- behavioral leak -- */
+
+.insight-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.insight-refresh {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-muted);
+  border-radius: 50%;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.insight-refresh:hover:not(:disabled) {
+  color: var(--text-strong);
+  background: var(--tint-2);
+}
+
+.leak-card.is-high {
+  border-color: color-mix(in srgb, var(--red) 40%, transparent);
+}
+
+.leak-card.is-medium {
+  border-color: color-mix(in srgb, var(--amber) 36%, transparent);
+}
+
+.leak-cost {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.leak-cost strong {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.leak-fix {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  border-radius: var(--r-sm);
+  background: var(--tint-1);
+}
+
+.leak-fix svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent-strong);
+}
+
+.leak-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.leak-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.shimmer {
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--tint-1) 25%,
+    var(--tint-3) 50%,
+    var(--tint-1) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.shimmer.title {
+  height: 16px;
+  width: 62%;
+  margin-bottom: 4px;
+}
+
+.shimmer.short {
+  width: 45%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+  }
+}

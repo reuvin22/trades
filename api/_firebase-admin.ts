@@ -1,5 +1,6 @@
 import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app'
 import { getAuth, type Auth } from 'firebase-admin/auth'
+import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 
 /**
  * Server-side Firebase. This is the *only* place the service account belongs:
@@ -40,4 +41,8 @@ function loadApp(): App {
 
 export function adminAuth(): Auth {
   return getAuth(loadApp())
+}
+
+export function adminDb(): Firestore {
+  return getFirestore(loadApp())
 }

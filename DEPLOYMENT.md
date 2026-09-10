@@ -4,7 +4,19 @@ The frontend is hosted on Vercel; Firebase provides auth and Firestore only.
 Deploying to Vercel does **not** deploy Firestore rules — those live in the
 Firebase project and are published separately.
 
-## 1. Environment variables (the usual cause of a broken deploy)
+## 1. Environment variables
+
+The Firebase **web** config is committed in `src/lib/firebase-defaults.ts`, so a
+fresh deploy works with no environment configuration at all. Those values are
+public identifiers that ship in the bundle regardless of where they are stored;
+Firestore rules, authorized domains and API-key restrictions are what protect
+the project.
+
+Set the `VITE_FIREBASE_*` variables only when you want a deployment to point at
+a *different* Firebase project — they override the committed defaults. The
+server-only secrets in section 1b are a different matter and must always be set.
+
+### Overriding the defaults
 
 `.env.local` is gitignored and listed in `.vercelignore`, so it is never
 uploaded. Vite inlines `VITE_*` variables at **build** time, which means a
@@ -35,6 +47,26 @@ vercel env add VITE_FIREBASE_API_KEY production
 **Redeploy after changing any of them.** Vercel does not rebuild on an env
 change alone, and the old values stay baked into the existing bundle.
 
+### "Keep This Value Private" — Vercel's warning on VITE_ variables
+
+Vercel flags every `VITE_`-prefixed variable with *"The VITE_ prefix exposes
+this value to the browser."* That is correct, and for the Firebase web config it
+is exactly what we want: those values are public identifiers that Firebase
+expects to ship in the client. Click **Change to Config** on all seven of them.
+
+The warning becomes a real one only if a genuine secret ever gets a `VITE_`
+prefix. `npm run build` now refuses to proceed in that case — see
+`scripts/check-env.mjs`, which runs automatically before and after every build,
+including on Vercel.
+
+| Variable | Vercel type |
+| --- | --- |
+| `VITE_FIREBASE_*` (all 7) | **Config** — public by design |
+| `BREVO_API_KEY` | **Secret** |
+| `GEMINI_API_KEY` | **Secret** |
+| `FIREBASE_SERVICE_ACCOUNT` | **Secret** |
+| `APP_URL` | Config — just a URL |
+
 ## 1b. Server-only secrets (Brevo + Admin SDK)
 
 These have **no `VITE_` prefix on purpose**. Vite inlines every `VITE_*`
@@ -46,6 +78,8 @@ They are read only by the serverless function in `api/`.
 | `BREVO_API_KEY` | Brevo transactional key. Can send mail as you — treat as a password. |
 | `BREVO_SENDER_EMAIL` | A sender address **verified in Brevo**, or sends will be rejected. |
 | `BREVO_SENDER_NAME` | Display name on the email. Defaults to `TradeX`. |
+| `GEMINI_API_KEY` | Gemini key for the behavioural-leak card. From [AI Studio](https://aistudio.google.com/apikey). |
+| `GEMINI_MODEL` | Optional. Defaults to `gemini-flash-latest`, an alias that survives model retirements. |
 | `FIREBASE_SERVICE_ACCOUNT` | The entire contents of `trading.json`, on one line. |
 | `APP_URL` | e.g. `https://your-project.vercel.app`, used to build the return link. |
 

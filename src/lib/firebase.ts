@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import { getFirestore, type Firestore } from 'firebase/firestore'
+import { FIREBASE_WEB_CONFIG } from './firebase-defaults'
 
 /**
  * Web app config. These values are identifiers, not secrets — they ship inside
@@ -14,14 +15,20 @@ import { getFirestore, type Firestore } from 'firebase/firestore'
  * The service account key in trading.json is a different thing entirely: it is
  * an admin credential that bypasses all three, and must never be imported here.
  */
+// `||` rather than `??`: an env var set to an empty string should fall through
+// to the committed default, not blank the config out.
 const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || FIREBASE_WEB_CONFIG.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || FIREBASE_WEB_CONFIG.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || FIREBASE_WEB_CONFIG.projectId,
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || FIREBASE_WEB_CONFIG.storageBucket,
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    FIREBASE_WEB_CONFIG.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || FIREBASE_WEB_CONFIG.appId,
+  measurementId:
+    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || FIREBASE_WEB_CONFIG.measurementId,
 }
 
 /** Named so the login screen can say exactly which values are still blank. */

@@ -33,3 +33,5 @@ serviceAccount*.json
 .env.local
 .env.*.local
 email-preview.html
+DEPLOYMENT.md
+firestore.rules

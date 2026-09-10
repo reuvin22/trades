@@ -50,7 +50,7 @@ function TraderView({
 }: TraderViewProps) {
   switch (route) {
     case 'dashboard':
-      return <Dashboard trades={trades} />
+      return <Dashboard trades={trades} uid={uid} />
     case 'journal':
       return <TradeJournal uid={uid} trades={trades} loading={loading} error={error} />
     case 'analytics':

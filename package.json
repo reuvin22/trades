@@ -11,7 +11,12 @@
     "setup:firebase": "node scripts/firebase-config.mjs",
     "preview:email": "node scripts/preview-email.mjs",
     "build:email-gif": "python scripts/make-email-gif.py",
-    "test:email": "node scripts/send-test-email.mjs"
+    "test:email": "node scripts/send-test-email.mjs",
+    "test:leak": "node scripts/test-leak.mjs",
+    "check:env": "node scripts/check-env.mjs",
+    "prebuild": "node scripts/check-env.mjs",
+    "postbuild": "node scripts/check-env.mjs --dist",
+    "vercel:env": "node scripts/vercel-env.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

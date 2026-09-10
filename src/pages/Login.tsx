@@ -30,6 +30,9 @@ type Mode = 'signin' | 'register'
 const PROJECT = 'trading-journal-43d07'
 const CONSOLE_URL = `https://console.firebase.google.com/project/${PROJECT}/settings/general`
 
+/** Advice differs: locally you edit a file, on a host you set build variables. */
+const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
+
 const HIGHLIGHTS = [
   {
     icon: TrendIcon,
@@ -161,23 +164,36 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                 <strong>web app</strong> config — a different credential from a service
                 account key, which has none of these values in it.
               </p>
-              <ol className="setup-steps">
-                <li>
-                  Open{' '}
-                  <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
-                    Project settings &rsaquo; General
-                  </a>{' '}
-                  and scroll to <em>Your apps</em>. No web app there yet? Click{' '}
-                  <code>&lt;/&gt;</code> to register one.
-                </li>
-                <li>
-                  Copy the whole <code>firebaseConfig</code> block.
-                </li>
-                <li>
-                  Run <code>npm run setup:firebase</code>, paste it, then restart the dev
-                  server.
-                </li>
-              </ol>
+              {IS_LOCAL ? (
+                <ol className="setup-steps">
+                  <li>
+                    Open{' '}
+                    <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
+                      Project settings &rsaquo; General
+                    </a>{' '}
+                    and scroll to <em>Your apps</em>. No web app there yet? Click{' '}
+                    <code>&lt;/&gt;</code> to register one.
+                  </li>
+                  <li>
+                    Copy the whole <code>firebaseConfig</code> block.
+                  </li>
+                  <li>
+                    Run <code>npm run setup:firebase</code>, paste it, then restart the
+                    dev server.
+                  </li>
+                </ol>
+              ) : (
+                <ol className="setup-steps">
+                  <li>
+                    Set these in your host&rsquo;s environment variables (on Vercel:
+                    Settings &rsaquo; Environment Variables, type <em>Config</em>).
+                  </li>
+                  <li>
+                    <strong>Redeploy.</strong> These are compiled in at build time, so an
+                    environment change alone does not update the running site.
+                  </li>
+                </ol>
+              )}
               {missingFirebaseKeys.length > 0 && (
                 <ul className="setup-list">
                   {missingFirebaseKeys.map((key) => (

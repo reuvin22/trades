@@ -16,6 +16,13 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create, update, delete: if isOwner(uid) && isVerified();
       }
+
+      // Model-written analysis. The client reads it; only the Admin SDK writes
+      // it, and the Admin SDK bypasses these rules entirely.
+      match /insights/{insightId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
     }
 
     match /{document=**} {
