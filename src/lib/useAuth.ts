@@ -159,9 +159,14 @@ export function readRedirectError(): string | null {
   const reason = new URLSearchParams(window.location.search).get('auth_error')
   if (reason === null) return null
 
-  return reason === 'cancelled'
-    ? 'Google sign-in was closed before it finished.'
-    : 'Google sign-in did not complete. Try again.'
+  switch (reason) {
+    case 'cancelled':
+      return 'Google sign-in was closed before it finished.'
+    case 'unconfigured':
+      return 'Google sign-in is not finished being set up on the server.'
+    default:
+      return 'Google sign-in did not complete. Try again.'
+  }
 }
 
 /** Strips the parameter, so a reload does not show the message again. */
