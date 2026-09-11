@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { ApiError, apiFetch } from './api'
+import { auth } from './firebase'
 
 /**
  * The signed-in trader.
@@ -130,57 +132,71 @@ export function registerWithPassword(
 }
 
 /**
- * Hand the browser to the API, which hands it to Google.
+ * Google sign-in: popup in the browser, session minted by the API.
  *
- * A full-page navigation rather than a popup, and deliberately so: the client
- * holds no OAuth client id and no Firebase config, so it has nothing to build
- * an authorize URL from. The API owns the redirect, does the code exchange
- * with its secret, sets the session cookie and sends the browser back.
+ * The Firebase SDK runs the OAuth handshake — it owns the OAuth client, so
+ * there is no redirect URI to register and no client secret anywhere. All it
+ * produces is an ID token, which goes to the API once and is verified there
+ * against the Firebase project before any session exists.
  *
- * This also sidesteps the popup problems the SDK had — blocked popups, mobile
- * Safari, in-app browsers, and a cross-origin-opener-policy that could hide a
- * dismissal and leave the caller spinning forever.
+ * The token is never stored. `signOut` clears the SDK's own copy immediately,
+ * because the only credential this app should hold afterwards is the HttpOnly
+ * cookie the API set, which script on this page cannot read.
  */
-export function signInWithGoogle(): void {
-  window.location.href = `${
-    import.meta.env.VITE_API_BASE_URL ?? ''
-  }/api/v1/auth/google/start`
-}
+export async function signInWithGoogle(): Promise<AuthUser | null> {
+  const instance = auth
+  if (!instance) {
+    throw new Error('Google sign-in is not configured in this build.')
+  }
 
-/**
- * A failed Google sign-in, as reported by the page the browser came back to.
- *
- * The OAuth callback cannot answer with JSON — it is reached by a navigation —
- * so it reports through a query parameter. Reading and clearing are separate
- * because reading has to happen during render, to seed the error state, and
- * rewriting history is a side effect that must not.
- */
-export function readRedirectError(): string | null {
-  const reason = new URLSearchParams(window.location.search).get('auth_error')
-  if (reason === null) return null
+  const provider = new GoogleAuthProvider()
+  // Always ask which account, rather than silently reusing whichever one the
+  // browser last used on some other Google property.
+  provider.setCustomParameters({ prompt: 'select_account' })
 
-  switch (reason) {
-    case 'cancelled':
-      return 'Google sign-in was closed before it finished.'
-    case 'unconfigured':
-      return 'Google sign-in is not finished being set up on the server.'
-    default:
-      return 'Google sign-in did not complete. Try again.'
+  const credential = await signInWithPopup(instance, provider)
+  const idToken = await credential.user.getIdToken()
+
+  try {
+    const wire = await apiFetch<SessionWire>('/api/v1/auth/google', {
+      method: 'POST',
+      body: { id_token: idToken },
+    })
+    return toUser(wire)
+  } finally {
+    // Whether or not the exchange worked, the SDK's session has done its job.
+    // Leaving it signed in would keep a second, refreshable credential in the
+    // browser alongside the cookie — two sources of truth, one of them readable
+    // by any script on the page.
+    await signOut(instance).catch(() => {})
   }
 }
 
-/** Strips the parameter, so a reload does not show the message again. */
-export function clearRedirectError(): void {
-  const params = new URLSearchParams(window.location.search)
-  if (!params.has('auth_error')) return
+/** Firebase's popup errors are not fit to show a person. */
+export function readableGoogleError(error: unknown): string | null {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : ''
 
-  params.delete('auth_error')
-  const query = params.toString()
-  window.history.replaceState(
-    null,
-    '',
-    `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`,
-  )
+  switch (code) {
+    // Closing the popup is a decision, not a failure. Nothing to report.
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return null
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the Google popup. Allow popups and try again.'
+    case 'auth/account-exists-with-different-credential':
+      return 'That email already has an account. Sign in with your password instead.'
+    case 'auth/unauthorized-domain':
+      return `Add "${window.location.hostname}" to Firebase Console > Authentication > Settings > Authorized domains.`
+    case 'auth/operation-not-allowed':
+      return 'Google sign-in is switched off for this project. Enable it under Authentication > Sign-in method.'
+    case 'auth/network-request-failed':
+      return 'Network problem reaching Google. Check your connection.'
+    default:
+      return readableAuthError(error)
+  }
 }
 
 export function resendVerification() {

@@ -19,12 +19,27 @@ const DIM = '[2m'
 const OFF = '[0m'
 
 /** Names that must never be exposed, whatever they are prefixed with. */
-// "API_KEY" is matched now. It used to be exempt because VITE_FIREBASE_API_KEY
-// was public by design and flagging it would have blocked every build — but the
-// client holds no vendor key at all any more, so any name that looks like one
-// reaching this bundle is a mistake worth failing on.
 const SECRET_NAME =
   /(SECRET|PRIVATE|PASSWORD|CREDENTIAL|SERVICE_ACCOUNT|BREVO|OPENROUTER|GEMINI|API_KEY|CLIENT_SECRET|_TOKEN)/i
+
+/**
+ * Names that match the pattern above but are public identifiers by design.
+ *
+ * The Firebase web config is the whole list. It ships in every client bundle
+ * because the SDK needs it in the browser, and Google publishes the same values
+ * in its own quickstarts — what protects the project is the API holding the
+ * service account and Firestore rules denying everything else.
+ *
+ * Kept as an explicit allowlist rather than by loosening SECRET_NAME: the point
+ * of this check is that adding a key to the bundle should be a decision someone
+ * made on purpose, and had to write down here.
+ */
+const PUBLIC_BY_DESIGN = new Set([
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_APP_ID',
+])
 
 /** Value shapes that are unambiguously credentials. */
 const SECRET_VALUE = [
@@ -80,6 +95,7 @@ if (process.argv.includes('--dist')) {
       !name.startsWith('VITE_') &&
       typeof value === 'string' &&
       value.length >= 16 &&
+      !PUBLIC_BY_DESIGN.has(name) &&
       (SECRET_NAME.test(name) || SECRET_VALUE.some((s) => s.pattern.test(value))),
   )
 
@@ -102,6 +118,8 @@ if (process.argv.includes('--dist')) {
 } else {
   for (const [name, value] of Object.entries(env)) {
     if (!name.startsWith('VITE_') || typeof value !== 'string' || value === '') continue
+
+    if (PUBLIC_BY_DESIGN.has(name)) continue
 
     if (SECRET_NAME.test(name)) {
       problems.push(`${name} is VITE_-prefixed but its name says it is a secret.`)

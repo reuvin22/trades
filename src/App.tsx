@@ -153,7 +153,14 @@ function App() {
   }
 
   if (!signedIn) {
-    return <Login theme={theme} onToggleTheme={toggle} onPreview={() => setPreview(true)} />
+    return (
+      <Login
+        theme={theme}
+        onToggleTheme={toggle}
+        onPreview={() => setPreview(true)}
+        onSignedIn={refresh}
+      />
+    )
   }
 
   if (route === 'login') return null

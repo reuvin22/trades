@@ -1,9 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { ApiError } from '../lib/api'
 import {
-  clearRedirectError,
   readableAuthError,
-  readRedirectError,
+  readableGoogleError,
   registerWithPassword,
   signInWithGoogle,
   signInWithPassword,
@@ -55,6 +54,8 @@ type LoginProps = {
   theme: Theme
   onToggleTheme: () => void
   onPreview: () => void
+  /** Called once a session exists, so the app can leave the login screen. */
+  onSignedIn: () => void
 }
 
 type Mode = 'signin' | 'register'
@@ -80,15 +81,13 @@ const HIGHLIGHTS = [
   },
 ]
 
-export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
+export function Login({ theme, onToggleTheme, onPreview, onSignedIn }: LoginProps) {
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [reveal, setReveal] = useState(false)
-  // Seeded from the URL: a Google failure is already on the page before the
-  // first paint, rather than appearing a frame later.
-  const [error, setError] = useState(() => readRedirectError() ?? '')
+  const [error, setError] = useState('')
   const [busy, setBusy] = useState<'google' | 'email' | null>(null)
   /*
    * Set when a sign-in attempt could not reach the API at all — status 0, which
@@ -98,19 +97,27 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
    */
   const [unreachable, setUnreachable] = useState(false)
 
-  // The message is already in state; drop the parameter so a reload is clean.
-  useEffect(clearRedirectError, [])
-
   /**
-   * Hands the browser to the API, which hands it to Google.
+   * The Google popup, then the API.
    *
-   * Nothing after this runs: it is a navigation, not a popup. `busy` stays set
-   * on purpose, so the button reads as working right up until the page leaves.
+   * `onSignedIn` is what moves the app on. Sign-in sets an HttpOnly cookie,
+   * and a cookie the page cannot read is also a cookie the page cannot notice
+   * arriving — so every path that establishes a session has to say so.
    */
-  function handleGoogle() {
+  async function handleGoogle() {
     setError('')
     setBusy('google')
-    signInWithGoogle()
+    try {
+      await signInWithGoogle()
+      onSignedIn()
+    } catch (cause) {
+      // A closed popup reports null: the person changed their mind, which is
+      // not an error worth shouting about.
+      const message = readableGoogleError(cause)
+      if (message) setError(message)
+    } finally {
+      setBusy(null)
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -129,6 +136,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
       } else {
         await registerWithPassword(email.trim(), password, name)
       }
+      onSignedIn()
     } catch (cause) {
       setUnreachable(cause instanceof ApiError && cause.status === 0)
       setError(readableAuthError(cause))
@@ -224,7 +232,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
             ) : (
               <GoogleIcon size={18} />
             )}
-            {busy === 'google' ? 'Taking you to Google…' : 'Continue with Google'}
+            {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
           </button>
 
           <div className={LOGIN_DIVIDER}>
