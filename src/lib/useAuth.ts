@@ -11,6 +11,7 @@ import {
   signInWithRedirect,
   signOut,
   updateProfile,
+  type Auth,
   type User,
 } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from './firebase'
@@ -86,17 +87,75 @@ const REDIRECT_FALLBACK = new Set([
   'auth/web-storage-unsupported',
 ])
 
+/** Long enough for a finished sign-in to report itself before we read the
+ *  returned focus as a cancellation. */
+const ABANDON_GRACE_MS = 1500
+
+/**
+ * Firebase decides a popup was dismissed by polling `popup.closed`, which the
+ * cross-origin-opener-policy on Google's account chooser can hide from us. When
+ * it does, signInWithPopup never settles and the caller is left spinning
+ * forever. Treat "the popup took focus, handed it back, and nobody ended up
+ * signed in" as the dismissal Firebase failed to notice.
+ */
+function watchForAbandonedPopup(instance: Auth) {
+  let stop = () => {}
+
+  const promise = new Promise<never>((_, reject) => {
+    let timer: number | undefined
+    // The popup has to steal focus before handing it back can mean anything —
+    // without this, a popup that never opened would look like a cancellation.
+    let tookFocus = false
+
+    const onBlur = () => {
+      tookFocus = true
+      window.clearTimeout(timer)
+    }
+
+    const onFocus = () => {
+      if (!tookFocus) return
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (instance.currentUser) return
+        stop()
+        reject(
+          Object.assign(new Error('Google sign-in was closed.'), {
+            code: 'auth/popup-closed-by-user',
+          }),
+        )
+      }, ABANDON_GRACE_MS)
+    }
+
+    stop = () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('blur', onBlur)
+      window.removeEventListener('focus', onFocus)
+    }
+
+    window.addEventListener('blur', onBlur)
+    window.addEventListener('focus', onFocus)
+  })
+
+  return { promise, stop: () => stop() }
+}
+
 export async function signInWithGoogle() {
   const instance = requireAuth()
+  const abandoned = watchForAbandonedPopup(instance)
 
   try {
-    return await signInWithPopup(instance, googleProvider)
+    return await Promise.race([
+      signInWithPopup(instance, googleProvider),
+      abandoned.promise,
+    ])
   } catch (error) {
     if (REDIRECT_FALLBACK.has(errorCode(error))) {
       await signInWithRedirect(instance, googleProvider)
       return null
     }
     throw error
+  } finally {
+    abandoned.stop()
   }
 }
 

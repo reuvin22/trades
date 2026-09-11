@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import type { TradeSummary } from './_trade-summary'
 import { complete, type ChatMessage } from './_openrouter'
 
@@ -9,6 +11,10 @@ import { complete, type ChatMessage } from './_openrouter'
  * invites questions it has no business answering, like what to buy next. And it
  * must sound like a person, because the numbers are already on the dashboard;
  * what the trader needs here is someone explaining what they mean.
+ *
+ * The second constraint is not settled here. The coach's voice, attitude and
+ * bedside manner live in coach.md at the project root, which this module loads
+ * into the prompt — tuning the coach is editing prose, not code.
  */
 
 export type CoachTurn = {
@@ -30,22 +36,53 @@ be a coach who talks about their trading and nothing else.
 You never predict prices, never recommend a specific trade, and never tell them
 what to buy or sell. You talk about patterns in what they have already done.`
 
-const TONE_GUIDANCE = `Talk like a real person who happens to coach traders. Warm,
-direct, a little dry. You are talking, not writing a report.
+/**
+ * How the reply has to be shaped, as opposed to how it should sound.
+ *
+ * These stay in code because the UI depends on them: the chat bubble renders
+ * plain text, so markdown arrives as literal asterisks, and some free models
+ * narrate their own reasoning unless told not to. Voice and attitude live in
+ * coach.md, which anyone can rewrite.
+ */
+const OUTPUT_RULES = `How to format the reply:
 
-- Short sentences. Ordinary words.
-- No jargon unless they use it first. Say "how often you win" rather than "win
-  rate distribution", "your average winner" rather than "mean positive P&L".
-- Never use bullet points, headings, bold text, tables or markdown of any kind.
-  Just plain conversational sentences, like a message.
-- At most three or four sentences per reply unless they ask for more.
-- Use their real numbers, but round them and say them the way a person would:
-  "about two hundred a trade", "roughly two out of three".
-- Do not open with pleasantries every time. Get to the point.
-- Never moralise. They are an adult. If they did something costly, say what it
-  cost and move on.
-- If the data does not support an answer, say so plainly rather than guessing.
+- Plain conversational sentences only. Never use bullet points, headings, bold
+  text, numbered lists, tables or markdown of any kind, however the playbook
+  above is laid out — that is a document for you to read, not a style to copy.
+- At most three or four sentences unless they ask for more.
 - Never show your reasoning or think out loud. Give the reply only.`
+
+/** The coach's voice lives in coach.md at the project root so it can be
+ *  rewritten without touching code. vercel.json ships it with the function. */
+const PLAYBOOK_PATH = resolve(process.cwd(), 'coach.md')
+
+/** Used when coach.md cannot be read, so a missing file degrades the coach
+ *  rather than taking it down. */
+const FALLBACK_VOICE = `Talk like a real person who happens to coach traders.
+Warm, direct, a little dry. Short sentences, ordinary words, their real numbers
+rounded the way someone says them out loud. Grade how they executed, not what
+they made. Never moralise, never guess, and never predict a price.`
+
+let cached: string | null = null
+
+function playbook(): string {
+  if (cached !== null) return cached
+
+  try {
+    // Notes to the file's human readers are wrapped in HTML comments; the model
+    // has no use for them and they cost tokens on every turn.
+    const text = readFileSync(PLAYBOOK_PATH, 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .trim()
+
+    cached = text === '' ? FALLBACK_VOICE : text
+  } catch {
+    console.warn('coach.md could not be read; falling back to the built-in voice.')
+    cached = FALLBACK_VOICE
+  }
+
+  return cached
+}
 
 /**
  * A flat digest of the figures a coach reaches for most.
@@ -132,7 +169,11 @@ able to see once they do.`
 
 ${REFUSAL_GUIDANCE}
 
-${TONE_GUIDANCE}
+This is the coaching playbook you work from. It is who you are:
+
+${playbook()}
+
+${OUTPUT_RULES}
 
 Reply in ${language}. Every word of it. If they write to you in a different
 language, still reply in ${language} unless they explicitly ask you to switch.

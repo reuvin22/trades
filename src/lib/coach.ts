@@ -21,6 +21,39 @@ export const LANGUAGES = [
   { code: 'German', label: 'German', native: 'Deutsch' },
 ]
 
+/** Locally a missing API means the dev server is not serving api/; deployed it
+ *  never does, so the advice has to differ. */
+const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
+
+/**
+ * The coach answered with something that is not JSON.
+ *
+ * Deployed, that is the host's own error page — a timeout, a crashed function,
+ * a route that is not there — and the status is the only thing that says which.
+ * Telling a deployed user to run `npm run dev` is noise; they cannot act on it.
+ */
+function describeNonJson(status: number): string {
+  if (status === 504 || status === 408) {
+    return 'The coach took too long to answer and the request was cut off. Ask again — a shorter question usually comes back in time.'
+  }
+
+  if (status === 429) {
+    return 'Too many requests just now. Give it a moment and ask again.'
+  }
+
+  if (status === 404) {
+    return IS_LOCAL
+      ? 'The coach API is not running. Start the app with npm run dev rather than a static preview.'
+      : 'The coach is not available on this deployment. Its serverless function did not build.'
+  }
+
+  if (status >= 500) {
+    return 'The coach hit a server error. Try again in a moment.'
+  }
+
+  return 'The coach sent back a reply we could not read. Try again in a moment.'
+}
+
 let counter = 0
 function nextId() {
   counter += 1
@@ -74,9 +107,7 @@ export function useCoach(language: string): CoachState {
 
         const isJson = response.headers.get('content-type')?.includes('json')
         if (!isJson) {
-          setError(
-            'The coach needs the API running. Use npm run dev (or deploy) rather than a static preview.',
-          )
+          setError(describeNonJson(response.status))
           return
         }
 

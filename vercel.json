@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/coach-chat.ts": {
+      "includeFiles": "coach.md",
+      "maxDuration": 60
+    },
+    "api/behavioral-leak.ts": {
+      "maxDuration": 60
+    }
+  }
+}
