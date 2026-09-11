@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { apiFetch, date, readableApiError } from './api'
+import { API_BASE, apiFetch, date, readableApiError } from './api'
 import { toEntry, type DirectoryEntry } from './directory'
 
 /**
@@ -119,14 +119,137 @@ export async function markSeen(uid: string): Promise<Thread> {
   return toThread(wire)
 }
 
+/**
+ * The live connection: one EventSource, shared by the whole dock.
+ *
+ * The server sends a nudge naming whoever's conversation moved — not the
+ * message itself — and listeners refetch through the ordinary endpoints. That
+ * keeps one code path for reading data, and makes a dropped event harmless:
+ * the next fetch reads current state regardless of how many nudges preceded it.
+ *
+ * Polling stays as the fallback, slowed right down while the stream is live.
+ * Some corporate proxies buffer server-sent events into uselessness, and a
+ * sleeping free-tier instance drops every open connection — neither should mean
+ * a chat that silently stops updating.
+ */
+type Listener = (uid: string) => void
+
+const listeners = new Set<Listener>()
+let source: EventSource | null = null
+let connected = false
+let retry = 0
+
+/** Backoff between reconnects, so a server that is down is not hammered. */
+const RETRY_BASE_MS = 1_000
+const RETRY_MAX_MS = 30_000
+
+function notify(uid: string) {
+  for (const listener of listeners) listener(uid)
+}
+
+function open() {
+  if (source !== null) return
+
+  // EventSource cannot set headers, which is exactly why the session is a
+  // cookie: same-origin through the proxy, so the browser attaches it here as
+  // it does on every other request.
+  source = new EventSource(`${API_BASE}/api/v1/chat/stream`, {
+    withCredentials: true,
+  })
+
+  source.addEventListener('open', () => {
+    connected = true
+    retry = 0
+  })
+
+  source.addEventListener('change', (event) => {
+    try {
+      const data = JSON.parse((event as MessageEvent<string>).data) as { uid?: string }
+      if (data.uid) notify(data.uid)
+    } catch {
+      // A malformed line is not worth breaking the stream over; the next
+      // poll picks up whatever changed.
+    }
+  })
+
+  source.addEventListener('error', () => {
+    // EventSource reconnects itself, but only for a connection it believes is
+    // recoverable — and it retries at a fixed interval. Closing and backing
+    // off by hand is both gentler on a sleeping instance and recovers from the
+    // cases the browser gives up on.
+    connected = false
+    source?.close()
+    source = null
+
+    retry += 1
+    const wait = Math.min(RETRY_BASE_MS * 2 ** (retry - 1), RETRY_MAX_MS)
+    window.setTimeout(() => {
+      if (listeners.size > 0) open()
+    }, wait)
+  })
+}
+
+function close() {
+  source?.close()
+  source = null
+  connected = false
+  retry = 0
+}
+
+/**
+ * Subscribe to live changes for as long as the component is mounted.
+ *
+ * One connection is shared however many components ask: browsers cap
+ * simultaneous connections per origin, and a dock that opened two would spend
+ * that budget on saying the same thing twice.
+ */
+export function useChatStream(enabled: boolean, onChange: Listener): boolean {
+  const [live, setLive] = useState(false)
+  const latest = useRef(onChange)
+
+  useEffect(() => {
+    latest.current = onChange
+  }, [onChange])
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const listener: Listener = (uid) => latest.current(uid)
+    listeners.add(listener)
+    open()
+
+    // The connection state lives outside React, so it is sampled rather than
+    // pushed. A second is far below anything a person notices, and it only
+    // decides how often the fallback poll runs.
+    const timer = window.setInterval(() => setLive(connected), 1_000)
+
+    return () => {
+      listeners.delete(listener)
+      window.clearInterval(timer)
+      if (listeners.size === 0) close()
+    }
+  }, [enabled])
+
+  return live
+}
+
 /* ------------------------------------------------------------------- polls */
 
-/** With the dock open, fast enough to feel live. */
+/*
+ * Polling intervals — the fallback, not the mechanism. The stream delivers
+ * changes in well under a second; these only matter when it is not connected,
+ * which happens behind proxies that buffer server-sent events and while a
+ * free-tier instance is waking up.
+ *
+ * With the stream live they stretch right out: something still has to catch
+ * the change that arrived during a reconnect, but it no longer has to be
+ * quick about it.
+ */
 const POLL_OPEN = 4_000
-/** Closed, this only has to keep the unread badge roughly honest. */
 const POLL_IDLE = 60_000
-/** An open conversation is the one thing worth watching closely. */
 const POLL_THREAD = 3_000
+/** Safety net while the stream is connected. */
+const POLL_BACKUP = 45_000
 
 /**
  * Repeats `run` on an interval, and once immediately.
@@ -193,7 +316,14 @@ export function useContacts(signedIn: boolean, dockOpen: boolean): ContactsState
     }
   }, [signedIn])
 
-  usePoll(reload, signedIn ? (dockOpen ? POLL_OPEN : POLL_IDLE) : null)
+  // Any thread moving changes the contact list — a new message, a read
+  // receipt, an unread count. So every nudge refetches it, whoever it names.
+  const live = useChatStream(signedIn, useCallback(() => void reload(), [reload]))
+
+  usePoll(
+    reload,
+    signedIn ? (live ? POLL_BACKUP : dockOpen ? POLL_OPEN : POLL_IDLE) : null,
+  )
 
   return { contacts, error, reload }
 }
@@ -236,7 +366,18 @@ export function useThread(uid: string | null, me: string | null): ThreadState {
     }
   }, [uid, me])
 
-  usePoll(reload, uid === null ? null : POLL_THREAD)
+  const live = useChatStream(
+    uid !== null,
+    useCallback(
+      (changed: string) => {
+        // Ignore nudges about other conversations: this hook renders one.
+        if (changed === uid) void reload()
+      },
+      [uid, reload],
+    ),
+  )
+
+  usePoll(reload, uid === null ? null : live ? POLL_BACKUP : POLL_THREAD)
 
   const fresh = state.uid === uid
 
