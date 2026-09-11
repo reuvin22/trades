@@ -9,12 +9,17 @@ import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { navigate, useHashRoute } from './lib/useHashRoute'
 import { useAuth } from './lib/useAuth'
-import { useProfile, type Profile as ProfileRecord } from './lib/profile'
+import {
+  accountTypeLabel,
+  useProfile,
+  type Profile as ProfileRecord,
+} from './lib/profile'
 import { saveTrade, useTrades } from './lib/trades'
 import { useTheme } from './lib/useTheme'
 import { labelForRoute } from './navigation'
 import { AiCoach } from './pages/AiCoach'
 import { Analytics } from './pages/Analytics'
+import { Calendar } from './pages/Calendar'
 import { Billing } from './pages/Billing'
 import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login'
@@ -31,6 +36,7 @@ const HOME_ROUTE = 'dashboard'
 
 type TraderViewProps = {
   route: string
+  onQuickAdd: () => void
   uid: string | null
   user: User | null
   profile: ProfileRecord | null
@@ -41,6 +47,7 @@ type TraderViewProps = {
 
 function TraderView({
   route,
+  onQuickAdd,
   uid,
   user,
   profile,
@@ -55,6 +62,8 @@ function TraderView({
       return <TradeJournal uid={uid} trades={trades} loading={loading} error={error} />
     case 'analytics':
       return <Analytics trades={trades} />
+    case 'calendar':
+      return <Calendar trades={trades} onQuickAdd={onQuickAdd} />
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'profile':
@@ -109,7 +118,7 @@ function App() {
   if (pending) {
     return (
       <div className="auth-splash">
-        <h1 className="brand-name">RadEx</h1>
+        <h1 className="brand-name">RagDex</h1>
         <p className="brand-sub">Restoring your session…</p>
       </div>
     )
@@ -139,13 +148,18 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar route={route} onQuickAdd={() => setLogging(true)} />
+      <Sidebar
+        route={route}
+        accountLabel={accountTypeLabel(profile?.accountType)}
+        onQuickAdd={() => setLogging(true)}
+      />
 
       <div className="workspace">
         <TopBar theme={theme} onToggleTheme={toggle} />
         <main className="content" key={route}>
           <TraderView
             route={route}
+            onQuickAdd={() => setLogging(true)}
             uid={uid}
             user={user}
             profile={profile}

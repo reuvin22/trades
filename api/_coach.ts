@@ -128,7 +128,7 @@ ${JSON.stringify(summary, null, 1)}`
 honest about that. Encourage them to log a few and tell them what you will be
 able to see once they do.`
 
-  return `You are the AI Coach inside RadEx, a trading journal app. ${who}
+  return `You are the AI Coach inside RagDex, a trading journal app. ${who}
 
 ${REFUSAL_GUIDANCE}
 

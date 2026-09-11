@@ -92,7 +92,7 @@ export async function complete({
       'content-type': 'application/json',
       // OpenRouter uses these for attribution on its dashboard.
       'HTTP-Referer': process.env.APP_URL ?? 'http://localhost:5173',
-      'X-Title': 'RadEx',
+      'X-Title': 'RagDex',
     },
     body: JSON.stringify(body),
   })

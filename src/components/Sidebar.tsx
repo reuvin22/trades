@@ -4,15 +4,17 @@ import { PlusIcon } from './Icons'
 
 type SidebarProps = {
   route: string
+  /** e.g. "Individual Trader Account" — the account's category. */
+  accountLabel: string
   onQuickAdd: () => void
 }
 
-export function Sidebar({ route, onQuickAdd }: SidebarProps) {
+export function Sidebar({ route, accountLabel, onQuickAdd }: SidebarProps) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#/dashboard">
-        <h1 className="brand-name">RadEx</h1>
-        <p className="brand-sub">Pro Trader Account</p>
+        <h1 className="brand-name">RagDex</h1>
+        <p className="brand-sub">{accountLabel}</p>
       </a>
 
       <nav className="nav" aria-label="Primary">

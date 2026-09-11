@@ -32,13 +32,50 @@ export type Profile = {
   /** Chosen once on the AI Coach's first visit. */
   coachLanguage?: string
 
+  /** Which kind of account this is. Defaults to individual. */
+  accountType?: AccountType
+
   // Written by the billing page.
   plan?: string
   planSince?: Date | null
 }
 
+/** The three kinds of account the app recognises. */
+export type AccountType = 'student' | 'coach' | 'individual'
+
+export const ACCOUNT_TYPES: {
+  value: AccountType
+  label: string
+  blurb: string
+}[] = [
+  {
+    value: 'student',
+    label: 'Student Trader Account',
+    blurb: 'Learning the craft, usually on a small or simulated account.',
+  },
+  {
+    value: 'coach',
+    label: 'Coach Trader Account',
+    blurb: 'Mentors and reviews other traders alongside their own journal.',
+  },
+  {
+    value: 'individual',
+    label: 'Individual Trader Account',
+    blurb: 'Trading their own capital, for themselves.',
+  },
+]
+
+export const DEFAULT_ACCOUNT_TYPE: AccountType = 'individual'
+
+/** The label shown in the sidebar under the wordmark. */
+export function accountTypeLabel(value: AccountType | undefined): string {
+  const match = ACCOUNT_TYPES.find((entry) => entry.value === value)
+  return (match ?? ACCOUNT_TYPES.find((entry) => entry.value === DEFAULT_ACCOUNT_TYPE)!).label
+}
+
 export type ProfileDetails = {
   displayName: string
+  accountType: AccountType
   photoURL: string
   timezone: string
   currency: string

@@ -115,17 +115,16 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
       </div>
 
       <section className="login-aside">
-        <div className="login-brand">
-          <h1 className="brand-name">RadEx</h1>
-          <p className="brand-sub">Pro Trader Account</p>
-        </div>
+        {/* Name sits directly above the tagline so a first-time visitor reads
+            what the product is called before what it claims to do. */}
+        <div className="login-hero">
+          <h1 className="login-brand">RagDex</h1>
 
-        <div>
-          <h2 className="login-pitch">
+          <p className="login-pitch">
             Know Your Trades.
             <br />
             Grow Your Edge.
-          </h2>
+          </p>
 
           <ul className="login-points">
             {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
@@ -297,7 +296,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
           </form>
 
           <p className="login-switch">
-            {mode === 'signin' ? 'New to RadEx? ' : 'Already have an account? '}
+            {mode === 'signin' ? 'New to RagDex? ' : 'Already have an account? '}
             <button
               type="button"
               className="link-button"

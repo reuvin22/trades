@@ -153,11 +153,14 @@
   z-index: 1;
 }
 
+/* Centred as one block. `space-between` used to fling the name, the tagline and
+   the footer to opposite edges of a tall viewport, which read as three
+   unrelated things rather than one masthead. */
 .login-aside {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 40px;
+  justify-content: center;
   padding: 46px 52px;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--sidebar-mid) 72%, transparent);
@@ -165,16 +168,29 @@
   animation: fade 0.6s ease backwards;
 }
 
-.login-brand .brand-name {
-  font-size: 28px;
+.login-hero {
+  width: 100%;
+  max-width: 460px;
+}
+
+/* The wordmark leads. It is the largest thing on the page, with the tagline
+   sitting under it as a subtitle. */
+.login-brand {
+  margin: 0 0 14px;
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  color: var(--text-strong);
+  animation: rise 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
 }
 
 .login-pitch {
-  font-size: 38px;
-  font-weight: 600;
-  line-height: 1.18;
-  letter-spacing: -0.035em;
-  color: var(--text-strong);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--text-dim);
   animation: rise 0.6s 0.08s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
 }
 
@@ -224,7 +240,11 @@
   color: var(--text-muted);
 }
 
+/* Out of flow so a tall viewport cannot stretch the masthead apart to reach it. */
 .login-foot {
+  position: absolute;
+  left: 52px;
+  bottom: 40px;
   font-size: 11.5px;
   letter-spacing: 0.03em;
   color: var(--text-muted);
@@ -487,11 +507,15 @@
     border-right: none;
     border-bottom: 1px solid var(--border);
     padding: 38px 28px 32px;
-    gap: 28px;
+  }
+
+  .login-brand {
+    font-size: 42px;
+    margin-bottom: 10px;
   }
 
   .login-pitch {
-    font-size: 28px;
+    font-size: 19px;
   }
 
   .login-foot {

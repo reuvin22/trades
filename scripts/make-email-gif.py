@@ -1,5 +1,5 @@
 """
-Builds the animated GIF used in the RadEx verification email.
+Builds the animated GIF used in the RagDex verification email.
 
 An equity curve draws itself left to right under a rising balance, then holds
 before looping. Run with:  python scripts/make-email-gif.py
@@ -105,7 +105,7 @@ def render(progress: float) -> Image.Image:
     figure = load_font(30 * SCALE, bold=True)
     small = load_font(10 * SCALE)
 
-    draw.text((34 * SCALE, 28 * SCALE), "RadEx", font=title, fill=TEXT)
+    draw.text((34 * SCALE, 28 * SCALE), "RagDex", font=title, fill=TEXT)
     draw.text(
         (34 * SCALE, 48 * SCALE),
         "KNOW YOUR TRADES. GROW YOUR EDGE.",

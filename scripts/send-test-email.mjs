@@ -33,7 +33,7 @@ const env = { ...loadEnv(), ...process.env }
 
 const apiKey = env.BREVO_API_KEY
 const sender = env.BREVO_SENDER_EMAIL
-const brand = env.BREVO_SENDER_NAME || 'RadEx'
+const brand = env.BREVO_SENDER_NAME || 'RagDex'
 
 if (!apiKey) {
   console.error('\n  BREVO_API_KEY is not set in .env.local\n')

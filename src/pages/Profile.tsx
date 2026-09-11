@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import type { User } from 'firebase/auth'
 import {
+  ACCOUNT_TYPES,
+  DEFAULT_ACCOUNT_TYPE,
   saveProfileDetails,
+  type AccountType,
   type Profile as ProfileRecord,
   type ProfileDetails,
 } from '../lib/profile'
@@ -34,6 +37,7 @@ type Form = ProfileDetails & { openingBalance: number | null; balanceText: strin
 
 const BLANK: Form = {
   displayName: '',
+  accountType: DEFAULT_ACCOUNT_TYPE,
   photoURL: '',
   timezone: '',
   currency: 'USD',
@@ -47,6 +51,7 @@ const BLANK: Form = {
 function fromRecord(record: ProfileRecord): Form {
   return {
     displayName: record.displayName ?? '',
+    accountType: record.accountType ?? DEFAULT_ACCOUNT_TYPE,
     photoURL: record.photoURL ?? '',
     timezone: record.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     currency: record.currency ?? 'USD',
@@ -98,6 +103,7 @@ export function Profile({ user, profile }: ProfileProps) {
     try {
       await saveProfileDetails(user, {
         displayName: form.displayName.trim(),
+        accountType: form.accountType,
         photoURL: form.photoURL.trim(),
         timezone: form.timezone,
         currency: form.currency,
@@ -171,6 +177,25 @@ export function Profile({ user, profile }: ProfileProps) {
             <label className="field span-2">
               <span className="field-label">Email address</span>
               <input value={user?.email ?? ''} readOnly disabled />
+            </label>
+
+            <label className="field span-4">
+              <span className="field-label">Account type</span>
+              <select
+                value={form.accountType}
+                onChange={(event) =>
+                  update('accountType', event.target.value as AccountType)
+                }
+              >
+                {ACCOUNT_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <span className="field-hint">
+                {ACCOUNT_TYPES.find((type) => type.value === form.accountType)?.blurb}
+              </span>
             </label>
 
             <label className="field span-4">
@@ -282,6 +307,12 @@ export function Profile({ user, profile }: ProfileProps) {
               Sign-in method
             </dt>
             <dd>{user?.providerData.map((entry) => entry.providerId).join(', ') || '—'}</dd>
+          </div>
+          <div>
+            <dt>Account type</dt>
+            <dd>
+              {ACCOUNT_TYPES.find((type) => type.value === form.accountType)?.label}
+            </dd>
           </div>
           <div>
             <dt>Account created</dt>

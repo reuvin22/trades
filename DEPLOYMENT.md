@@ -77,7 +77,7 @@ They are read only by the serverless function in `api/`.
 | --- | --- |
 | `BREVO_API_KEY` | Brevo transactional key. Can send mail as you — treat as a password. |
 | `BREVO_SENDER_EMAIL` | A sender address **verified in Brevo**, or sends will be rejected. |
-| `BREVO_SENDER_NAME` | Display name on the email. Defaults to `RadEx`. |
+| `BREVO_SENDER_NAME` | Display name on the email. Defaults to `RagDex`. |
 | `OPENROUTER_API_KEY` | Powers the behavioural-leak card and the AI Coach. From [openrouter.ai/keys](https://openrouter.ai/keys). |
 | `OPENROUTER_MODEL` | Optional. A slug, or a comma-separated fallback chain. Defaults to free models that fall through on rate limits. |
 | `FIREBASE_SERVICE_ACCOUNT` | The entire contents of `trading.json`, on one line. |
