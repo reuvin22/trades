@@ -8,20 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "setup:firebase": "node scripts/firebase-config.mjs",
-    "preview:email": "node scripts/preview-email.mjs",
-    "build:email-gif": "python scripts/make-email-gif.py",
-    "test:email": "node scripts/send-test-email.mjs",
-    "test:leak": "node scripts/test-leak.mjs",
     "check:env": "node scripts/check-env.mjs",
     "prebuild": "node scripts/check-env.mjs",
     "postbuild": "node scripts/check-env.mjs --dist",
-    "vercel:env": "node scripts/vercel-env.mjs",
-    "test:coach": "node scripts/test-coach.mjs"
+    "vercel:env": "node scripts/vercel-env.mjs"
   },
   "dependencies": {
-    "firebase": "^12.19.0",
-    "firebase-admin": "^14.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -31,7 +23,6 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
-    "@vercel/node": "^12.0.3",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",

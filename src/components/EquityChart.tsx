@@ -120,7 +120,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
   }
 
   return (
-    <section className={`${CARD} ${CHART_CARD}`}>
+    <section data-tour="chart" className={`${CARD} ${CHART_CARD}`}>
       <div className={CARD_HEAD}>
         <div>
           <h2 className={CARD_TITLE}>Cumulative Equity</h2>

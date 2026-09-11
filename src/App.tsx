@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChatDock } from './components/ChatDock'
+import { Tour } from './components/Tour'
+import { accountIsNew, markTourSeen, tourSeen } from './lib/tourState'
 import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
@@ -27,7 +29,7 @@ import { TradeJournal } from './pages/TradeJournal'
 import { VerifyEmail } from './pages/VerifyEmail'
 import { AdminShell } from './pages/admin/AdminShell'
 import type { StoredTrade } from './lib/trades'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from './lib/useAuth'
 
 /** Where a signed-in session lands, and where sign-out returns from. */
 const HOME_ROUTE = 'dashboard'
@@ -35,7 +37,7 @@ const HOME_ROUTE = 'dashboard'
 type TraderViewProps = {
   route: string
   uid: string | null
-  user: User | null
+  user: AuthUser | null
   profile: ProfileRecord | null
   trades: StoredTrade[]
   loading: boolean
@@ -78,12 +80,27 @@ function App() {
   const { profile, isNewAccount } = useProfile(user)
   const [logging, setLogging] = useState(false)
   const nav = useNavDrawer(route)
-  // Escape hatch for browsing the UI before Firebase credentials are in place.
+  const [tourDone, setTourDone] = useState<string | null>(null)
+  // Escape hatch for browsing the UI without an account, or while the API is
+  // unreachable.
   const [preview, setPreview] = useState(false)
 
   const uid = user?.uid ?? null
-  const { trades, loading, error } = useTrades(emailVerified ? uid : null)
+  const { trades, loading, error, reload } = useTrades(emailVerified ? uid : null)
   const signedIn = (Boolean(user) && emailVerified) || preview
+
+  /*
+   * The tour runs once for a new account. Derived rather than held in an
+   * effect, so it simply stops being true the moment it is dismissed — and
+   * never appears for the preview session, which has no account to remember it
+   * against.
+   */
+  const showTour = useMemo(() => {
+    if (!signedIn || !uid || preview) return false
+    if (tourDone === uid) return false
+    if (!accountIsNew(isNewAccount, profile?.createdAt ?? null)) return false
+    return !tourSeen(uid)
+  }, [signedIn, uid, preview, tourDone, isNewAccount, profile?.createdAt])
 
   // Signing in always lands on the dashboard, and signing out always returns to
   // login. Matching on `route === 'login'` alone was not enough: a session that
@@ -129,7 +146,7 @@ function App() {
       <VerifyEmail
         user={user}
         onRecheck={refresh}
-        viaGoogle={user.providerData.some((entry) => entry.providerId === 'google.com')}
+        viaGoogle={user.providers.includes('google.com')}
         isNewAccount={isNewAccount}
       />
     )
@@ -175,14 +192,24 @@ function App() {
         </main>
       </div>
 
-      <ChatDock />
+      {showTour && uid && (
+        <Tour
+          onFinish={() => {
+            markTourSeen(uid)
+            setTourDone(uid)
+          }}
+        />
+      )}
+
+      <ChatDock user={user} />
 
       <QuickAddTrade
         open={logging}
         onClose={() => setLogging(false)}
         onSave={async (trade) => {
           if (!user) return
-          await saveTrade(user.uid, trade)
+          await saveTrade(trade)
+          reload()
         }}
       />
     </div>

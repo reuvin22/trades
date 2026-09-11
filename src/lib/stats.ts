@@ -67,7 +67,7 @@ function mean(values: number[]): number {
 }
 
 export function deriveStats(trades: StoredTrade[]): DerivedStats {
-  // Firestore hands these back newest-first; every calculation below wants the
+  // The API hands these back newest-first; every calculation below wants the
   // opposite, so sort once here rather than reversing at each use.
   const ordered = [...trades].sort((a, b) => {
     const left = tradeDate(a)?.getTime() ?? 0

@@ -41,7 +41,7 @@ const timeFormat = new Intl.DateTimeFormat('en-US', {
   hour12: false,
 })
 
-/** Maps a Firestore document onto the row shape the table already renders. */
+/** Maps a stored trade onto the row shape the table already renders. */
 function toRow(trade: StoredTrade): JournalTrade {
   const opened = trade.entryAt ? new Date(trade.entryAt) : trade.createdAt
   const valid = opened instanceof Date && !Number.isNaN(opened.getTime())
@@ -73,7 +73,7 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
     : rows
 
   return (
-    <section className={`${CARD} overflow-hidden p-0`}>
+    <section data-tour="journal-table" className={`${CARD} overflow-hidden p-0`}>
       <div className="overflow-x-auto">
         <table className={`${TABLE} min-w-860`}>
           <thead>

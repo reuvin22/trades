@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { auth } from './firebase'
+import { ApiError, apiFetch, readableApiError } from './api'
 
 export type LeakResult = {
   title: string
@@ -11,7 +11,6 @@ export type LeakResult = {
 
 export type LeakState = {
   result: LeakResult | null
-  generatedAt: Date | null
   loading: boolean
   /** Set when the model has nothing to work with yet. */
   needed: number | null
@@ -22,27 +21,30 @@ export type LeakState = {
   refresh: () => void
 }
 
-type Payload = {
-  status?: 'ok' | 'insufficient'
-  result?: LeakResult
-  generatedAt?: string
-  needed?: number
-  have?: number
-  error?: string
+type LeakWire = {
+  result: {
+    title: string
+    finding: string
+    cost_label: string
+    severity: 'low' | 'medium' | 'high'
+    recommendation: string
+  } | null
+  trade_count: number
+  needed: number | null
 }
 
 /**
- * Fetches the model-written behavioural leak for the signed-in trader.
+ * The model-written behavioural leak for the signed-in trader.
  *
  * `tradeCount` is a dependency rather than the trades themselves: the server
  * reads the journal directly, so the count is only here to re-run the request
- * when the journal actually changes.
+ * when the journal actually changes. Nothing about the analysis is computed
+ * here — a client that could supply the numbers could invent the finding.
  */
 export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakState {
   const [state, setState] = useState<{
     key: string | null
     result: LeakResult | null
-    generatedAt: Date | null
     needed: number | null
     have: number
     error: string | null
@@ -50,7 +52,6 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
   }>({
     key: null,
     result: null,
-    generatedAt: null,
     needed: null,
     have: 0,
     error: null,
@@ -61,90 +62,58 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
   const key = uid === null ? null : `${uid}:${tradeCount}:${nonce}`
 
   useEffect(() => {
-    if (!uid || !auth?.currentUser) return
+    if (!uid) return
 
-    let live = true
+    const abort = new AbortController()
 
-    async function load() {
-      try {
-        const token = await auth!.currentUser!.getIdToken()
-        const response = await fetch('/api/behavioral-leak', {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${token}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: nonce > 0 }),
-        })
-
-        // No handler deployed: the server answers with the SPA shell.
-        const isJson = response.headers.get('content-type')?.includes('json')
-        if (!isJson || response.status === 404 || response.status === 501) {
-          if (live) {
-            setState((current) => ({ ...current, key, unavailable: true, error: null }))
-          }
-          return
-        }
-
-        const payload = (await response.json()) as Payload
-
-        if (!live) return
-
-        if (!response.ok) {
-          setState((current) => ({
-            ...current,
-            key,
-            error: payload.error ?? 'Could not generate the analysis.',
-          }))
-          return
-        }
-
-        if (payload.status === 'insufficient') {
-          setState({
-            key,
-            result: null,
-            generatedAt: null,
-            needed: payload.needed ?? null,
-            have: payload.have ?? 0,
-            error: null,
-            unavailable: false,
-          })
-          return
-        }
-
+    apiFetch<LeakWire>('/api/v1/insights/behavioral-leak', {
+      query: { refresh: nonce > 0 ? 'true' : undefined },
+      signal: abort.signal,
+    })
+      .then((body) =>
         setState({
           key,
-          result: payload.result ?? null,
-          generatedAt: payload.generatedAt ? new Date(payload.generatedAt) : null,
-          needed: null,
-          have: tradeCount,
+          result: body.result
+            ? {
+                title: body.result.title,
+                finding: body.result.finding,
+                costLabel: body.result.cost_label,
+                severity: body.result.severity,
+                recommendation: body.result.recommendation,
+              }
+            : null,
+          needed: body.needed,
+          have: body.trade_count,
           error: null,
           unavailable: false,
-        })
-      } catch {
-        if (live) setState((current) => ({ ...current, key, unavailable: true }))
-      }
-    }
+        }),
+      )
+      .catch((cause: unknown) => {
+        if (abort.signal.aborted) return
 
-    void load()
-    return () => {
-      live = false
-    }
-  }, [uid, tradeCount, nonce, key])
+        // 501 is "no model key on the server", which is a deployment choice
+        // rather than a fault. The card hides itself instead of alarming.
+        const notConfigured = cause instanceof ApiError && cause.status === 501
+        setState((current) => ({
+          ...current,
+          key,
+          unavailable: notConfigured,
+          error: notConfigured ? null : readableApiError(cause),
+        }))
+      })
 
-  const refresh = useCallback(() => setNonce((value) => value + 1), [])
+    return () => abort.abort()
+  }, [uid, key, nonce])
 
-  // Derived rather than stored, so a changing journal never shows stale text.
   const fresh = state.key === key
 
   return {
     result: fresh ? state.result : null,
-    generatedAt: fresh ? state.generatedAt : null,
-    loading: uid !== null && !fresh,
+    loading: Boolean(uid) && !fresh,
     needed: fresh ? state.needed : null,
     have: fresh ? state.have : 0,
     error: fresh ? state.error : null,
-    unavailable: fresh ? state.unavailable : false,
-    refresh,
+    unavailable: fresh && state.unavailable,
+    refresh: useCallback(() => setNonce((current) => current + 1), []),
   }
 }

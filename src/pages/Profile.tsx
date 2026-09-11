@@ -1,7 +1,8 @@
+import { readableApiError } from '../lib/api'
 import { useState, type FormEvent } from 'react'
 import { Select } from '../components/Select'
 import { useToast } from '../lib/toast'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../lib/useAuth'
 import {
   ACCOUNT_TYPES,
   DEFAULT_ACCOUNT_TYPE,
@@ -10,7 +11,6 @@ import {
   type Profile as ProfileRecord,
   type ProfileDetails,
 } from '../lib/profile'
-import { readableFirestoreError } from '../lib/trades'
 import { CameraIcon, SpinnerIcon, UserGlyphIcon } from '../components/Icons'
 import {
   ACCOUNT_ACTIONS,
@@ -39,7 +39,7 @@ import {
 } from '../components/ui'
 
 type ProfileProps = {
-  user: User | null
+  user: AuthUser | null
   profile: ProfileRecord | null
 }
 
@@ -128,7 +128,7 @@ export function Profile({ user, profile }: ProfileProps) {
     setError('')
 
     try {
-      await saveProfileDetails(user, {
+      await saveProfileDetails({
         displayName: form.displayName.trim(),
         accountType: form.accountType,
         photoURL: form.photoURL.trim(),
@@ -142,7 +142,7 @@ export function Profile({ user, profile }: ProfileProps) {
       setStatus('Profile saved.')
       toast.success('Profile saved', 'Your details are up to date.')
     } catch (cause) {
-      const message = readableFirestoreError(cause)
+      const message = readableApiError(cause)
       setError(message)
       toast.error('Could not save your profile', message)
     } finally {
@@ -336,7 +336,7 @@ export function Profile({ user, profile }: ProfileProps) {
               <UserGlyphIcon size={15} />
               Sign-in method
             </dt>
-            <dd>{user?.providerData.map((entry) => entry.providerId).join(', ') || '—'}</dd>
+            <dd>{user?.providers.join(', ') || '—'}</dd>
           </div>
           <div>
             <dt>Account type</dt>

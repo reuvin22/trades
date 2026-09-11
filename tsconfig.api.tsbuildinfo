@@ -1,1 +1,0 @@
-{"root":["./api/_coach.ts","./api/_email-template.ts","./api/_firebase-admin.ts","./api/_leak-prompt.ts","./api/_openrouter.ts","./api/_trade-summary.ts","./api/behavioral-leak.ts","./api/coach-chat.ts","./api/send-verification.ts"],"version":"6.0.3"}

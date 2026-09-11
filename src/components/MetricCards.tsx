@@ -12,7 +12,7 @@ import {
 
 export function MetricCards({ stats }: { stats: DerivedStats }) {
   return (
-    <div className={`grid grid-cols-4 gap-16 max-[1180px]:grid-cols-[repeat(auto-fit,minmax(190px,1fr))] ${ROW_STAGGER}`}>
+    <div data-tour="metrics" className={`grid grid-cols-4 gap-16 max-[1180px]:grid-cols-[repeat(auto-fit,minmax(190px,1fr))] ${ROW_STAGGER}`}>
       <article className={`${CARD} ${CARD_HOVER} flex flex-col gap-6 px-18 pt-16 pb-18`}>
         <div className="flex items-center justify-between gap-12">
           <p className="text-[12px] text-fg-muted">Expectancy</p>

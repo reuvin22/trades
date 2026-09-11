@@ -33,3 +33,12 @@ serviceAccount*.json
 .env.local
 .env.*.local
 email-preview.html
+# Backend secrets — the service account is a full-access credential.
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/.venv/
+backend/__pycache__/
+
+# Destructive one-off: deletes every account in the project.
+scripts/wipe-accounts.mjs

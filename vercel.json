@@ -1,12 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/coach-chat.ts": {
-      "includeFiles": "coach.md",
-      "maxDuration": 60
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ragdex-be.onrender.com/api/:path*"
     },
-    "api/behavioral-leak.ts": {
-      "maxDuration": 60
+    {
+      "source": "/health",
+      "destination": "https://ragdex-be.onrender.com/health"
     }
-  }
+  ]
 }

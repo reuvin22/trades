@@ -19,9 +19,12 @@ const DIM = '[2m'
 const OFF = '[0m'
 
 /** Names that must never be exposed, whatever they are prefixed with. */
-// Deliberately NOT matching a bare "API_KEY": VITE_FIREBASE_API_KEY is public
-// by design, and flagging it would block every build.
-const SECRET_NAME = /(SECRET|PRIVATE|PASSWORD|CREDENTIAL|SERVICE_ACCOUNT|BREVO|OPENROUTER|GEMINI|_TOKEN)/i
+// "API_KEY" is matched now. It used to be exempt because VITE_FIREBASE_API_KEY
+// was public by design and flagging it would have blocked every build — but the
+// client holds no vendor key at all any more, so any name that looks like one
+// reaching this bundle is a mistake worth failing on.
+const SECRET_NAME =
+  /(SECRET|PRIVATE|PASSWORD|CREDENTIAL|SERVICE_ACCOUNT|BREVO|OPENROUTER|GEMINI|API_KEY|CLIENT_SECRET|_TOKEN)/i
 
 /** Value shapes that are unambiguously credentials. */
 const SECRET_VALUE = [
@@ -31,6 +34,8 @@ const SECRET_VALUE = [
   { pattern: /^sk-or-/, what: 'an OpenRouter key' },
   { pattern: /^sk-/, what: 'an API secret key' },
   { pattern: /^ghp_|^github_pat_/, what: 'a GitHub token' },
+  // Google's own key shape. The client no longer has any business carrying one.
+  { pattern: /^AIza[0-9A-Za-z_-]{20,}/, what: 'a Google API key' },
 ]
 
 function loadDotEnv() {

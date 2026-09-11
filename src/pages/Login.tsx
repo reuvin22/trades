@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { isFirebaseConfigured, missingFirebaseKeys, projectId } from '../lib/firebase'
+import { ApiError } from '../lib/api'
 import {
-  consumeRedirectResult,
+  clearRedirectError,
   readableAuthError,
+  readRedirectError,
   registerWithPassword,
   signInWithGoogle,
   signInWithPassword,
@@ -44,7 +45,6 @@ import {
   POINT_GLYPH,
   POINT_TITLE,
   REVEAL,
-  SETUP_LIST,
   SETUP_NOTICE,
   SETUP_SKIP,
   SETUP_STEPS,
@@ -59,10 +59,7 @@ type LoginProps = {
 
 type Mode = 'signin' | 'register'
 
-const PROJECT = 'trading-journal-43d07'
-const CONSOLE_URL = `https://console.firebase.google.com/project/${PROJECT}/settings/general`
-
-/** Advice differs: locally you edit a file, on a host you set build variables. */
+/** Advice differs: locally the API is probably not running; deployed it is down. */
 const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
 
 const HIGHLIGHTS = [
@@ -79,7 +76,7 @@ const HIGHLIGHTS = [
   {
     icon: ShieldIcon,
     title: 'Your journal, your rules',
-    body: 'Entries are scoped to your account and synced live through Firestore.',
+    body: 'Entries are scoped to your account and never leave it.',
   },
 ]
 
@@ -89,30 +86,31 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [reveal, setReveal] = useState(false)
-  const [error, setError] = useState('')
+  // Seeded from the URL: a Google failure is already on the page before the
+  // first paint, rather than appearing a frame later.
+  const [error, setError] = useState(() => readRedirectError() ?? '')
   const [busy, setBusy] = useState<'google' | 'email' | null>(null)
+  /*
+   * Set when a sign-in attempt could not reach the API at all — status 0, which
+   * is a network failure, a blocked preflight, or a free instance still waking.
+   * Derived from a real attempt rather than a probe on load: an extra request
+   * on every visit to learn something only the first sign-in needs is waste.
+   */
+  const [unreachable, setUnreachable] = useState(false)
 
-  // A redirect sign-in reports its outcome only after the page comes back.
-  useEffect(() => {
-    let live = true
-    consumeRedirectResult().then((message) => {
-      if (live && message) setError(message)
-    })
-    return () => {
-      live = false
-    }
-  }, [])
+  // The message is already in state; drop the parameter so a reload is clean.
+  useEffect(clearRedirectError, [])
 
-  async function handleGoogle() {
+  /**
+   * Hands the browser to the API, which hands it to Google.
+   *
+   * Nothing after this runs: it is a navigation, not a popup. `busy` stays set
+   * on purpose, so the button reads as working right up until the page leaves.
+   */
+  function handleGoogle() {
     setError('')
     setBusy('google')
-    try {
-      await signInWithGoogle()
-    } catch (cause) {
-      setError(readableAuthError(cause))
-    } finally {
-      setBusy(null)
-    }
+    signInWithGoogle()
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -132,6 +130,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
         await registerWithPassword(email.trim(), password, name)
       }
     } catch (cause) {
+      setUnreachable(cause instanceof ApiError && cause.status === 0)
       setError(readableAuthError(cause))
     } finally {
       setBusy(null)
@@ -187,53 +186,27 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
               : 'We will email you a link to confirm the address before your journal opens.'}
           </p>
 
-          {!isFirebaseConfigured && (
+          {unreachable && (
             <div className={SETUP_NOTICE} role="status">
-              <p className={SETUP_TITLE}>Firebase is not connected yet</p>
+              <p className={SETUP_TITLE}>Cannot reach the RagDex API</p>
               <p>
-                Project <code>{projectId ?? PROJECT}</code> needs its{' '}
-                <strong>web app</strong> config — a different credential from a service
-                account key, which has none of these values in it.
+                Sign-in, the journal and the coach all live behind the API, so nothing
+                here works until it answers.
               </p>
-              {IS_LOCAL ? (
-                <ol className={SETUP_STEPS}>
+              <ol className={SETUP_STEPS}>
+                {IS_LOCAL ? (
                   <li>
-                    Open{' '}
-                    <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
-                      Project settings &rsaquo; General
-                    </a>{' '}
-                    and scroll to <em>Your apps</em>. No web app there yet? Click{' '}
-                    <code>&lt;/&gt;</code> to register one.
+                    Start it with <code>uvicorn app.main:app --reload</code> in{' '}
+                    <code>ragdex-be</code>, and point this at it with{' '}
+                    <code>VITE_API_BASE_URL</code>.
                   </li>
+                ) : (
                   <li>
-                    Copy the whole <code>firebaseConfig</code> block.
+                    The service may be asleep — a free instance takes about a minute to
+                    wake. Try again shortly.
                   </li>
-                  <li>
-                    Run <code>npm run setup:firebase</code>, paste it, then restart the
-                    dev server.
-                  </li>
-                </ol>
-              ) : (
-                <ol className={SETUP_STEPS}>
-                  <li>
-                    Set these in your host&rsquo;s environment variables (on Vercel:
-                    Settings &rsaquo; Environment Variables, type <em>Config</em>).
-                  </li>
-                  <li>
-                    <strong>Redeploy.</strong> These are compiled in at build time, so an
-                    environment change alone does not update the running site.
-                  </li>
-                </ol>
-              )}
-              {missingFirebaseKeys.length > 0 && (
-                <ul className={SETUP_LIST}>
-                  {missingFirebaseKeys.map((key) => (
-                    <li key={key}>
-                      <code>{key}</code>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                )}
+              </ol>
               <button type="button" className={SETUP_SKIP} onClick={onPreview}>
                 Preview the app without signing in
               </button>
@@ -244,14 +217,14 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
             type="button"
             className={GOOGLE_BUTTON}
             onClick={handleGoogle}
-            disabled={!isFirebaseConfigured || busy !== null}
+            disabled={busy !== null}
           >
             {busy === 'google' ? (
               <SpinnerIcon className="animate-spin" />
             ) : (
               <GoogleIcon size={18} />
             )}
-            {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
+            {busy === 'google' ? 'Taking you to Google…' : 'Continue with Google'}
           </button>
 
           <div className={LOGIN_DIVIDER}>
@@ -267,7 +240,6 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Alex Moreno"
                   autoComplete="name"
-                  disabled={!isFirebaseConfigured}
                 />
               </label>
             )}
@@ -280,7 +252,6 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@desk.com"
                 autoComplete="email"
-                disabled={!isFirebaseConfigured}
               />
             </label>
 
@@ -298,7 +269,6 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                  disabled={!isFirebaseConfigured}
                 />
                 <button
                   type="button"
@@ -320,7 +290,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
             <button
               type="submit"
               className={LOGIN_SUBMIT}
-              disabled={!isFirebaseConfigured || busy !== null}
+              disabled={busy !== null}
             >
               {busy === 'email' && <SpinnerIcon className="animate-spin" />}
               {mode === 'signin' ? 'Sign in' : 'Create account'}

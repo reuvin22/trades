@@ -334,7 +334,7 @@ export function Calendar({ trades }: CalendarProps) {
         </span>
       </div>
 
-      <div className={`${CARD} ${CAL_GRID}`}>
+      <div data-tour="calendar-grid" className={`${CARD} ${CAL_GRID}`}>
         <div className={`${CAL_ROW} ${CAL_WEEKDAYS}`}>
           {WEEKDAYS.map((day) => (
             <span key={day} className={CAL_WEEKDAY}>

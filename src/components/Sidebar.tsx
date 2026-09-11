@@ -110,6 +110,7 @@ export function QuickAddButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
+      data-tour="quick-add"
       onClick={onClick}
       className="mt-auto flex animate-rise items-center justify-center gap-10 rounded-md [animation-delay:300ms] border border-line-strong bg-tint-2 px-20 py-17 text-[16px] font-medium text-fg-strong shadow-[var(--shadow-card)] transition-[transform,background-color,border-color] duration-150 hover:-translate-y-1 hover:bg-tint-3 active:translate-y-0"
     >
@@ -142,7 +143,7 @@ export function Sidebar({
 
         <DrawerClose onClose={onClose} />
 
-        <nav className="-mx-22 flex flex-col gap-2" aria-label="Primary">
+        <nav data-tour="nav" className="-mx-22 flex flex-col gap-2" aria-label="Primary">
           {TRADER_NAV.map(({ route: target, label, icon, disabled }) => (
             <NavButton
               key={target}

@@ -1,25 +1,21 @@
-import { useEffect, useState } from 'react'
-import {
-  Timestamp,
-  doc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-} from 'firebase/firestore'
-import { updateProfile, type User } from 'firebase/auth'
-import { db } from './firebase'
+import { useCallback, useEffect, useState } from 'react'
+import { apiFetch, date, num, readableApiError } from './api'
+import type { AuthUser } from './useAuth'
+
+/**
+ * The account record, through the API.
+ *
+ * Reading it also upserts it, which is the contract `GET /api/v1/me` already
+ * had: a first sign-in has a record without a separate call.
+ */
 
 export type Profile = {
   uid: string
   email: string
   displayName: string
   photoURL: string
-  providers: string[]
-  /** Set the first time an account reaches the app. */
   createdAt: Date | null
   lastSeenAt: Date | null
-  verifiedAt: Date | null
 
   // Editable on the profile page.
   timezone?: string
@@ -35,7 +31,6 @@ export type Profile = {
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
 
-  // Written by the billing page.
   plan?: string
   planSince?: Date | null
 }
@@ -70,7 +65,8 @@ export const DEFAULT_ACCOUNT_TYPE: AccountType = 'individual'
 /** The label shown in the sidebar under the wordmark. */
 export function accountTypeLabel(value: AccountType | undefined): string {
   const match = ACCOUNT_TYPES.find((entry) => entry.value === value)
-  return (match ?? ACCOUNT_TYPES.find((entry) => entry.value === DEFAULT_ACCOUNT_TYPE)!).label
+  return (match ?? ACCOUNT_TYPES.find((entry) => entry.value === DEFAULT_ACCOUNT_TYPE)!)
+    .label
 }
 
 export type ProfileDetails = {
@@ -91,86 +87,81 @@ export type ProfileState = {
   isNewAccount: boolean
   loading: boolean
   error: string | null
+  reload: () => void
 }
 
-function profileRef(uid: string) {
-  if (!db) throw new Error('Firestore is not configured.')
-  return doc(db, 'users', uid)
+type ProfileWire = Record<string, unknown>
+
+function toProfile(wire: ProfileWire): Profile {
+  return {
+    uid: String(wire.uid ?? ''),
+    email: String(wire.email ?? ''),
+    displayName: String(wire.display_name ?? ''),
+    photoURL: String(wire.photo_url ?? ''),
+    accountType: (wire.account_type as AccountType) ?? 'individual',
+    timezone: (wire.timezone as string) ?? undefined,
+    currency: (wire.currency as string) ?? undefined,
+    openingBalance: num(wire.opening_balance),
+    tradingStyle: (wire.trading_style as string) ?? undefined,
+    markets: Array.isArray(wire.markets) ? wire.markets.map(String) : [],
+    bio: String(wire.bio ?? ''),
+    coachLanguage: (wire.coach_language as string) ?? undefined,
+    plan: String(wire.plan ?? 'individual'),
+    planSince: date(wire.plan_since),
+    createdAt: date(wire.created_at),
+    lastSeenAt: date(wire.last_seen_at),
+  }
 }
 
-/**
- * Writes the account record on every sign-in. `createdAt` is only ever set by
- * the first write, so its absence beforehand is what marks a brand-new account.
- */
-export async function recordSignIn(user: User): Promise<{ isNew: boolean }> {
-  if (!db) return { isNew: false }
-
-  const ref = profileRef(user.uid)
-  const existing = await getDoc(ref)
-  const isNew = !existing.exists()
-
-  await setDoc(
-    ref,
-    {
-      uid: user.uid,
-      email: user.email ?? '',
-      displayName: user.displayName ?? '',
-      photoURL: user.photoURL ?? '',
-      providers: user.providerData.map((entry) => entry.providerId),
-      lastSeenAt: serverTimestamp(),
-      ...(isNew ? { createdAt: serverTimestamp() } : {}),
-      ...(user.emailVerified && !existing.data()?.verifiedAt
-        ? { verifiedAt: serverTimestamp() }
-        : {}),
+/** Saves the editable fields. The API mirrors the name and avatar onto the
+ *  auth record and the directory, so the top bar and contact search follow. */
+export async function saveProfileDetails(details: ProfileDetails): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: {
+      display_name: details.displayName,
+      account_type: details.accountType,
+      photo_url: details.photoURL,
+      timezone: details.timezone,
+      currency: details.currency,
+      opening_balance: details.openingBalance,
+      trading_style: details.tradingStyle,
+      markets: details.markets,
+      bio: details.bio,
     },
-    { merge: true },
-  )
-
-  return { isNew }
-}
-
-/**
- * Saves the editable fields. The name and avatar are mirrored onto the Firebase
- * Auth record too, so the top bar and any future token reflect them.
- */
-export async function saveProfileDetails(user: User, details: ProfileDetails) {
-  if (!db) throw new Error('Firestore is not configured.')
-
-  await updateProfile(user, {
-    displayName: details.displayName || null,
-    photoURL: details.photoURL || null,
   })
-
-  await setDoc(
-    profileRef(user.uid),
-    { ...details, updatedAt: serverTimestamp() },
-    { merge: true },
-  )
+  return toProfile(wire)
 }
 
 /** Remembers the language the coach should reply in. */
-export async function saveCoachLanguage(uid: string, coachLanguage: string) {
-  if (!db) throw new Error('Firestore is not configured.')
-  await setDoc(profileRef(uid), { coachLanguage }, { merge: true })
+export async function saveCoachLanguage(coachLanguage: string): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: { coach_language: coachLanguage },
+  })
+  return toProfile(wire)
 }
 
 /** Records the chosen plan. No payment processor is wired up yet. */
-export async function savePlan(uid: string, plan: string) {
-  if (!db) throw new Error('Firestore is not configured.')
-
-  await setDoc(
-    profileRef(uid),
-    { plan, planSince: serverTimestamp() },
-    { merge: true },
-  )
+export async function savePlan(plan: string): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me/plan', {
+    method: 'PUT',
+    body: { plan },
+  })
+  return toProfile(wire)
 }
 
-function toDate(value: unknown): Date | null {
-  return value instanceof Timestamp ? value.toDate() : null
-}
+/**
+ * How recently an account has to have been created to count as new.
+ *
+ * The API upserts on read, so `createdAt` is set by the first `GET /me` rather
+ * than reported back as a flag. Comparing it against now is what tells a
+ * brand-new account from a returning one.
+ */
+const NEW_ACCOUNT_WINDOW_MS = 60_000
 
-/** Live account record for the signed-in user. */
-export function useProfile(user: User | null): ProfileState {
+/** The signed-in trader's account record. */
+export function useProfile(user: AuthUser | null): ProfileState {
   const [state, setState] = useState<{
     uid: string | null
     profile: Profile | null
@@ -178,61 +169,43 @@ export function useProfile(user: User | null): ProfileState {
     error: string | null
   }>({ uid: null, profile: null, isNewAccount: false, error: null })
 
+  const [nonce, setNonce] = useState(0)
+  const reload = useCallback(() => setNonce((current) => current + 1), [])
+
+  const uid = user?.uid ?? null
+
   useEffect(() => {
-    if (!user || !db) return
+    if (!uid) return
 
-    let live = true
+    const abort = new AbortController()
 
-    recordSignIn(user)
-      .then(({ isNew }) => {
-        if (live) {
-          setState((current) => ({ ...current, uid: user.uid, isNewAccount: isNew }))
-        }
+    apiFetch<ProfileWire>('/api/v1/me', { signal: abort.signal })
+      .then((wire) => {
+        const profile = toProfile(wire)
+        const created = profile.createdAt
+        setState({
+          uid,
+          profile,
+          isNewAccount:
+            created !== null && Date.now() - created.getTime() < NEW_ACCOUNT_WINDOW_MS,
+          error: null,
+        })
       })
       .catch((cause: unknown) => {
-        if (live) {
-          setState({
-            uid: user.uid,
-            profile: null,
-            isNewAccount: false,
-            error: cause instanceof Error ? cause.message : 'Could not read your account.',
-          })
-        }
+        if (abort.signal.aborted) return
+        setState({ uid, profile: null, isNewAccount: false, error: readableApiError(cause) })
       })
 
-    const stop = onSnapshot(
-      profileRef(user.uid),
-      (snapshot) => {
-        const data = snapshot.data()
-        setState((current) => ({
-          ...current,
-          uid: user.uid,
-          profile: data
-            ? ({
-                ...data,
-                createdAt: toDate(data.createdAt),
-                lastSeenAt: toDate(data.lastSeenAt),
-                verifiedAt: toDate(data.verifiedAt),
-                planSince: toDate(data.planSince),
-              } as Profile)
-            : null,
-        }))
-      },
-      (cause) => setState((current) => ({ ...current, uid: user.uid, error: cause.message })),
-    )
+    return () => abort.abort()
+  }, [uid, nonce])
 
-    return () => {
-      live = false
-      stop()
-    }
-  }, [user])
-
-  const fresh = state.uid === (user?.uid ?? null)
+  const fresh = state.uid === uid
 
   return {
     profile: fresh ? state.profile : null,
-    isNewAccount: fresh ? state.isNewAccount : false,
-    loading: Boolean(user && db) && (!fresh || state.profile === null),
+    isNewAccount: fresh && state.isNewAccount,
+    loading: Boolean(uid) && !fresh,
     error: fresh ? state.error : null,
+    reload,
   }
 }

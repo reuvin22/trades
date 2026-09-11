@@ -43,7 +43,7 @@ export function StatCards({ stats }: { stats: DerivedStats }) {
   const down = 'text-red [&>svg]:-scale-y-100'
 
   return (
-    <div className={`${STAT_ROW} ${ROW_STAGGER}`}>
+    <div data-tour="stats" className={`${STAT_ROW} ${ROW_STAGGER}`}>
       <StatCard
         label="Net P/L"
         value={<AnimatedNumber value={stats.netPl} format={(n) => currency.format(n)} />}

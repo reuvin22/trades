@@ -1,7 +1,7 @@
+import { readableApiError } from '../lib/api'
 import { useState } from 'react'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../lib/useAuth'
 import { savePlan, type Profile } from '../lib/profile'
-import { readableFirestoreError } from '../lib/trades'
 import { useToast } from '../lib/toast'
 import { currency } from '../data/dashboard'
 import {
@@ -43,7 +43,7 @@ import {
 } from '../components/ui'
 
 type BillingProps = {
-  user: User | null
+  user: AuthUser | null
   profile: Profile | null
 }
 
@@ -114,13 +114,13 @@ export function Billing({ user, profile }: BillingProps) {
     setPending(plan.id)
     setError('')
     try {
-      await savePlan(user.uid, plan.id)
+      await savePlan(plan.id)
       toast.success(
         `You are on the ${plan.name} plan`,
         'Nothing was charged — no payment processor is connected yet.',
       )
     } catch (cause) {
-      const message = readableFirestoreError(cause)
+      const message = readableApiError(cause)
       setError(message)
       toast.error('Could not change your plan', message)
     } finally {
@@ -238,9 +238,10 @@ export function Billing({ user, profile }: BillingProps) {
               </p>
             </div>
           ) : (
-            <table className={TABLE}>
-              <tbody>
-                {INVOICES.map((invoice) => (
+            <div className="overflow-x-auto">
+              <table className={TABLE}>
+                <tbody>
+                  {INVOICES.map((invoice) => (
                   <tr key={invoice.id}>
                     <td className={TD}>{invoice.date}</td>
                     <td className={`${TD} ${MONO} text-right`}>{currency.format(invoice.amount)}</td>
@@ -248,7 +249,8 @@ export function Billing({ user, profile }: BillingProps) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </section>
       </div>

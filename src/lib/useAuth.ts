@@ -1,250 +1,208 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  getRedirectResult,
-  onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  signOut,
-  updateProfile,
-  type Auth,
-  type User,
-} from 'firebase/auth'
-import { auth, isFirebaseConfigured } from './firebase'
+import { ApiError, apiFetch } from './api'
+
+/**
+ * The signed-in trader.
+ *
+ * Not a Firebase `User` — the client has no Firebase SDK and holds no token.
+ * This is what `GET /auth/session` returns, and the session itself is a cookie
+ * the page cannot read.
+ */
+export type AuthUser = {
+  uid: string
+  email: string | null
+  emailVerified: boolean
+  displayName: string
+  photoURL: string
+  /** Provider ids, e.g. google.com. */
+  providers: string[]
+}
+
+type SessionWire = {
+  user: {
+    uid: string
+    email: string | null
+    email_verified: boolean
+    display_name: string
+    photo_url: string
+    providers: string[]
+  } | null
+}
+
+function toUser(wire: SessionWire): AuthUser | null {
+  if (wire.user === null) return null
+  return {
+    uid: wire.user.uid,
+    email: wire.user.email,
+    emailVerified: wire.user.email_verified,
+    displayName: wire.user.display_name,
+    photoURL: wire.user.photo_url,
+    providers: wire.user.providers,
+  }
+}
 
 export type AuthState = {
-  user: User | null
-  /** Mirrored into state because reload() mutates the user object in place. */
+  user: AuthUser | null
+  /** Mirrored out of the user so the gate screen can read it on its own. */
   emailVerified: boolean
-  /** True until Firebase has reported the restored session. */
+  /** True until the API has reported whether there is a session. */
   pending: boolean
 }
 
-const googleProvider = new GoogleAuthProvider()
-googleProvider.setCustomParameters({ prompt: 'select_account' })
-
-function errorCode(error: unknown): string {
-  return typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code: unknown }).code)
-    : ''
-}
-
-function requireAuth() {
-  if (!auth) {
-    throw new Error('Firebase is not configured. Fill in .env.local first.')
-  }
-  return auth
+/** Reads the session cookie's account, or null. Never throws for "not signed in". */
+async function readSession(): Promise<AuthUser | null> {
+  const wire = await apiFetch<SessionWire>('/api/v1/auth/session')
+  return toUser(wire)
 }
 
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
     emailVerified: false,
-    pending: isFirebaseConfigured,
+    pending: true,
   })
 
   useEffect(() => {
-    if (!auth) return
-    return onAuthStateChanged(auth, (user) =>
-      setState({
-        user,
-        emailVerified: user?.emailVerified ?? false,
-        pending: false,
-      }),
-    )
+    let live = true
+
+    readSession()
+      .then((user) => {
+        if (!live) return
+        setState({
+          user,
+          emailVerified: user?.emailVerified ?? false,
+          pending: false,
+        })
+      })
+      .catch(() => {
+        // An unreachable API is indistinguishable from no session as far as
+        // what the app can show; the login screen reports the failure itself.
+        if (live) setState({ user: null, emailVerified: false, pending: false })
+      })
+
+    return () => {
+      live = false
+    }
   }, [])
 
   /**
    * Clicking a verification link does not notify this tab, so the gate screen
-   * has to pull the fresh state itself.
+   * has to pull the fresh state itself. The API reads through to the auth
+   * record rather than trusting the cookie's claims, which is what lets a
+   * cookie minted before confirmation report as verified afterwards.
    */
   const refresh = useCallback(async () => {
-    const current = auth?.currentUser
-    if (!current) return false
-
-    await current.reload()
-    const verified = auth?.currentUser?.emailVerified ?? false
-
-    setState({ user: auth?.currentUser ?? null, emailVerified: verified, pending: false })
-    return verified
+    try {
+      const user = await readSession()
+      setState({ user, emailVerified: user?.emailVerified ?? false, pending: false })
+      return user?.emailVerified ?? false
+    } catch {
+      return false
+    }
   }, [])
 
-  return { ...state, refresh }
+  /** Adopt a session the sign-in calls below have just established. */
+  const adopt = useCallback((user: AuthUser | null) => {
+    setState({ user, emailVerified: user?.emailVerified ?? false, pending: false })
+  }, [])
+
+  return { ...state, refresh, adopt }
 }
 
-/**
- * Popups are unreliable on mobile Safari and in-app browsers, which is most of
- * the traffic a deployed site sees. Fall back to a full-page redirect rather
- * than dead-ending the user.
- */
-const REDIRECT_FALLBACK = new Set([
-  'auth/popup-blocked',
-  'auth/operation-not-supported-in-this-environment',
-  'auth/web-storage-unsupported',
-])
-
-/** Long enough for a finished sign-in to report itself before we read the
- *  returned focus as a cancellation. */
-const ABANDON_GRACE_MS = 1500
-
-/**
- * Firebase decides a popup was dismissed by polling `popup.closed`, which the
- * cross-origin-opener-policy on Google's account chooser can hide from us. When
- * it does, signInWithPopup never settles and the caller is left spinning
- * forever. Treat "the popup took focus, handed it back, and nobody ended up
- * signed in" as the dismissal Firebase failed to notice.
- */
-function watchForAbandonedPopup(instance: Auth) {
-  let stop = () => {}
-
-  const promise = new Promise<never>((_, reject) => {
-    let timer: number | undefined
-    // The popup has to steal focus before handing it back can mean anything —
-    // without this, a popup that never opened would look like a cancellation.
-    let tookFocus = false
-
-    const onBlur = () => {
-      tookFocus = true
-      window.clearTimeout(timer)
-    }
-
-    const onFocus = () => {
-      if (!tookFocus) return
-      window.clearTimeout(timer)
-      timer = window.setTimeout(() => {
-        if (instance.currentUser) return
-        stop()
-        reject(
-          Object.assign(new Error('Google sign-in was closed.'), {
-            code: 'auth/popup-closed-by-user',
-          }),
-        )
-      }, ABANDON_GRACE_MS)
-    }
-
-    stop = () => {
-      window.clearTimeout(timer)
-      window.removeEventListener('blur', onBlur)
-      window.removeEventListener('focus', onFocus)
-    }
-
-    window.addEventListener('blur', onBlur)
-    window.addEventListener('focus', onFocus)
-  })
-
-  return { promise, stop: () => stop() }
-}
-
-export async function signInWithGoogle() {
-  const instance = requireAuth()
-  const abandoned = watchForAbandonedPopup(instance)
-
-  try {
-    return await Promise.race([
-      signInWithPopup(instance, googleProvider),
-      abandoned.promise,
-    ])
-  } catch (error) {
-    if (REDIRECT_FALLBACK.has(errorCode(error))) {
-      await signInWithRedirect(instance, googleProvider)
-      return null
-    }
-    throw error
-  } finally {
-    abandoned.stop()
-  }
-}
-
-/** Surfaces failures from a redirect sign-in once the page comes back. */
-export function consumeRedirectResult(): Promise<string | null> {
-  if (!auth) return Promise.resolve(null)
-
-  return getRedirectResult(auth)
-    .then(() => null)
-    .catch((error: unknown) => readableAuthError(error))
-}
+/* ------------------------------------------------------------- sign-in */
 
 export function signInWithPassword(email: string, password: string) {
-  return signInWithEmailAndPassword(requireAuth(), email, password)
+  return apiFetch<SessionWire>('/api/v1/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  }).then(toUser)
 }
 
-/** Registers and sets the display name. The verification email is sent by the
- *  gate screen, so the branded Brevo template is the only one that goes out. */
-export async function registerWithPassword(
+export function registerWithPassword(
   email: string,
   password: string,
   displayName: string,
 ) {
-  const instance = requireAuth()
-  const credential = await createUserWithEmailAndPassword(instance, email, password)
-
-  if (displayName.trim() !== '') {
-    await updateProfile(credential.user, { displayName: displayName.trim() })
-  }
-
-  // Deliberately no send here. The gate screen sends the branded email through
-  // Brevo and can report failures; firing Firebase's default template as well
-  // would deliver an unbranded duplicate.
-  return credential
+  return apiFetch<SessionWire>('/api/v1/auth/register', {
+    method: 'POST',
+    body: { email, password, display_name: displayName.trim() },
+  }).then(toUser)
 }
 
-/** Firebase Auth is the sender — customise the template in the console. */
+/**
+ * Hand the browser to the API, which hands it to Google.
+ *
+ * A full-page navigation rather than a popup, and deliberately so: the client
+ * holds no OAuth client id and no Firebase config, so it has nothing to build
+ * an authorize URL from. The API owns the redirect, does the code exchange
+ * with its secret, sets the session cookie and sends the browser back.
+ *
+ * This also sidesteps the popup problems the SDK had — blocked popups, mobile
+ * Safari, in-app browsers, and a cross-origin-opener-policy that could hide a
+ * dismissal and leave the caller spinning forever.
+ */
+export function signInWithGoogle(): void {
+  window.location.href = `${
+    import.meta.env.VITE_API_BASE_URL ?? ''
+  }/api/v1/auth/google/start`
+}
+
+/**
+ * A failed Google sign-in, as reported by the page the browser came back to.
+ *
+ * The OAuth callback cannot answer with JSON — it is reached by a navigation —
+ * so it reports through a query parameter. Reading and clearing are separate
+ * because reading has to happen during render, to seed the error state, and
+ * rewriting history is a side effect that must not.
+ */
+export function readRedirectError(): string | null {
+  const reason = new URLSearchParams(window.location.search).get('auth_error')
+  if (reason === null) return null
+
+  return reason === 'cancelled'
+    ? 'Google sign-in was closed before it finished.'
+    : 'Google sign-in did not complete. Try again.'
+}
+
+/** Strips the parameter, so a reload does not show the message again. */
+export function clearRedirectError(): void {
+  const params = new URLSearchParams(window.location.search)
+  if (!params.has('auth_error')) return
+
+  params.delete('auth_error')
+  const query = params.toString()
+  window.history.replaceState(
+    null,
+    '',
+    `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`,
+  )
+}
+
 export function resendVerification() {
-  const current = requireAuth().currentUser
-  if (!current) throw new Error('No signed-in account to verify.')
-  return sendEmailVerification(current)
+  return apiFetch<{ status: string }>('/api/v1/auth/verify-email', { method: 'POST' })
 }
 
 export function sendPasswordReset(email: string) {
-  return sendPasswordResetEmail(requireAuth(), email)
+  return apiFetch<{ message: string }>('/api/v1/auth/password-reset', {
+    method: 'POST',
+    body: { email },
+  })
 }
 
 export function signOutOfApp() {
-  return signOut(requireAuth())
+  return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }
 
-/** Firebase error codes are not fit to show a person. */
+/**
+ * Turns a failure into something worth showing a person.
+ *
+ * Short now, because the messages arrive already fit to read: the API maps
+ * Identity Toolkit's codes server-side, which is also where the judgement
+ * about what is safe to reveal belongs. What used to be a long switch over
+ * `auth/*` codes — including several that told a visitor how our Firebase
+ * project was misconfigured — is gone with the SDK that produced them.
+ */
 export function readableAuthError(error: unknown): string {
-  const code = errorCode(error)
-
-  switch (code) {
-    case 'auth/invalid-email':
-      return 'That email address does not look right.'
-    case 'auth/missing-password':
-      return 'Enter your password to continue.'
-    case 'auth/weak-password':
-      return 'Pick a password of at least six characters.'
-    case 'auth/email-already-in-use':
-      return 'That email already has an account. Try signing in instead.'
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      return 'Email or password is incorrect.'
-    case 'auth/too-many-requests':
-      return 'Too many attempts. Wait a moment and try again.'
-    case 'auth/popup-closed-by-user':
-    case 'auth/cancelled-popup-request':
-      return 'Google sign-in was closed before it finished.'
-    case 'auth/popup-blocked':
-      return 'Your browser blocked the Google popup. Allow popups and retry.'
-    case 'auth/unauthorized-domain':
-      return `Add "${window.location.hostname}" to Firebase Console > Authentication > Settings > Authorized domains, then retry.`
-    case 'auth/operation-not-allowed':
-      return 'That sign-in method is switched off. Enable it under Authentication > Sign-in method.'
-    case 'auth/configuration-not-found':
-      return 'Authentication is not enabled on this Firebase project yet. Open the console, go to Authentication, and click "Get started" — then enable Google and Email/Password.'
-    case 'auth/invalid-api-key':
-    case 'auth/api-key-not-valid':
-      return 'The Firebase API key is wrong. Re-run npm run setup:firebase with the config from the console.'
-    case 'auth/admin-restricted-operation':
-      return 'This project restricts new sign-ups. Enable the provider or allow sign-ups in the console.'
-    case 'auth/network-request-failed':
-      return 'Network problem reaching Firebase. Check your connection.'
-    default:
-      return error instanceof Error ? error.message : 'Something went wrong signing in.'
-  }
+  if (error instanceof ApiError) return error.message
+  return error instanceof Error ? error.message : 'Something went wrong signing in.'
 }

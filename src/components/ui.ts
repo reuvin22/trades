@@ -296,7 +296,10 @@ export const FIELD_LEGEND =
   'flex items-center gap-8 pb-14 text-[10.5px] font-medium tracking-[0.15em] text-fg-dim uppercase'
 export const GROUP_GLYPH =
   "text-[13px] [font-family:'Segoe_UI_Emoji','Apple_Color_Emoji',sans-serif]"
-export const FIELD_GRID = 'grid grid-cols-4 gap-14 max-[760px]:grid-cols-2'
+/** Four up, two on a tablet, one on a phone — two columns of inputs inside a
+ *  360px screen leaves each about 150px, which is not an input. */
+export const FIELD_GRID =
+  'grid grid-cols-4 gap-14 max-[760px]:grid-cols-2 max-[480px]:grid-cols-1'
 
 /* ---------------------------------------------------------------- toggles */
 
@@ -726,7 +729,13 @@ export const COMBO_EMPTY = 'px-11 py-10 text-[12px] leading-[1.5] text-fg-muted'
 /* --------------------------------------------------------- notifications */
 
 export const NOTIFY_MENU =
-  'absolute top-[calc(100%+10px)] right-0 z-40 flex w-[min(360px,calc(100vw-32px))] flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)]'
+  'absolute top-[calc(100%+10px)] right-0 z-40 flex w-[min(360px,calc(100vw-32px))] flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  /* The bell is ~120px in from the right edge, so a menu anchored to it but
+     sized against the viewport hangs 88px off the left on a phone. Below 520px
+     it stops being a dropdown and spans the screen with even gutters. The
+     topbar's only animation is opacity, so nothing there creates a containing
+     block that would capture this `fixed`. */
+  'max-[520px]:fixed max-[520px]:top-76 max-[520px]:right-16 max-[520px]:left-16 max-[520px]:w-auto'
 
 export const NOTIFY_HEAD =
   'flex items-center justify-between gap-12 border-b border-line bg-tint-1 px-15 py-12'
@@ -735,7 +744,10 @@ export const NOTIFY_TITLE =
 export const NOTIFY_ACTION =
   'text-[11.5px] font-medium text-accent-strong transition-opacity duration-150 hover:underline disabled:opacity-40 disabled:no-underline'
 
-export const NOTIFY_LIST = 'flex max-h-360 flex-col overflow-y-auto p-6'
+/* Capped against the viewport too: a fixed 360px runs off the bottom of a
+   landscape phone, where the whole screen is barely taller than that. */
+export const NOTIFY_LIST =
+  'flex max-h-[min(360px,calc(100vh-160px))] flex-col overflow-y-auto p-6'
 
 export const NOTIFY_ITEM =
   'flex w-full shrink-0 gap-11 rounded-sm px-9 py-10 text-left transition-colors duration-150 hover:bg-tint-2'
@@ -770,7 +782,11 @@ export const DOCK_LAUNCHER_BADGE =
 
 export const DOCK_PANEL =
   'fixed right-24 bottom-88 z-40 flex h-[min(520px,calc(100vh-140px))] w-[min(680px,calc(100vw-40px))] origin-bottom-right animate-dock overflow-hidden rounded-lg border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] ' +
-  'max-shell:right-20 max-shell:bottom-84 max-shell:w-[calc(100vw-40px)]'
+  /* Only the offsets change below the shell breakpoint. The width must not:
+     `min(680px, 100vw-40px)` already narrows on a phone, and overriding it with
+     a bare `100vw-40px` threw the 680px cap away, so on a 960px screen the
+     panel stretched to 920px instead of staying a dock. */
+  'max-shell:right-20 max-shell:bottom-84'
 
 /** Contacts left, conversation right. One column once there is no room. */
 export const DOCK_BODY = 'grid min-h-0 w-full grid-cols-[224px_1fr] max-[620px]:grid-cols-1'
@@ -785,8 +801,12 @@ export const DOCK_CONTACTS = 'flex min-h-0 flex-col gap-2 overflow-y-auto p-6'
 export const DOCK_CONTACT =
   'flex w-full shrink-0 items-center gap-10 rounded-sm px-9 py-9 text-left transition-colors duration-150 hover:bg-tint-2'
 export const DOCK_CONTACT_ACTIVE = 'bg-tint-3 hover:bg-tint-3'
-export const DOCK_AVATAR =
-  'relative grid size-32 flex-none place-items-center rounded-full text-[11.5px] font-semibold text-white'
+/* The circle is two layers: the face clips a photo to a round crop, and the
+   wrapper stays unclipped so the presence dot can overhang its edge. */
+export const DOCK_AVATAR = 'relative size-32 flex-none'
+/** Initials on the contact's `accent`; a photo, when set, covers them. */
+export const DOCK_AVATAR_FACE =
+  'grid size-full place-items-center overflow-hidden rounded-full text-[11.5px] font-semibold text-white [&_img]:block [&_img]:size-full [&_img]:object-cover'
 /** Presence dot, ringed in the panel colour so it reads as a cutout. */
 export const DOCK_ONLINE =
   'absolute -right-1 -bottom-1 size-9 rounded-full bg-green shadow-[0_0_0_2px_var(--color-panel-solid)]'
@@ -795,6 +815,45 @@ export const DOCK_CONTACT_NAME =
 export const DOCK_CONTACT_ROLE = 'truncate text-[10.5px] text-fg-muted'
 export const DOCK_UNREAD =
   'ml-auto grid size-18 flex-none place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink'
+
+/* ------------------------------------------------------ adding a contact */
+
+/** Sits beside the close button in the head; pressed state mirrors the dock. */
+export const DOCK_ADD =
+  'grid size-28 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong aria-expanded:bg-accent aria-expanded:text-accent-ink'
+
+/* The search row anchors the results, so it carries the positioning context
+   and a stacking order above the contact list beneath it. */
+export const DOCK_SEARCH = 'relative z-20 shrink-0 border-b border-line px-10 py-9'
+export const DOCK_SEARCH_FIELD =
+  'flex items-center gap-7 rounded-full border border-line bg-tint-2 px-10 py-6 transition-colors duration-150 focus-within:border-accent ' +
+  '[&_svg]:flex-none [&_svg]:text-fg-muted ' +
+  '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-[12px] [&_input]:text-fg [&_input]:outline-none [&_input::placeholder]:text-fg-muted'
+export const DOCK_SEARCH_CLOSE =
+  'grid size-18 flex-none place-items-center rounded-full text-fg-muted transition-colors duration-150 hover:bg-tint-3 hover:text-fg-strong'
+
+/*
+ * Wider than the 224px contact column it hangs from: an address and a name
+ * need the room, and overhanging the thread costs nothing while open.
+ */
+export const DOCK_RESULTS =
+  'absolute top-[calc(100%-4px)] left-8 z-20 max-h-232 w-284 max-w-[calc(100vw-72px)] overflow-y-auto overflow-x-hidden rounded-md border border-line-strong bg-panel-solid p-5 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)]'
+
+/**
+ * One match. Details lead, avatar closes the row on the right — the mirror of
+ * the contact list below, which is what marks these out as not-yet-contacts.
+ */
+export const DOCK_RESULT =
+  'flex w-full items-center gap-10 rounded-sm px-9 py-8 text-left transition-colors duration-150 hover:bg-tint-2 aria-selected:bg-tint-2'
+/** Name over email, one column, each line clipped rather than wrapped. */
+export const DOCK_RESULT_DETAILS = 'grid min-w-0 flex-1 gap-1'
+export const DOCK_RESULT_NAME = 'truncate text-[12.5px] font-medium text-fg-strong'
+export const DOCK_RESULT_EMAIL = 'truncate text-[10.5px] text-fg-muted'
+
+/** Searching, no matches, or the reason the lookup failed. */
+export const DOCK_RESULT_NOTE =
+  'flex items-center gap-7 px-10 py-9 text-[11.5px] text-fg-muted'
+export const DOCK_RESULT_ERROR = 'text-red'
 
 export const DOCK_MAIN = 'flex min-h-0 min-w-0 flex-col'
 export const DOCK_MAIN_HEAD =
@@ -808,6 +867,17 @@ export const DOCK_BUBBLE_ME =
   'self-end text-white bg-[linear-gradient(160deg,#3f6bff,#2a55ef)]'
 export const DOCK_TIME = 'mt-4 block text-[10px] opacity-70'
 
+/**
+ * The read receipt, under the last sent message the other person has reached.
+ * Right-aligned to sit beneath its own bubble, and only ever shown once —
+ * marking every seen message would be noise, since seeing one means seeing
+ * everything before it.
+ */
+export const DOCK_SEEN =
+  'flex shrink-0 items-center justify-end gap-4 pr-2 text-[10px] text-fg-muted [&_svg]:text-accent-strong'
+/** Cancels the thread's row gap, so the receipt reads as part of the bubble. */
+export const DOCK_SEEN_ROW = '-mt-8'
+
 export const DOCK_COMPOSER =
   'flex shrink-0 items-center gap-8 border-t border-line px-12 py-10 ' +
   '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:rounded-full [&_input]:border [&_input]:border-line [&_input]:bg-tint-1 [&_input]:px-14 [&_input]:py-9 [&_input]:text-[13px] [&_input]:text-fg [&_input]:outline-none [&_input::placeholder]:text-fg-muted [&_input:focus-visible]:border-accent'
@@ -816,6 +886,14 @@ export const DOCK_SEND =
 
 export const DOCK_EMPTY =
   'grid flex-1 place-items-center px-24 text-center text-[12.5px] text-fg-muted'
+
+/** An empty contact list, which is where every new account starts. */
+export const DOCK_CONTACTS_EMPTY =
+  'px-10 py-14 text-center text-[11.5px] leading-[1.6] text-fg-muted'
+
+/** A send that did not land, or a database that is not reachable. */
+export const DOCK_ERROR =
+  'shrink-0 border-t border-line bg-[color-mix(in_srgb,var(--color-red)_10%,transparent)] px-14 py-8 text-[11px] text-red'
 
 /** Only shown in one-column mode, to get back to the contact list. */
 export const DOCK_BACK =
@@ -860,3 +938,59 @@ export const TOAST_TITLE = 'text-[13px] font-medium text-fg-strong'
 export const TOAST_BODY = 'mt-3 text-[11.5px] leading-[1.5] text-fg-muted'
 export const TOAST_CLOSE =
   'mt-1 grid size-22 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+
+/* ------------------------------------------------------------------- tour */
+
+/*
+ * The spotlight. One element with an enormous spread shadow, so the page is
+ * dimmed everywhere except the cut-out — cheaper and smoother than four
+ * masking panels, and it animates as the rect moves between steps.
+ */
+export const TOUR_SPOTLIGHT =
+  'pointer-events-none fixed z-[90] rounded-md shadow-[0_0_0_9999px_rgba(6,5,15,0.72)] ring-2 ring-accent transition-[top,left,width,height] duration-300 ease-out'
+
+/** Used when a step has no target, or its target is not on screen at this
+ *  size: dim everything and centre the card. */
+export const TOUR_VEIL = 'fixed inset-0 z-[90] bg-[rgba(6,5,15,0.72)]'
+
+/*
+ * The card. Fixed, positioned in script, and clamped to the viewport on both
+ * axes — below 520px it stops trying to follow the target and becomes a sheet
+ * across the bottom, which is the only thing that reliably fits.
+ */
+export const TOUR_CARD =
+  'fixed z-[92] flex w-[min(360px,calc(100vw-32px))] flex-col gap-12 rounded-lg border border-line-strong bg-panel-solid p-18 shadow-[var(--shadow-pop)] animate-toast-in ' +
+  'max-[520px]:right-16 max-[520px]:bottom-16 max-[520px]:left-16 max-[520px]:w-auto max-[520px]:!top-auto max-[520px]:!left-16'
+
+export const TOUR_HEAD = 'flex items-start gap-12'
+
+/** The guide. Bobs gently so it reads as a companion rather than an icon. */
+export const TOUR_AVATAR =
+  'grid size-40 flex-none place-items-center rounded-full text-accent-ink animate-guide bg-[linear-gradient(160deg,var(--color-accent-strong),var(--color-accent))] shadow-[0_6px_18px_color-mix(in_srgb,var(--color-accent)_45%,transparent)]'
+
+export const TOUR_TITLE = 'text-[16px] font-semibold tracking-[-0.01em] text-fg-strong'
+export const TOUR_BODY = 'mt-4 text-[12.5px] leading-[1.6] text-fg-dim'
+
+export const TOUR_FOOT = 'flex flex-wrap items-center gap-10'
+export const TOUR_COUNT = 'text-[11px] font-medium tracking-[0.12em] text-fg-muted uppercase'
+export const TOUR_SKIP =
+  'text-[12px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg-strong'
+export const TOUR_NEXT =
+  'ml-auto inline-flex items-center gap-7 rounded-sm bg-accent px-16 py-9 text-[13px] font-medium text-accent-ink transition-[background-color,transform] duration-150 hover:bg-accent-strong active:scale-[0.97]'
+
+/*
+ * Previous sits above the card, as its own control. Absolute against the card
+ * so it travels with it, and it flips inside on small screens where there may
+ * be nothing above the sheet.
+ */
+export const TOUR_PREV =
+  'absolute -top-42 left-0 inline-flex items-center gap-6 rounded-full border border-line-strong bg-panel-solid px-12 py-7 text-[12px] font-medium text-fg-dim shadow-[var(--shadow-pop)] transition-[color,transform] duration-150 hover:-translate-y-1 hover:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0'
+
+/** Always reachable, whatever the card is doing. */
+export const TOUR_EXIT =
+  'fixed top-18 right-18 z-[93] inline-flex items-center gap-7 rounded-full border border-line-strong bg-panel-solid px-14 py-8 text-[12px] font-medium text-fg-dim shadow-[var(--shadow-pop)] transition-colors duration-150 hover:text-fg-strong'
+
+/** Progress along the bottom of the card. */
+export const TOUR_TRACK = 'h-3 overflow-hidden rounded-full bg-tint-2'
+export const TOUR_FILL =
+  'block h-full rounded-full bg-accent transition-[width] duration-300 ease-out'

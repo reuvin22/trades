@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../lib/useAuth'
 import { navigate } from '../lib/useHashRoute'
 import { signOutOfApp } from '../lib/useAuth'
 import { CardIcon, LogoutIcon, UserGlyphIcon } from './Icons'
@@ -16,7 +16,7 @@ import {
 } from './ui'
 
 type AccountMenuProps = {
-  user: User | null
+  user: AuthUser | null
 }
 
 export function AccountMenu({ user }: AccountMenuProps) {

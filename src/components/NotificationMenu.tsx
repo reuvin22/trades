@@ -78,7 +78,7 @@ export function NotificationMenu() {
   }
 
   return (
-    <div className="relative" ref={wrapper}>
+    <div className="relative" data-tour="notifications" ref={wrapper}>
       <button
         ref={trigger}
         type="button"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../lib/useAuth'
 import { readableAuthError, signOutOfApp } from '../lib/useAuth'
 import { sendVerificationEmail } from '../lib/verification'
 import { LoginBackdrop } from '../components/LoginBackdrop'
@@ -22,8 +22,8 @@ import {
 } from '../components/ui'
 
 type VerifyEmailProps = {
-  user: User
-  /** Resolves true once Firebase reports the address as verified. */
+  user: AuthUser
+  /** Resolves true once the API reports the address as verified. */
   onRecheck: () => Promise<boolean>
   viaGoogle: boolean
   isNewAccount: boolean

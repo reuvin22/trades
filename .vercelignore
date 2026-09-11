@@ -10,3 +10,6 @@ serviceAccount*.json
 
 node_modules
 dist
+
+# The FastAPI service deploys separately; it has no place in the web bundle.
+backend

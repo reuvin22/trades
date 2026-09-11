@@ -207,6 +207,15 @@
     }
   }
 
+  /* The tour guide, breathing. */
+  --animate-guide: guide-bob 3.2s ease-in-out infinite;
+
+  @keyframes guide-bob {
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
   --animate-dock: dock-in 0.18s var(--ease-out);
 
   @keyframes dock-in {

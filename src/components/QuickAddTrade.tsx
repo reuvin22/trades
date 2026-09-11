@@ -1,3 +1,4 @@
+import { readableApiError } from '../lib/api'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
   EMOTIONS,
@@ -10,7 +11,6 @@ import {
   type SizeUnit,
   type TradeEntry,
 } from '../data/tradeForm'
-import { readableFirestoreError } from '../lib/trades'
 import { useToast } from '../lib/toast'
 import { Combobox } from './Combobox'
 import { Select } from './Select'
@@ -122,7 +122,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
       reset()
       onClose()
     } catch (cause) {
-      const message = readableFirestoreError(cause)
+      const message = readableApiError(cause)
       setSaveError(message)
       toast.error('Could not save the trade', message)
     } finally {

@@ -3,7 +3,6 @@ import { AnimatedNumber } from '../components/AnimatedNumber'
 import { JournalTable } from '../components/JournalTable'
 import { JOURNAL_FILTERS } from '../data/journal'
 import type { StoredTrade } from '../lib/trades'
-import { isFirebaseConfigured } from '../lib/firebase'
 import {
   ChartBarsIcon,
   ChevronDownIcon,
@@ -78,7 +77,9 @@ type TradeJournalProps = {
 }
 
 export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps) {
-  const live = isFirebaseConfigured && uid !== null
+  // A signed-in session is the only precondition now: the API is the single
+  // thing this page talks to, and it either answers or reports why.
+  const live = uid !== null
 
   return (
     <>
@@ -102,7 +103,7 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
         </div>
       </div>
 
-      <div className={`${FILTER_ROW} ${ROW_STAGGER}`}>
+      <div data-tour="filters" className={`${FILTER_ROW} ${ROW_STAGGER}`}>
         <FilterSelects />
 
         <div className={`${CARD} ${CARD_HOVER} ${FILTER_CARD} cursor-default gap-8`}>

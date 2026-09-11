@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../lib/useAuth'
 import { LANGUAGES, useCoach } from '../lib/coach'
 import { saveCoachLanguage, type Profile } from '../lib/profile'
 import { RobotIcon, SendIcon, UserGlyphIcon } from '../components/Icons'
@@ -32,7 +32,7 @@ import {
 } from '../components/ui'
 
 type AiCoachProps = {
-  user: User | null
+  user: AuthUser | null
   profile: Profile | null
   tradeCount: number
 }
@@ -92,7 +92,7 @@ function LanguagePicker({
 }
 
 export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
-  // Held locally as well as on the profile. A Firestore write can fail — most
+  // Held locally as well as on the profile. The save can fail — most
   // often because the security rules have not been published yet — and when it
   // does the conversation must still open rather than stranding the user on a
   // language picker that never advances.
@@ -118,10 +118,10 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
 
     if (user) {
       try {
-        await saveCoachLanguage(user.uid, choice)
+        await saveCoachLanguage(choice)
       } catch {
         setSaveWarning(
-          "I couldn't save that preference, so I'll ask again next time. Publishing firestore.rules fixes it.",
+          "I couldn't save that preference, so I'll ask again next time.",
         )
       }
     }
@@ -243,7 +243,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         <div ref={threadEnd} />
       </div>
 
-      <form className={COMPOSER} onSubmit={handleSubmit}>
+      <form data-tour="coach" className={COMPOSER} onSubmit={handleSubmit}>
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

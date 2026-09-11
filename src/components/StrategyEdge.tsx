@@ -39,7 +39,7 @@ export function StrategyEdge({ stats }: { stats: DerivedStats }) {
   })
 
   return (
-    <section className={`${CARD} flex flex-col px-22 pt-20 pb-24`}>
+    <section data-tour="edge" className={`${CARD} flex flex-col px-22 pt-20 pb-24`}>
       <h2 className={CARD_TITLE}>Strategy Edge</h2>
 
       {slices.length === 0 ? (

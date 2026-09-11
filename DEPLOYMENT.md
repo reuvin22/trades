@@ -1,153 +1,86 @@
-# Deploying to Vercel
+# Deploying the web client
 
-The frontend is hosted on Vercel; Firebase provides auth and Firestore only.
-Deploying to Vercel does **not** deploy Firestore rules — those live in the
-Firebase project and are published separately.
+The client is a static bundle on Vercel. It holds no credentials — not a
+Firebase config, not a vendor key, not a project id — so there is very little
+here. Everything that needs configuring lives in
+[`ragdex-be`](../ragdex-be/README.md), and that is where the deployment work is.
 
 ## 1. Environment variables
 
-The Firebase **web** config is committed in `src/lib/firebase-defaults.ts`, so a
-fresh deploy works with no environment configuration at all. Those values are
-public identifiers that ship in the bundle regardless of where they are stored;
-Firestore rules, authorized domains and API-key restrictions are what protect
-the project.
+One, and it is optional:
 
-Set the `VITE_FIREBASE_*` variables only when you want a deployment to point at
-a *different* Firebase project — they override the committed defaults. The
-server-only secrets in section 1b are a different matter and must always be set.
-
-### Overriding the defaults
-
-`.env.local` is gitignored and listed in `.vercelignore`, so it is never
-uploaded. Vite inlines `VITE_*` variables at **build** time, which means a
-Vercel build with no variables set produces a bundle with no Firebase config —
-the deployed site then shows "Firebase is not connected yet" no matter what your
-local file says.
-
-Add these in **Vercel → Project → Settings → Environment Variables**, for
-Production, Preview and Development:
-
-| Variable | Value |
+| Variable | What goes in it |
 | --- | --- |
-| `VITE_FIREBASE_API_KEY` | `AIzaSy…Mwzg` |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `trading-journal-43d07.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | `trading-journal-43d07` |
-| `VITE_FIREBASE_STORAGE_BUCKET` | `trading-journal-43d07.firebasestorage.app` |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | `628278688107` |
-| `VITE_FIREBASE_APP_ID` | `1:628278688107:web:71cbc5a265c65c0aa7742e` |
-| `VITE_FIREBASE_MEASUREMENT_ID` | `G-TN1DPHK7F5` |
+| `VITE_API_BASE_URL` | Leave it **empty**. See below. |
 
-Or from the CLI:
+Empty means same-origin, which is what `vercel.json` arranges with a rewrite:
+`/api/*` is proxied to the Render service, so from the browser's point of view
+the API is part of this site.
+
+**That rewrite is load-bearing, not cosmetic.** The session is an HttpOnly
+cookie. A cookie set by `ragdex-be.onrender.com` on a page served from
+`ragdex.vercel.app` is a third-party cookie — Safari blocks those outright and
+Chrome is following. Proxying through this origin makes it first-party, and has
+the side benefit that CORS never enters into it.
+
+Set `VITE_API_BASE_URL` only to point a local build at a remote API while
+debugging, and expect sign-in not to stick when you do.
+
+If the backend moves, edit the destination in [`vercel.json`](vercel.json).
+
+## 2. What the backend needs to know about this deployment
+
+Three of the backend's variables name this site. They are set over there, not
+here, but getting them wrong breaks sign-in:
+
+| Backend variable | Value |
+| --- | --- |
+| `APP_URL` | This site's origin, e.g. `https://ragdex.vercel.app`. Where sign-in returns to, and the base for links in emails. |
+| `API_PUBLIC_URL` | The backend's own origin. Google redirects to it, so it must match the OAuth client exactly. |
+| `CORS_ORIGINS` | This site's origin. Only consulted if you stop using the rewrite. |
+
+## 3. Google sign-in
+
+The OAuth client lives in the **Google Cloud console → APIs & Services →
+Credentials**, not in Firebase. Its authorised redirect URI must be exactly:
+
+```
+<API_PUBLIC_URL>/api/v1/auth/google/callback
+```
+
+The client id and secret go in the backend's environment. Neither belongs here:
+this site never builds an authorize URL, it navigates to
+`/api/v1/auth/google/start` and lets the API do it.
+
+## 4. Checks that run on every build
 
 ```bash
-vercel env add VITE_FIREBASE_API_KEY production
-# ...repeat per variable and environment
+npm run check:env
 ```
 
-**Redeploy after changing any of them.** Vercel does not rebuild on an env
-change alone, and the old values stay baked into the existing bundle.
+Runs before and after `vite build`. It fails the build if anything that looks
+like a credential appears in a `VITE_` variable or in `dist/` — names matching
+`SECRET|PRIVATE|PASSWORD|API_KEY|CLIENT_SECRET|…`, and values shaped like a
+Brevo key, an OpenRouter key, a private key, a service account, or a Google API
+key.
 
-### "Keep This Value Private" — Vercel's warning on VITE_ variables
-
-Vercel flags every `VITE_`-prefixed variable with *"The VITE_ prefix exposes
-this value to the browser."* That is correct, and for the Firebase web config it
-is exactly what we want: those values are public identifiers that Firebase
-expects to ship in the client. Click **Change to Config** on all seven of them.
-
-The warning becomes a real one only if a genuine secret ever gets a `VITE_`
-prefix. `npm run build` now refuses to proceed in that case — see
-`scripts/check-env.mjs`, which runs automatically before and after every build,
-including on Vercel.
-
-| Variable | Vercel type |
-| --- | --- |
-| `VITE_FIREBASE_*` (all 7) | **Config** — public by design |
-| `BREVO_API_KEY` | **Secret** |
-| `OPENROUTER_API_KEY` | **Secret** |
-| `FIREBASE_SERVICE_ACCOUNT` | **Secret** |
-| `APP_URL` | Config — just a URL |
-
-## 1b. Server-only secrets (Brevo + Admin SDK)
-
-These have **no `VITE_` prefix on purpose**. Vite inlines every `VITE_*`
-variable into the client bundle, so prefixing either of these would publish it.
-They are read only by the serverless function in `api/`.
-
-| Variable | What it is |
-| --- | --- |
-| `BREVO_API_KEY` | Brevo transactional key. Can send mail as you — treat as a password. |
-| `BREVO_SENDER_EMAIL` | A sender address **verified in Brevo**, or sends will be rejected. |
-| `BREVO_SENDER_NAME` | Display name on the email. Defaults to `RagDex`. |
-| `OPENROUTER_API_KEY` | Powers the behavioural-leak card and the AI Coach. From [openrouter.ai/keys](https://openrouter.ai/keys). |
-| `OPENROUTER_MODEL` | Optional. A slug, or a comma-separated fallback chain. Defaults to free models that fall through on rate limits. |
-| `FIREBASE_SERVICE_ACCOUNT` | The entire contents of `trading.json`, on one line. |
-| `APP_URL` | e.g. `https://your-project.vercel.app`, used to build the return link. |
-
-To load the service account into Vercel without hand-editing JSON:
-
-```bash
-node -e "console.log(JSON.stringify(require('./trading.json')))" | vercel env add FIREBASE_SERVICE_ACCOUNT production
-```
-
-This is the one legitimate home for that key: it stays server-side, is never
-bundled, and never reaches a browser.
-
-## 2. Authorized domains
-
-Google sign-in refuses to run on a domain Firebase does not know. In
-**Firebase Console → Authentication → Settings → Authorized domains**, add:
-
-- `your-project.vercel.app`
-- any custom domain you have attached
-
-Firebase does **not** support wildcards, so per-branch preview URLs
-(`app-git-branch-user.vercel.app`) each need adding, or accept that Google
-sign-in only works on production and stable preview aliases.
-
-If you miss this, the app now names the exact hostname to add in the error
-message rather than showing `auth/unauthorized-domain`.
-
-## 3. Sign-in methods
-
-**Firebase Console → Authentication → Sign-in method** — enable **Google** and
-**Email/Password**. Without this you get `auth/operation-not-allowed`.
-
-## 4. Firestore rules
-
-Publish [`firestore.rules`](firestore.rules) — via the console's Rules tab, or:
-
-```bash
-firebase deploy --only firestore:rules
-```
-
-The default `allow read, write: if false` blocks every request, and the sign-in
-will succeed while the journal stays permanently empty.
-
-## 5. Restrict the API key (optional but worth doing)
-
-The web API key is public by design — it identifies the project, it does not
-grant access. It is still worth limiting where it can be used:
-
-**Google Cloud Console → APIs & Services → Credentials →** your browser key →
-*Application restrictions* → **HTTP referrers**, then allow only:
-
-```
-https://your-project.vercel.app/*
-https://your-custom-domain.com/*
-http://localhost:*
-```
-
-This does not protect your data — rules do that — but it stops the key being
-used to run up quota from someone else's site.
+That last one used to be exempt, because the Firebase web key was public by
+design. Nothing in this bundle carries a vendor key now, so a value shaped like
+one is a mistake worth failing on.
 
 ## What actually secures this app
 
 | Concern | Handled by |
 | --- | --- |
-| Who can read/write a trade | `firestore.rules` — scoped to `request.auth.uid` |
-| Who can sign in | Authorized domains + enabled providers |
-| Key abuse from other origins | HTTP referrer restrictions |
-| Admin access | `trading.json`, which stays off the client and out of git entirely |
+| Who can read or write a trade | The API — every repository function takes a verified uid first |
+| Who can read a conversation | The API — a thread is derived from the caller's uid, never named by them |
+| Where the session lives | An HttpOnly cookie the page cannot read, `SameSite` against CSRF |
+| Who can sign in | The backend's Identity Toolkit calls and its OAuth client |
+| Keeping credentials out of the browser | This bundle has none, and `check:env` keeps it that way |
+| Admin access | The service account, which lives only in the backend's environment |
 
-The service account key is the only real secret here. It is excluded by
-`.gitignore`, `.vercelignore`, and `vite.config.ts`'s `server.fs.deny`.
+`firestore.rules` is gone from this repository. It protected a client that read
+the database directly; nothing does now. The rules in the Firebase project
+should be set to deny everything — the Admin SDK bypasses them regardless, so
+they defend only against a credential leak, and denying all is the strongest
+version of that.

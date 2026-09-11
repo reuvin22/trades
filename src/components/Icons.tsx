@@ -499,6 +499,20 @@ export function CheckIcon({ size = 15, className }: IconProps) {
   )
 }
 
+/**
+ * The read receipt: two overlapping ticks, the messenger convention for "this
+ * reached them and they looked at it". Drawn as a pair rather than reusing
+ * CheckIcon twice so the overlap stays a fixed offset at any size.
+ */
+export function SeenIcon({ size = 13, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={2.4}>
+      <path d="m1.5 12.5 4 4L14 8" />
+      <path d="m10 16.5 8.5-8.5" />
+    </svg>
+  )
+}
+
 export function ReceiptIcon({ size = 18, className }: IconProps) {
   return (
     <svg {...base(size)} className={className}>

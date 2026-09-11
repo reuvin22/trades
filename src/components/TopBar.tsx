@@ -56,8 +56,12 @@ export function TopBar({ theme, onToggleTheme, navOpen, onToggleNav }: TopBarPro
 
       <div className="ml-auto flex items-center gap-16">
         <NotificationMenu />
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-        <AccountMenu user={user} />
+        <span data-tour="theme" className="contents">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </span>
+        <span data-tour="account" className="contents">
+          <AccountMenu user={user} />
+        </span>
       </div>
     </header>
   )

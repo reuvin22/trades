@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react'
-import {
-  Timestamp,
-  addDoc,
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
-import {
-  holdTime,
-  netProfit,
-  riskReward,
-  type TradeEntry,
-} from '../data/tradeForm'
+import { useCallback, useEffect, useState } from 'react'
+import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
+import type { TradeEntry } from '../data/tradeForm'
 
-/** One journal entry as it is stored under users/{uid}/trades. */
+/**
+ * The journal, through the API.
+ *
+ * The three derived figures — net P&L, R:R and hold time — are no longer
+ * computed here. The server works them out from entry, exit and size, which is
+ * the only way they can be trusted: a figure the caller can set is a figure
+ * that can be made up, and every statistic in the product is built on them.
+ */
+
+/** One journal entry, as the client renders it. */
 export type StoredTrade = {
   id: string
   ticker: string
@@ -44,29 +39,58 @@ export type StoredTrade = {
   createdAt: Date | null
 }
 
-/**
- * Firestore's raw errors are unhelpful to a person, and `permission-denied` in
- * particular almost always means the project's security rules were never
- * deployed past the default deny-all.
- */
-export function readableFirestoreError(error: unknown): string {
-  const code =
-    typeof error === 'object' && error !== null && 'code' in error
-      ? String((error as { code: unknown }).code)
-      : ''
+/** The wire shape: snake_case, with numbers that may arrive as strings. */
+type TradeWire = Record<string, unknown>
 
-  switch (code) {
-    case 'permission-denied':
-    case 'firestore/permission-denied':
-      return 'Firestore rejected this request. Deploy firestore.rules — the default rules deny every read and write.'
-    case 'unauthenticated':
-      return 'Your session expired. Sign in again.'
-    case 'unavailable':
-      return 'Cannot reach Firestore right now. Check your connection.'
-    case 'failed-precondition':
-      return 'Firestore needs an index for this query. The console error link will create it.'
-    default:
-      return error instanceof Error ? error.message : 'Firestore request failed.'
+type TradePage = {
+  items: TradeWire[]
+  next_cursor: string | null
+}
+
+/** How long a trade was held, from the two timestamps the server returned. */
+function holdTimeOf(entryAt: string, exitAt: string): string | null {
+  const opened = date(entryAt)
+  const closed = date(exitAt)
+  if (!opened || !closed) return null
+
+  const minutes = Math.round((closed.getTime() - opened.getTime()) / 60_000)
+  if (minutes < 0) return null
+  if (minutes < 60) return `${minutes}m`
+
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
+}
+
+function toStored(wire: TradeWire): StoredTrade {
+  const entryAt = fromIso(wire.entry_at)
+  const exitAt = fromIso(wire.exit_at)
+
+  return {
+    id: String(wire.id ?? ''),
+    ticker: String(wire.ticker ?? ''),
+    direction: wire.direction === 'Short' ? 'Short' : 'Long',
+    size: num(wire.size),
+    sizeUnit: String(wire.size_unit ?? 'Shares'),
+    entryPrice: num(wire.entry_price),
+    exitPrice: num(wire.exit_price),
+    entryAt,
+    exitAt,
+    setup: String(wire.setup ?? ''),
+    rationale: String(wire.rationale ?? ''),
+    stopLoss: num(wire.stop_loss),
+    takeProfit: num(wire.take_profit),
+    screenshot: String(wire.screenshot ?? ''),
+    netPl: num(wire.net_pl),
+    riskReward: num(wire.risk_reward),
+    duration: holdTimeOf(entryAt, exitAt),
+    compliedEntry: String(wire.complied_entry ?? ''),
+    compliedExit: String(wire.complied_exit ?? ''),
+    compliedManagement: String(wire.complied_management ?? ''),
+    emotionBefore: String(wire.emotion_before ?? ''),
+    emotionDuring: String(wire.emotion_during ?? ''),
+    mistakes: Array.isArray(wire.mistakes) ? wire.mistakes.map(String) : [],
+    createdAt: date(wire.created_at),
   }
 }
 
@@ -76,94 +100,113 @@ function toNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-function tradesCollection(uid: string) {
-  if (!db) throw new Error('Firestore is not configured.')
-  return collection(db, 'users', uid, 'trades')
-}
-
-/**
- * Writes the form entry plus the three derived figures, so queries and charts
- * never have to recompute P&L across the whole collection.
- */
-export function saveTrade(uid: string, trade: TradeEntry) {
-  return addDoc(tradesCollection(uid), {
+/** The form entry as the API expects it. No derived figures: those are the
+ *  server's to decide, and it refuses a body that tries to set them. */
+function toWire(trade: TradeEntry): Record<string, unknown> {
+  return {
     ticker: trade.ticker.trim(),
     direction: trade.direction,
     size: toNumber(trade.size),
-    sizeUnit: trade.sizeUnit,
-    entryPrice: toNumber(trade.entryPrice),
-    exitPrice: toNumber(trade.exitPrice),
-    entryAt: trade.entryAt,
-    exitAt: trade.exitAt,
+    size_unit: trade.sizeUnit,
+    entry_price: toNumber(trade.entryPrice),
+    exit_price: toNumber(trade.exitPrice),
+    entry_at: toIso(trade.entryAt),
+    exit_at: toIso(trade.exitAt),
     setup: trade.setup.trim(),
     rationale: trade.rationale.trim(),
-    stopLoss: toNumber(trade.stopLoss),
-    takeProfit: toNumber(trade.takeProfit),
+    stop_loss: toNumber(trade.stopLoss),
+    take_profit: toNumber(trade.takeProfit),
     screenshot: trade.screenshot.trim(),
-    netPl: netProfit(trade),
-    riskReward: riskReward(trade),
-    duration: holdTime(trade),
-    compliedEntry: trade.compliedEntry,
-    compliedExit: trade.compliedExit,
-    compliedManagement: trade.compliedManagement,
-    emotionBefore: trade.emotionBefore,
-    emotionDuring: trade.emotionDuring,
+    complied_entry: trade.compliedEntry,
+    complied_exit: trade.compliedExit,
+    complied_management: trade.compliedManagement,
+    emotion_before: trade.emotionBefore,
+    emotion_during: trade.emotionDuring,
     mistakes: trade.mistakes,
-    createdAt: serverTimestamp(),
+  }
+}
+
+/** How many entries one page carries. The journal views want everything. */
+const PAGE_SIZE = 100
+
+/** Every page, followed to the end. A journal is read whole by the charts. */
+async function fetchAll(signal?: AbortSignal): Promise<StoredTrade[]> {
+  const all: StoredTrade[] = []
+  let cursor: string | null = null
+
+  do {
+    const page: TradePage = await apiFetch<TradePage>('/api/v1/trades', {
+      query: { limit: PAGE_SIZE, cursor: cursor ?? undefined },
+      signal,
+    })
+    all.push(...page.items.map(toStored))
+    cursor = page.next_cursor
+  } while (cursor !== null)
+
+  return all
+}
+
+export async function saveTrade(trade: TradeEntry): Promise<StoredTrade> {
+  const created = await apiFetch<TradeWire>('/api/v1/trades', {
+    method: 'POST',
+    body: toWire(trade),
   })
+  return toStored(created)
+}
+
+export function deleteTrade(id: string): Promise<null> {
+  return apiFetch<null>(`/api/v1/trades/${id}`, { method: 'DELETE' })
 }
 
 export type TradesState = {
   trades: StoredTrade[]
   loading: boolean
   error: string | null
+  /** Re-reads the journal. Called after a write, since there is no longer a
+   *  live listener to push the change back. */
+  reload: () => void
 }
 
-type Snapshot = {
-  uid: string | null
-  trades: StoredTrade[]
-  error: string | null
-}
-
-/** Live view of the signed-in trader's journal, newest first. */
+/**
+ * The signed-in trader's journal, newest first.
+ *
+ * Fetched rather than streamed. Firestore's realtime listener is gone with the
+ * direct SDK, and deliberately: a client that can subscribe to a collection is
+ * a client with credentials for it. Writes call `reload`, which is what keeps
+ * the views current without a socket.
+ */
 export function useTrades(uid: string | null): TradesState {
-  const [snapshot, setSnapshot] = useState<Snapshot>({
-    uid: null,
-    trades: [],
-    error: null,
-  })
+  const [state, setState] = useState<{
+    uid: string | null
+    trades: StoredTrade[]
+    error: string | null
+  }>({ uid: null, trades: [], error: null })
+
+  const [nonce, setNonce] = useState(0)
+  const reload = useCallback(() => setNonce((current) => current + 1), [])
 
   useEffect(() => {
-    if (!uid || !db) return
+    if (!uid) return
 
-    const wanted = query(tradesCollection(uid), orderBy('createdAt', 'desc'))
+    const abort = new AbortController()
 
-    return onSnapshot(
-      wanted,
-      (result) => {
-        const trades = result.docs.map((entry) => {
-          const data = entry.data()
-          const created = data.createdAt
+    fetchAll(abort.signal)
+      .then((trades) => setState({ uid, trades, error: null }))
+      .catch((cause: unknown) => {
+        if (abort.signal.aborted) return
+        setState({ uid, trades: [], error: readableApiError(cause) })
+      })
 
-          return {
-            id: entry.id,
-            ...data,
-            createdAt: created instanceof Timestamp ? created.toDate() : null,
-          } as StoredTrade
-        })
-
-        setSnapshot({ uid, trades, error: null })
-      },
-      (error) => setSnapshot({ uid, trades: [], error: readableFirestoreError(error) }),
-    )
-  }, [uid])
+    return () => abort.abort()
+  }, [uid, nonce])
 
   // Derived rather than stored, so switching accounts never shows stale rows.
-  const fresh = snapshot.uid === uid
+  const fresh = state.uid === uid
 
   return {
-    trades: fresh ? snapshot.trades : [],
-    loading: Boolean(uid && db) && !fresh,
-    error: fresh ? snapshot.error : null,
+    trades: fresh ? state.trades : [],
+    loading: Boolean(uid) && !fresh,
+    error: fresh ? state.error : null,
+    reload,
   }
 }
