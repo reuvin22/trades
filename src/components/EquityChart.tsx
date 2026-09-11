@@ -1,3 +1,26 @@
+import {
+  AXIS_LEGEND,
+  CARD,
+  CARD_HEAD,
+  CARD_SUB,
+  CARD_TITLE,
+  CHART_AREA,
+  CHART_CARD,
+  CROSSHAIR,
+  EQUITY_LINE,
+  GRIDLINES,
+  PLOT,
+  PLOT_MARKER,
+  PLOT_SVG,
+  SEGMENT,
+  SEGMENTED,
+  SEGMENT_ACTIVE,
+  TOOLTIP,
+  TOOLTIP_DATE,
+  TOOLTIP_VALUE,
+  X_AXIS,
+  Y_AXIS,
+} from './ui'
 import { useMemo, useState, type PointerEvent } from 'react'
 import { compactCurrency, currency, shortDate } from '../data/dashboard'
 import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
@@ -97,21 +120,21 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
   }
 
   return (
-    <section className="card chart-card">
-      <div className="card-head">
+    <section className={`${CARD} ${CHART_CARD}`}>
+      <div className={CARD_HEAD}>
         <div>
-          <h2 className="card-title">Cumulative Equity</h2>
-          <p className="card-sub">
+          <h2 className={CARD_TITLE}>Cumulative Equity</h2>
+          <p className={CARD_SUB}>
             Realized returns over the last {RANGE_DAYS[range]} days
           </p>
         </div>
 
-        <div className="segmented" role="group" aria-label="Chart range">
+        <div className={SEGMENTED} role="group" aria-label="Chart range">
           {RANGES.map((option) => (
             <button
               key={option}
               type="button"
-              className={`segment${range === option ? ' is-active' : ''}`}
+              className={`${SEGMENT} ${range === option ? SEGMENT_ACTIVE : ''}`}
               aria-pressed={range === option}
               onClick={() => {
                 setRange(option)
@@ -124,17 +147,17 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         </div>
       </div>
 
-      <p className="axis-legend">
+      <p className={AXIS_LEGEND}>
         x = Time
         <br />Y = Account Equity
       </p>
 
       <div
-        className="plot"
+        className={PLOT}
         onPointerMove={trackPointer}
         onPointerLeave={() => setHovered(null)}
       >
-        <div className="y-axis" aria-hidden="true">
+        <div className={Y_AXIS} aria-hidden="true">
           {scale.ticks.map((tick) => (
             <span key={tick} style={{ top: `${(scaleY(tick) / H) * 100}%` }}>
               {compactCurrency(tick)}
@@ -143,7 +166,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         </div>
 
         <svg
-          className="plot-svg"
+          className={PLOT_SVG}
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
           role="img"
@@ -151,22 +174,22 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         >
           <defs>
             <linearGradient id="equity-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-fill-top)" />
-              <stop offset="45%" stopColor="var(--chart-fill-mid)" />
-              <stop offset="100%" stopColor="var(--chart-fill-bottom)" />
+              <stop offset="0%" stopColor="var(--color-chart-fill-top)" />
+              <stop offset="45%" stopColor="var(--color-chart-fill-mid)" />
+              <stop offset="100%" stopColor="var(--color-chart-fill-bottom)" />
             </linearGradient>
           </defs>
 
-          <g className="gridlines">
+          <g className={GRIDLINES}>
             {scale.ticks.map((tick) => (
               <line key={tick} x1="0" x2={W} y1={scaleY(tick)} y2={scaleY(tick)} />
             ))}
           </g>
 
-          <path d={geometry.area} fill="url(#equity-fill)" className="chart-area" />
+          <path d={geometry.area} fill="url(#equity-fill)" className={CHART_AREA} />
           <path
             d={geometry.line}
-            className="equity-line draw-line"
+            className={EQUITY_LINE}
             pathLength={1}
             fill="none"
             vectorEffect="non-scaling-stroke"
@@ -174,7 +197,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
 
           {hovered !== null && (
             <line
-              className="crosshair"
+              className={CROSSHAIR}
               x1={activeGeometry.x}
               x2={activeGeometry.x}
               y1={activeGeometry.y}
@@ -185,7 +208,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         </svg>
 
         <div
-          className="plot-marker"
+          className={PLOT_MARKER}
           style={{
             left: `${(activeGeometry.x / W) * 100}%`,
             top: `${(activeGeometry.y / H) * 100}%`,
@@ -194,18 +217,18 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         />
 
         <div
-          className="tooltip"
+          className={TOOLTIP}
           style={{
             left: `${(activeGeometry.x / W) * 100}%`,
             top: `${(activeGeometry.y / H) * 100}%`,
           }}
         >
-          <span className="tooltip-date">{shortDate.format(activePoint.date)}</span>
-          <strong className="tooltip-value">{currency.format(activePoint.value)}</strong>
+          <span className={TOOLTIP_DATE}>{shortDate.format(activePoint.date)}</span>
+          <strong className={TOOLTIP_VALUE}>{currency.format(activePoint.value)}</strong>
         </div>
       </div>
 
-      <div className="x-axis" aria-hidden="true">
+      <div className={X_AXIS} aria-hidden="true">
         {xLabels.map(({ index, label }) => (
           <span
             key={index}

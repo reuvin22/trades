@@ -1,3 +1,4 @@
+import { CARD, CARD_SUB, CARD_TITLE, CHART_EMPTY } from './ui'
 import { AnimatedNumber } from './AnimatedNumber'
 import type { DerivedStats } from '../lib/stats'
 
@@ -38,33 +39,33 @@ export function StrategyEdge({ stats }: { stats: DerivedStats }) {
   })
 
   return (
-    <section className="card edge-card">
-      <h2 className="card-title">Strategy Edge</h2>
+    <section className={`${CARD} flex flex-col px-22 pt-20 pb-24`}>
+      <h2 className={CARD_TITLE}>Strategy Edge</h2>
 
       {slices.length === 0 ? (
-        <p className="card-sub edge-empty">
+        <p className={`${CARD_SUB} ${CHART_EMPTY}`}>
           Tag your trades with a setup name to see which edge carries your account.
         </p>
       ) : (
-        <ul className="edge-legend">
+        <ul className="mt-20 flex list-none flex-col gap-9 p-0 [&>li]:grid [&>li]:grid-cols-[auto_1fr_auto] [&>li]:items-center [&>li]:gap-9 [&>li]:text-[12px] [&>li]:animate-slide-left [&>li:nth-child(1)]:[animation-delay:160ms] [&>li:nth-child(2)]:[animation-delay:240ms] [&>li:nth-child(3)]:[animation-delay:320ms]">
           {slices.map((slice) => (
             <li key={slice.label}>
-              <span className="edge-dot" style={{ background: slice.color }} />
-              <span className="edge-label">{slice.label}</span>
-              <span className="edge-share">{Math.round(slice.share)}%</span>
+              <span className="size-7 rounded-full" style={{ background: slice.color }} />
+              <span className="text-fg-dim">{slice.label}</span>
+              <span className="font-medium text-fg">{Math.round(slice.share)}%</span>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="donut">
+      <div className="relative mt-auto grid place-items-center pt-22 [&>svg]:h-auto [&>svg]:w-full [&>svg]:max-w-170 max-[1180px]:[&>svg]:max-w-200 [&_circle]:fill-none [&_circle]:[stroke-width:15]">
         <svg
           viewBox="0 0 160 160"
           role="img"
           aria-label={`${Math.round(stats.winRate)} percent win rate`}
         >
-          <g className="donut-arcs">
-            <circle className="donut-track" cx="80" cy="80" r={RADIUS} />
+          <g className="animate-donut [transform-box:view-box] [transform-origin:80px_80px] rotate-[-90deg]">
+            <circle className="stroke-tint-1" cx="80" cy="80" r={RADIUS} />
             {arcs.map((arc) => (
               <circle
                 key={arc.label}
@@ -79,7 +80,7 @@ export function StrategyEdge({ stats }: { stats: DerivedStats }) {
           </g>
         </svg>
 
-        <div className="donut-center">
+        <div className="pointer-events-none absolute top-[calc(50%+11px)] grid -translate-y-1/2 animate-pop justify-items-center gap-1 [animation-delay:0.55s] [&>strong]:text-[25px] [&>strong]:font-semibold [&>strong]:tracking-[-0.02em] [&>strong]:tabular-nums [&>span]:text-[10.5px] [&>span]:text-fg-muted">
           <strong>
             <AnimatedNumber value={stats.winRate} format={(n) => `${Math.round(n)}%`} />
           </strong>

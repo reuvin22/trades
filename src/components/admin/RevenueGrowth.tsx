@@ -1,5 +1,26 @@
 import { useMemo, useState } from 'react'
 import {
+  AXIS_LEGEND,
+  CARD,
+  CARD_HEAD,
+  CARD_SUB,
+  CARD_TITLE,
+  CHART_AREA,
+  CROSSHAIR,
+  EQUITY_LINE,
+  GRIDLINES,
+  PLOT,
+  PLOT_SVG,
+  SEGMENT,
+  SEGMENTED,
+  SEGMENT_ACTIVE,
+  TOOLTIP,
+  TOOLTIP_DATE,
+  TOOLTIP_VALUE,
+  X_AXIS_MONTHS,
+  Y_AXIS,
+} from '../ui'
+import {
   compactRevenue,
   REVENUE_MARKER,
   REVENUE_MARKER_LABEL,
@@ -40,21 +61,21 @@ export function RevenueGrowth() {
   }
 
   return (
-    <section className="card chart-card revenue-card">
-      <div className="card-head">
+    <section className={`${CARD} relative z-20 px-22 pt-20 pb-14`}>
+      <div className={CARD_HEAD}>
         <div>
-          <h2 className="card-title">Revenue Growth</h2>
-          <p className="card-sub">
+          <h2 className={CARD_TITLE}>Revenue Growth</h2>
+          <p className={CARD_SUB}>
             Historical performance of subscription revenue across all tiers.
           </p>
         </div>
 
-        <div className="segmented" role="group" aria-label="Revenue range">
+        <div className={SEGMENTED} role="group" aria-label="Revenue range">
           {RANGES.map((option) => (
             <button
               key={option}
               type="button"
-              className={`segment${range === option ? ' is-active' : ''}`}
+              className={`${SEGMENT} ${range === option ? SEGMENT_ACTIVE : ''}`}
               aria-pressed={range === option}
               onClick={() => setRange(option)}
             >
@@ -64,13 +85,13 @@ export function RevenueGrowth() {
         </div>
       </div>
 
-      <p className="axis-legend">
+      <p className={AXIS_LEGEND}>
         x = Timeline
         <br />Y = Revenue (USD)
       </p>
 
-      <div className="plot revenue-plot">
-        <div className="y-axis" aria-hidden="true">
+      <div className={`${PLOT} h-300 [&>div>span]:text-[10px]`}>
+        <div className={Y_AXIS} aria-hidden="true">
           {Y_TICKS.map((tick) => (
             <span key={tick} style={{ top: `${(scaleY(tick) / H) * 100}%` }}>
               {compactRevenue(tick)}
@@ -79,7 +100,7 @@ export function RevenueGrowth() {
         </div>
 
         <svg
-          className="plot-svg"
+          className={PLOT_SVG}
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
           role="img"
@@ -87,28 +108,28 @@ export function RevenueGrowth() {
         >
           <defs>
             <linearGradient id="revenue-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-fill-top)" />
-              <stop offset="55%" stopColor="var(--chart-fill-mid)" />
-              <stop offset="100%" stopColor="var(--chart-fill-bottom)" />
+              <stop offset="0%" stopColor="var(--color-chart-fill-top)" />
+              <stop offset="55%" stopColor="var(--color-chart-fill-mid)" />
+              <stop offset="100%" stopColor="var(--color-chart-fill-bottom)" />
             </linearGradient>
           </defs>
 
-          <g className="gridlines">
+          <g className={GRIDLINES}>
             {Y_TICKS.map((tick) => (
               <line key={tick} x1="0" x2={W} y1={scaleY(tick)} y2={scaleY(tick)} />
             ))}
           </g>
 
-          <path d={paths.area} fill="url(#revenue-fill)" className="chart-area" />
+          <path d={paths.area} fill="url(#revenue-fill)" className={CHART_AREA} />
           <path
             d={paths.line}
-            className="equity-line draw-line"
+            className={EQUITY_LINE}
             pathLength={1}
             fill="none"
             vectorEffect="non-scaling-stroke"
           />
           <line
-            className="crosshair"
+            className={CROSSHAIR}
             x1={marker.x}
             x2={marker.x}
             y1={marker.y}
@@ -118,17 +139,17 @@ export function RevenueGrowth() {
         </svg>
 
         <div
-          className="tooltip"
+          className={TOOLTIP}
           style={{ left: `${(marker.x / W) * 100}%`, top: `${(marker.y / H) * 100}%` }}
         >
-          <span className="tooltip-date">{REVENUE_MARKER_LABEL.toUpperCase()}</span>
-          <strong className="tooltip-value">
+          <span className={TOOLTIP_DATE}>{REVENUE_MARKER_LABEL.toUpperCase()}</span>
+          <strong className={TOOLTIP_VALUE}>
             {revenueLabel.format(REVENUE_SERIES[REVENUE_MARKER])}
           </strong>
         </div>
       </div>
 
-      <div className="x-axis months" aria-hidden="true">
+      <div className={X_AXIS_MONTHS} aria-hidden="true">
         {REVENUE_MONTHS.map((month) => (
           <span key={month}>{month}</span>
         ))}

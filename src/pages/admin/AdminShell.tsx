@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { AdminSidebar } from '../../components/admin/AdminSidebar'
 import { AdminTopBar } from '../../components/admin/AdminTopBar'
+import { ADMIN_SHELL, CONTENT, WORKSPACE } from '../../components/layout'
 import { QuickAddTrade } from '../../components/QuickAddTrade'
-import type { Theme } from '../../lib/useTheme'
+import { useNavDrawer } from '../../lib/useNavDrawer'
 import { labelForRoute } from '../../navigation'
-import { Placeholder } from '../Placeholder'
+import type { Theme } from '../../lib/useTheme'
 import { AdminDashboard } from './AdminDashboard'
-import '../../styles/admin.css'
+import { Placeholder } from '../Placeholder'
 
 type AdminShellProps = {
   route: string
@@ -16,14 +17,25 @@ type AdminShellProps = {
 
 export function AdminShell({ route, theme, onToggleTheme }: AdminShellProps) {
   const [logging, setLogging] = useState(false)
+  const nav = useNavDrawer(route)
 
   return (
-    <div className="app is-admin">
-      <AdminSidebar route={route} onQuickAdd={() => setLogging(true)} />
+    <div className={ADMIN_SHELL}>
+      <AdminSidebar
+        route={route}
+        onQuickAdd={() => setLogging(true)}
+        open={nav.open}
+        onClose={nav.close}
+      />
 
-      <div className="workspace">
-        <AdminTopBar theme={theme} onToggleTheme={onToggleTheme} />
-        <main className="content" key={route}>
+      <div className={WORKSPACE}>
+        <AdminTopBar
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          navOpen={nav.open}
+          onToggleNav={nav.toggle}
+        />
+        <main className={CONTENT} key={route}>
           {route === 'admin' ? (
             <AdminDashboard />
           ) : (

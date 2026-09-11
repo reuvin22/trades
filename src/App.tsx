@@ -1,12 +1,10 @@
-// Loaded first on purpose: page stylesheets override these base rules at equal
-// specificity, so they have to come later in the bundle.
-import './styles/app.css'
-import './styles/forms.css'
-import './styles/motion.css'
 import { useEffect, useRef, useState } from 'react'
+import { ChatDock } from './components/ChatDock'
 import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
+import { APP_SHELL, CONTENT, WORKSPACE } from './components/layout'
+import { useNavDrawer } from './lib/useNavDrawer'
 import { navigate, useHashRoute } from './lib/useHashRoute'
 import { useAuth } from './lib/useAuth'
 import {
@@ -36,7 +34,6 @@ const HOME_ROUTE = 'dashboard'
 
 type TraderViewProps = {
   route: string
-  onQuickAdd: () => void
   uid: string | null
   user: User | null
   profile: ProfileRecord | null
@@ -47,7 +44,6 @@ type TraderViewProps = {
 
 function TraderView({
   route,
-  onQuickAdd,
   uid,
   user,
   profile,
@@ -63,7 +59,7 @@ function TraderView({
     case 'analytics':
       return <Analytics trades={trades} />
     case 'calendar':
-      return <Calendar trades={trades} onQuickAdd={onQuickAdd} />
+      return <Calendar trades={trades} />
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'profile':
@@ -81,6 +77,7 @@ function App() {
   const { user, emailVerified, pending, refresh } = useAuth()
   const { profile, isNewAccount } = useProfile(user)
   const [logging, setLogging] = useState(false)
+  const nav = useNavDrawer(route)
   // Escape hatch for browsing the UI before Firebase credentials are in place.
   const [preview, setPreview] = useState(false)
 
@@ -117,9 +114,11 @@ function App() {
 
   if (pending) {
     return (
-      <div className="auth-splash">
-        <h1 className="brand-name">RagDex</h1>
-        <p className="brand-sub">Restoring your session…</p>
+      <div className="grid min-h-screen content-center justify-items-center gap-16 bg-[linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]">
+        <h1 className="animate-pulse-brand text-[30px] font-semibold tracking-[-0.02em] text-fg-strong">
+          RagDex
+        </h1>
+        <p className="text-[12.5px] tracking-[0.01em] text-fg-muted">Restoring your session…</p>
       </div>
     )
   }
@@ -147,19 +146,25 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={APP_SHELL}>
       <Sidebar
         route={route}
         accountLabel={accountTypeLabel(profile?.accountType)}
         onQuickAdd={() => setLogging(true)}
+        open={nav.open}
+        onClose={nav.close}
       />
 
-      <div className="workspace">
-        <TopBar theme={theme} onToggleTheme={toggle} />
-        <main className="content" key={route}>
+      <div className={WORKSPACE}>
+        <TopBar
+          theme={theme}
+          onToggleTheme={toggle}
+          navOpen={nav.open}
+          onToggleNav={nav.toggle}
+        />
+        <main className={CONTENT} key={route}>
           <TraderView
             route={route}
-            onQuickAdd={() => setLogging(true)}
             uid={uid}
             user={user}
             profile={profile}
@@ -169,6 +174,8 @@ function App() {
           />
         </main>
       </div>
+
+      <ChatDock />
 
       <QuickAddTrade
         open={logging}

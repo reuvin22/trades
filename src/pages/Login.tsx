@@ -17,7 +17,39 @@ import {
   SpinnerIcon,
   TrendIcon,
 } from '../components/Icons'
-import '../styles/login.css'
+import {
+  CARD,
+  FIELD,
+  FIELD_ASIDE,
+  FIELD_LABEL,
+  GOOGLE_BUTTON,
+  INPUT_PAIR,
+  LINK_BUTTON,
+  LOGIN_ASIDE,
+  LOGIN_BRAND,
+  LOGIN_CARD,
+  LOGIN_DIVIDER,
+  LOGIN_ERROR,
+  LOGIN_FOOT,
+  LOGIN_FORM,
+  LOGIN_MAIN,
+  LOGIN_PITCH,
+  LOGIN_POINTS,
+  LOGIN_SHELL,
+  LOGIN_SUB,
+  LOGIN_SUBMIT,
+  LOGIN_SWITCH,
+  LOGIN_TITLE,
+  POINT_BODY,
+  POINT_GLYPH,
+  POINT_TITLE,
+  REVEAL,
+  SETUP_LIST,
+  SETUP_NOTICE,
+  SETUP_SKIP,
+  SETUP_STEPS,
+  SETUP_TITLE,
+} from '../components/ui'
 
 type LoginProps = {
   theme: Theme
@@ -107,64 +139,64 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
   }
 
   return (
-    <div className="login">
+    <div className={LOGIN_SHELL}>
       <LoginBackdrop />
 
-      <div className="login-toggle">
+      <div className="absolute top-20 right-24 z-[3]">
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
-      <section className="login-aside">
+      <section className={LOGIN_ASIDE}>
         {/* Name sits directly above the tagline so a first-time visitor reads
             what the product is called before what it claims to do. */}
-        <div className="login-hero">
-          <h1 className="login-brand">RagDex</h1>
+        <div className="w-full max-w-460">
+          <h1 className={LOGIN_BRAND}>RagDex</h1>
 
-          <p className="login-pitch">
+          <p className={LOGIN_PITCH}>
             Know Your Trades.
             <br />
             Grow Your Edge.
           </p>
 
-          <ul className="login-points">
+          <ul className={LOGIN_POINTS}>
             {HIGHLIGHTS.map(({ icon: Icon, title, body }) => (
               <li key={title}>
-                <span className="point-glyph">
+                <span className={POINT_GLYPH}>
                   <Icon size={16} />
                 </span>
                 <div>
-                  <p className="point-title">{title}</p>
-                  <p className="point-body">{body}</p>
+                  <p className={POINT_TITLE}>{title}</p>
+                  <p className={POINT_BODY}>{body}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="login-foot">12,480 traders journaling this week</p>
+        <p className={LOGIN_FOOT}>12,480 traders journaling this week</p>
       </section>
 
-      <section className="login-main">
-        <div className="login-card card">
-          <h2 className="login-title">
+      <section className={LOGIN_MAIN}>
+        <div className={`${CARD} ${LOGIN_CARD}`}>
+          <h2 className={LOGIN_TITLE}>
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}
           </h2>
-          <p className="login-sub">
+          <p className={LOGIN_SUB}>
             {mode === 'signin'
               ? 'Sign in to pick up where your last session left off.'
               : 'We will email you a link to confirm the address before your journal opens.'}
           </p>
 
           {!isFirebaseConfigured && (
-            <div className="setup-notice" role="status">
-              <p className="setup-title">Firebase is not connected yet</p>
+            <div className={SETUP_NOTICE} role="status">
+              <p className={SETUP_TITLE}>Firebase is not connected yet</p>
               <p>
                 Project <code>{projectId ?? PROJECT}</code> needs its{' '}
                 <strong>web app</strong> config — a different credential from a service
                 account key, which has none of these values in it.
               </p>
               {IS_LOCAL ? (
-                <ol className="setup-steps">
+                <ol className={SETUP_STEPS}>
                   <li>
                     Open{' '}
                     <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
@@ -182,7 +214,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                   </li>
                 </ol>
               ) : (
-                <ol className="setup-steps">
+                <ol className={SETUP_STEPS}>
                   <li>
                     Set these in your host&rsquo;s environment variables (on Vercel:
                     Settings &rsaquo; Environment Variables, type <em>Config</em>).
@@ -194,7 +226,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                 </ol>
               )}
               {missingFirebaseKeys.length > 0 && (
-                <ul className="setup-list">
+                <ul className={SETUP_LIST}>
                   {missingFirebaseKeys.map((key) => (
                     <li key={key}>
                       <code>{key}</code>
@@ -202,7 +234,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                   ))}
                 </ul>
               )}
-              <button type="button" className="setup-skip" onClick={onPreview}>
+              <button type="button" className={SETUP_SKIP} onClick={onPreview}>
                 Preview the app without signing in
               </button>
             </div>
@@ -210,26 +242,26 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
 
           <button
             type="button"
-            className="google-button"
+            className={GOOGLE_BUTTON}
             onClick={handleGoogle}
             disabled={!isFirebaseConfigured || busy !== null}
           >
             {busy === 'google' ? (
-              <SpinnerIcon className="spinner" />
+              <SpinnerIcon className="animate-spin" />
             ) : (
               <GoogleIcon size={18} />
             )}
             {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
           </button>
 
-          <div className="login-divider">
+          <div className={LOGIN_DIVIDER}>
             <span>or</span>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit} noValidate>
+          <form className={LOGIN_FORM} onSubmit={handleSubmit} noValidate>
             {mode === 'register' && (
-              <label className="field">
-                <span className="field-label">Display name</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Display name</span>
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -240,8 +272,8 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
               </label>
             )}
 
-            <label className="field">
-              <span className="field-label">Email address</span>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Email address</span>
               <input
                 type="email"
                 value={email}
@@ -252,14 +284,14 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
               />
             </label>
 
-            <label className="field">
-              <span className="field-label">
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>
                 Password
                 {mode === 'signin' && (
-                  <span className="field-aside">At least 6 characters</span>
+                  <span className={FIELD_ASIDE}>At least 6 characters</span>
                 )}
               </span>
-              <span className="input-pair">
+              <span className={INPUT_PAIR}>
                 <input
                   type={reveal ? 'text' : 'password'}
                   value={password}
@@ -270,7 +302,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
                 />
                 <button
                   type="button"
-                  className="reveal"
+                  className={REVEAL}
                   onClick={() => setReveal((current) => !current)}
                   aria-pressed={reveal}
                 >
@@ -280,26 +312,26 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
             </label>
 
             {error && (
-              <p className="login-error" role="alert">
+              <p className={LOGIN_ERROR} role="alert">
                 {error}
               </p>
             )}
 
             <button
               type="submit"
-              className="login-submit"
+              className={LOGIN_SUBMIT}
               disabled={!isFirebaseConfigured || busy !== null}
             >
-              {busy === 'email' && <SpinnerIcon className="spinner" />}
+              {busy === 'email' && <SpinnerIcon className="animate-spin" />}
               {mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
-          <p className="login-switch">
+          <p className={LOGIN_SWITCH}>
             {mode === 'signin' ? 'New to RagDex? ' : 'Already have an account? '}
             <button
               type="button"
-              className="link-button"
+              className={LINK_BUTTON}
               onClick={() => {
                 setMode(mode === 'signin' ? 'register' : 'signin')
                 setError('')

@@ -21,6 +21,8 @@ export type NavItem = {
   route: string
   label: string
   icon: IconComponent
+  /** Shown, but not reachable — the screen behind it is not built yet. */
+  disabled?: boolean
 }
 
 export type NavSection = {
@@ -34,7 +36,7 @@ export const TRADER_NAV: NavItem[] = [
   { route: 'calendar', label: 'Calendar', icon: CalendarIcon },
   { route: 'analytics', label: 'Analytics', icon: AnalyticsIcon },
   { route: 'coach', label: 'AI Coach', icon: CoachIcon },
-  { route: 'settings', label: 'Settings', icon: SettingsIcon },
+  { route: 'settings', label: 'Settings', icon: SettingsIcon, disabled: true },
 ]
 
 export const ADMIN_NAV: NavSection[] = [

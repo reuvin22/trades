@@ -1,20 +1,56 @@
 import { useMemo, useState } from 'react'
+import { DayDetail, type DaySelection } from '../components/DayDetail'
 import { dayKey, tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  PlusIcon,
 } from '../components/Icons'
-import '../styles/calendar.css'
+import {
+  CAL_CLEAR,
+  CAL_COUNT,
+  CAL_DATE,
+  CAL_DAY,
+  CAL_DAY_BUTTON,
+  CAL_DAY_NEG,
+  CAL_DAY_OUTSIDE,
+  CAL_DAY_POS,
+  CAL_DAY_TODAY,
+  CAL_FILTER,
+  CAL_FILTERS,
+  CAL_FILTER_ACTIVE,
+  CAL_GRID,
+  CAL_HEAD,
+  CAL_MONTH,
+  CAL_MONTH_COUNT,
+  CAL_MONTH_TOTAL,
+  CAL_NAV,
+  CAL_PL,
+  CAL_ROW,
+  CAL_TODAY,
+  CAL_TOOLBAR,
+  CAL_WEEK,
+  CAL_WEEKDAY,
+  CAL_WEEKDAYS,
+  CAL_WEEK_PL,
+  CARD,
+  NEG,
+  POS,
+} from '../components/ui'
 
 type CalendarProps = {
   trades: StoredTrade[]
-  onQuickAdd: () => void
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+/*
+ * The week runs Monday to Sunday.
+ *
+ * Crypto does not close for the weekend, so Sunday is a trading day like any
+ * other — and putting it last means a Sunday fill counts towards the week it
+ * actually finished, with the weekly total sitting directly beside it.
+ */
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const WEEKS_SHOWN = 6
 
 const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
@@ -51,6 +87,12 @@ type DayCell = {
   inMonth: boolean
   netPl: number
   count: number
+  trades: StoredTrade[]
+}
+
+/** Monday-based weekday index: Monday is 0, Sunday is 6. */
+function weekdayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7
 }
 
 function Dropdown({
@@ -67,8 +109,8 @@ function Dropdown({
   const active = value !== 'all'
 
   return (
-    <label className={`cal-filter${active ? ' is-active' : ''}`}>
-      <span className="cal-filter-label">{label}</span>
+    <label className={`${CAL_FILTER} ${active ? CAL_FILTER_ACTIVE : ''}`}>
+      <span className="pointer-events-none">{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -81,12 +123,13 @@ function Dropdown({
   )
 }
 
-export function Calendar({ trades, onQuickAdd }: CalendarProps) {
+export function Calendar({ trades }: CalendarProps) {
   const [anchor, setAnchor] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
   })
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
+  const [selected, setSelected] = useState<DaySelection | null>(null)
 
   // Option lists come from what is actually in the journal, so the dropdowns
   // never offer a value that would return nothing.
@@ -141,28 +184,36 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
     [trades, filters],
   )
 
-  /** Daily totals, keyed by YYYY-MM-DD. */
+  /** Daily totals and the trades behind them, keyed by YYYY-MM-DD. */
   const byDay = useMemo(() => {
-    const totals = new Map<string, { netPl: number; count: number }>()
+    const totals = new Map<string, { netPl: number; count: number; trades: StoredTrade[] }>()
 
     for (const trade of filtered) {
       const when = tradeDate(trade)
       if (!when) continue
 
       const key = dayKey(when)
-      const entry = totals.get(key) ?? { netPl: 0, count: 0 }
+      const entry = totals.get(key) ?? { netPl: 0, count: 0, trades: [] }
       entry.netPl += trade.netPl ?? 0
       entry.count += 1
+      entry.trades.push(trade)
       totals.set(key, entry)
+    }
+
+    // Earliest fill first, so the day reads in the order it was traded.
+    for (const entry of totals.values()) {
+      entry.trades.sort(
+        (a, b) => (tradeDate(a)?.getTime() ?? 0) - (tradeDate(b)?.getTime() ?? 0),
+      )
     }
 
     return totals
   }, [filtered])
 
   const weeks = useMemo(() => {
-    // The grid always opens on the Sunday on or before the 1st.
+    // The grid always opens on the Monday on or before the 1st.
     const start = new Date(anchor)
-    start.setDate(1 - anchor.getDay())
+    start.setDate(1 - weekdayIndex(anchor))
 
     const rows: DayCell[][] = []
     for (let week = 0; week < WEEKS_SHOWN; week++) {
@@ -180,6 +231,7 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
           inMonth: date.getMonth() === anchor.getMonth(),
           netPl: totals?.netPl ?? 0,
           count: totals?.count ?? 0,
+          trades: totals?.trades ?? [],
         })
       }
       rows.push(row)
@@ -213,8 +265,8 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
 
   return (
     <>
-      <div className="cal-toolbar">
-        <div className="cal-filters">
+      <div className={CAL_TOOLBAR}>
+        <div className={CAL_FILTERS}>
           <Dropdown
             label="Side"
             value={filters.side}
@@ -249,26 +301,21 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
           {Object.values(filters).some((value) => value !== 'all') && (
             <button
               type="button"
-              className="cal-clear"
+              className={CAL_CLEAR}
               onClick={() => setFilters(EMPTY_FILTERS)}
             >
               Clear
             </button>
           )}
         </div>
-
-        <button type="button" className="cal-add" onClick={onQuickAdd}>
-          <PlusIcon size={15} />
-          Add Trade
-        </button>
       </div>
 
-      <div className="cal-head">
-        <button type="button" className="cal-today" onClick={goToThisMonth}>
+      <div className={CAL_HEAD}>
+        <button type="button" className={CAL_TODAY} onClick={goToThisMonth}>
           Today
         </button>
 
-        <div className="cal-nav">
+        <div className={CAL_NAV}>
           <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">
             <ChevronLeftIcon size={16} />
           </button>
@@ -277,24 +324,24 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
           </button>
         </div>
 
-        <h2 className="cal-month">{monthLabel.format(anchor)}</h2>
+        <h2 className={CAL_MONTH}>{monthLabel.format(anchor)}</h2>
 
-        <span className={`cal-month-total ${monthTotal.netPl >= 0 ? 'pos' : 'neg'}`}>
+        <span className={`${CAL_MONTH_TOTAL} ${monthTotal.netPl >= 0 ? POS : NEG}`}>
           {money(monthTotal.netPl)}
         </span>
-        <span className="cal-month-count">
+        <span className={CAL_MONTH_COUNT}>
           {monthTotal.count} {monthTotal.count === 1 ? 'trade' : 'trades'}
         </span>
       </div>
 
-      <div className="cal-grid card">
-        <div className="cal-row cal-weekdays">
+      <div className={`${CARD} ${CAL_GRID}`}>
+        <div className={`${CAL_ROW} ${CAL_WEEKDAYS}`}>
           {WEEKDAYS.map((day) => (
-            <span key={day} className="cal-weekday">
+            <span key={day} className={CAL_WEEKDAY}>
               {day}
             </span>
           ))}
-          <span className="cal-weekday" />
+          <span className={CAL_WEEKDAY} />
         </div>
 
         {weeks.map((week, index) => {
@@ -307,37 +354,48 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
           )
 
           return (
-            <div className="cal-row" key={index}>
+            <div className={CAL_ROW} key={index}>
               {week.map((cell) => {
                 const tone =
                   cell.count === 0 ? 'flat' : cell.netPl >= 0 ? 'pos' : 'neg'
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={cell.key}
-                    className={`cal-day is-${tone}${cell.inMonth ? '' : ' is-outside'}${
-                      cell.key === todayKey ? ' is-today' : ''
+                    aria-label={`${cell.date.toDateString()} — ${
+                      cell.count === 0
+                        ? 'no trades'
+                        : `${cell.count} ${cell.count === 1 ? 'trade' : 'trades'}, ${money(cell.netPl)}`
+                    }`}
+                    onClick={() =>
+                      setSelected({ date: cell.date, trades: cell.trades })
+                    }
+                    className={`${CAL_DAY} ${CAL_DAY_BUTTON} ${
+                      tone === 'pos' ? CAL_DAY_POS : tone === 'neg' ? CAL_DAY_NEG : ''
+                    } ${cell.inMonth ? '' : CAL_DAY_OUTSIDE} ${
+                      cell.key === todayKey ? CAL_DAY_TODAY : ''
                     }`}
                   >
-                    <span className="cal-date">{cell.date.getDate()}</span>
+                    <span data-date className={CAL_DATE}>{cell.date.getDate()}</span>
 
                     {cell.count > 0 && (
                       <>
-                        <span className="cal-pl">{money(cell.netPl)}</span>
-                        <span className="cal-count">
+                        <span data-pl className={CAL_PL}>{money(cell.netPl)}</span>
+                        <span className={CAL_COUNT}>
                           {cell.count} {cell.count === 1 ? 'Trade' : 'Trades'}
                         </span>
                       </>
                     )}
-                  </div>
+                  </button>
                 )
               })}
 
-              <div className="cal-week">
-                <span className={`cal-week-pl ${total.netPl >= 0 ? 'pos' : 'neg'}`}>
+              <div className={CAL_WEEK}>
+                <span className={`${CAL_WEEK_PL} ${total.netPl >= 0 ? POS : NEG}`}>
                   {total.count === 0 ? '$0' : money(total.netPl)}
                 </span>
-                <span className="cal-count">
+                <span className={CAL_COUNT}>
                   {total.count} {total.count === 1 ? 'Trade' : 'Trades'}
                 </span>
               </div>
@@ -345,6 +403,8 @@ export function Calendar({ trades, onQuickAdd }: CalendarProps) {
           )
         })}
       </div>
+
+      <DayDetail day={selected} onClose={() => setSelected(null)} />
     </>
   )
 }

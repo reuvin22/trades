@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react'
+import { Select } from '../components/Select'
+import { useToast } from '../lib/toast'
 import type { User } from 'firebase/auth'
 import {
   ACCOUNT_TYPES,
@@ -10,7 +12,31 @@ import {
 } from '../lib/profile'
 import { readableFirestoreError } from '../lib/trades'
 import { CameraIcon, SpinnerIcon, UserGlyphIcon } from '../components/Icons'
-import '../styles/account.css'
+import {
+  ACCOUNT_ACTIONS,
+  ACCOUNT_CARD,
+  ACCOUNT_GRID,
+  AVATAR_INITIALS,
+  CARD,
+  FIELD,
+  FIELD_GRID,
+  FIELD_HINT,
+  FIELD_LABEL,
+  IDENTITY,
+  IDENTITY_AVATAR,
+  META_LIST,
+  PAGE_HEAD,
+  PAGE_SUB,
+  PAGE_TITLE,
+  PILL,
+  PILL_ACCENT,
+  SAVE_ERROR,
+  SAVE_NOTE,
+  SECTION_TITLE,
+  TAG_ACTIVE,
+  TAG_CLOUD,
+  TAG_TOGGLE,
+} from '../components/ui'
 
 type ProfileProps = {
   user: User | null
@@ -69,6 +95,7 @@ export function Profile({ user, profile }: ProfileProps) {
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const toast = useToast()
 
   // Seeding during render is React's documented way to adjust state when props
   // arrive; doing it in an effect would render once with empty fields first.
@@ -113,8 +140,11 @@ export function Profile({ user, profile }: ProfileProps) {
         bio: form.bio.trim(),
       })
       setStatus('Profile saved.')
+      toast.success('Profile saved', 'Your details are up to date.')
     } catch (cause) {
-      setError(readableFirestoreError(cause))
+      const message = readableFirestoreError(cause)
+      setError(message)
+      toast.error('Could not save your profile', message)
     } finally {
       setSaving(false)
     }
@@ -127,30 +157,30 @@ export function Profile({ user, profile }: ProfileProps) {
 
   return (
     <>
-      <div className="page-head">
+      <div className={PAGE_HEAD}>
         <div>
-          <h2 className="page-title">My Profile</h2>
-          <p className="page-sub">
+          <h2 className={PAGE_TITLE}>My Profile</h2>
+          <p className={PAGE_SUB}>
             How your account is identified, and the defaults your journal uses.
           </p>
         </div>
       </div>
 
-      <form className="account-grid" onSubmit={handleSubmit}>
-        <section className="card account-card">
-          <h3 className="section-title">Identity</h3>
+      <form className={ACCOUNT_GRID} onSubmit={handleSubmit}>
+        <section className={`${CARD} ${ACCOUNT_CARD}`}>
+          <h3 className={SECTION_TITLE}>Identity</h3>
 
-          <div className="identity">
-            <span className="identity-avatar">
+          <div className={IDENTITY}>
+            <span className={IDENTITY_AVATAR}>
               {form.photoURL ? (
                 <img src={form.photoURL} alt="" referrerPolicy="no-referrer" />
               ) : (
-                <span className="avatar-initials">{initial}</span>
+                <span className={AVATAR_INITIALS}>{initial}</span>
               )}
             </span>
 
-            <label className="field identity-field">
-              <span className="field-label">
+            <label className={`${FIELD} min-w-0 flex-1 max-[900px]:w-full [&>span]:justify-start [&>span]:gap-7`}>
+              <span className={FIELD_LABEL}>
                 <CameraIcon />
                 Avatar image URL
               </span>
@@ -163,9 +193,9 @@ export function Profile({ user, profile }: ProfileProps) {
             </label>
           </div>
 
-          <div className="field-grid">
-            <label className="field span-2">
-              <span className="field-label">Display name</span>
+          <div className={FIELD_GRID}>
+            <label className={`${FIELD} col-span-2`}>
+              <span className={FIELD_LABEL}>Display name</span>
               <input
                 value={form.displayName}
                 onChange={(event) => update('displayName', event.target.value)}
@@ -174,14 +204,14 @@ export function Profile({ user, profile }: ProfileProps) {
               />
             </label>
 
-            <label className="field span-2">
-              <span className="field-label">Email address</span>
+            <label className={`${FIELD} col-span-2`}>
+              <span className={FIELD_LABEL}>Email address</span>
               <input value={user?.email ?? ''} readOnly disabled />
             </label>
 
-            <label className="field span-4">
-              <span className="field-label">Account type</span>
-              <select
+            <label className={`${FIELD} col-span-full`}>
+              <span className={FIELD_LABEL}>Account type</span>
+              <Select
                 value={form.accountType}
                 onChange={(event) =>
                   update('accountType', event.target.value as AccountType)
@@ -192,14 +222,14 @@ export function Profile({ user, profile }: ProfileProps) {
                     {type.label}
                   </option>
                 ))}
-              </select>
-              <span className="field-hint">
+              </Select>
+              <span className={FIELD_HINT}>
                 {ACCOUNT_TYPES.find((type) => type.value === form.accountType)?.blurb}
               </span>
             </label>
 
-            <label className="field span-4">
-              <span className="field-label">Short bio</span>
+            <label className={`${FIELD} col-span-full`}>
+              <span className={FIELD_LABEL}>Short bio</span>
               <textarea
                 rows={3}
                 value={form.bio}
@@ -210,13 +240,13 @@ export function Profile({ user, profile }: ProfileProps) {
           </div>
         </section>
 
-        <section className="card account-card">
-          <h3 className="section-title">Journal defaults</h3>
+        <section className={`${CARD} ${ACCOUNT_CARD}`}>
+          <h3 className={SECTION_TITLE}>Journal defaults</h3>
 
-          <div className="field-grid">
-            <label className="field span-2">
-              <span className="field-label">Time zone</span>
-              <select
+          <div className={FIELD_GRID}>
+            <label className={`${FIELD} col-span-2`}>
+              <span className={FIELD_LABEL}>Time zone</span>
+              <Select
                 value={form.timezone}
                 onChange={(event) => update('timezone', event.target.value)}
               >
@@ -225,12 +255,12 @@ export function Profile({ user, profile }: ProfileProps) {
                     {zone}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
-            <label className="field">
-              <span className="field-label">Base currency</span>
-              <select
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Base currency</span>
+              <Select
                 value={form.currency}
                 onChange={(event) => update('currency', event.target.value)}
               >
@@ -239,11 +269,11 @@ export function Profile({ user, profile }: ProfileProps) {
                     {code}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
-            <label className="field">
-              <span className="field-label">Opening balance</span>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Opening balance</span>
               <input
                 type="number"
                 step="any"
@@ -254,9 +284,9 @@ export function Profile({ user, profile }: ProfileProps) {
               />
             </label>
 
-            <label className="field span-2">
-              <span className="field-label">Trading style</span>
-              <select
+            <label className={`${FIELD} col-span-2`}>
+              <span className={FIELD_LABEL}>Trading style</span>
+              <Select
                 value={form.tradingStyle}
                 onChange={(event) => update('tradingStyle', event.target.value)}
               >
@@ -265,17 +295,17 @@ export function Profile({ user, profile }: ProfileProps) {
                     {style}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
-            <div className="field span-4">
-              <span className="field-label">Markets you trade</span>
-              <div className="tag-cloud">
+            <div className={`${FIELD} col-span-full`}>
+              <span className={FIELD_LABEL}>Markets you trade</span>
+              <div className={TAG_CLOUD}>
                 {MARKETS.map((market) => (
                   <button
                     key={market}
                     type="button"
-                    className={`tag-toggle${form.markets.includes(market) ? ' is-active' : ''}`}
+                    className={`${TAG_TOGGLE} ${form.markets.includes(market) ? TAG_ACTIVE : ''}`}
                     aria-pressed={form.markets.includes(market)}
                     onClick={() => toggleMarket(market)}
                   >
@@ -287,20 +317,20 @@ export function Profile({ user, profile }: ProfileProps) {
           </div>
         </section>
 
-        <div className="account-actions card">
-          <p className={`save-note${error ? ' is-error' : ''}`} role="status">
+        <div className={`${CARD} ${ACCOUNT_ACTIONS}`}>
+          <p className={`${SAVE_NOTE} ${error ? SAVE_ERROR : ''}`} role="status">
             {error || status || 'Changes are stored against your account.'}
           </p>
-          <button type="submit" className="pill is-accent" disabled={saving || !user}>
-            {saving && <SpinnerIcon className="spinner" size={14} />}
+          <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={saving || !user}>
+            {saving && <SpinnerIcon className="animate-spin" size={14} />}
             {saving ? 'Saving…' : 'Save changes'}
           </button>
         </div>
       </form>
 
-      <section className="card account-card">
-        <h3 className="section-title">Account</h3>
-        <dl className="meta-list">
+      <section className={`${CARD} ${ACCOUNT_CARD}`}>
+        <h3 className={SECTION_TITLE}>Account</h3>
+        <dl className={META_LIST}>
           <div>
             <dt>
               <UserGlyphIcon size={15} />

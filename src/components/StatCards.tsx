@@ -3,6 +3,20 @@ import { AnimatedNumber } from './AnimatedNumber'
 import { currency } from '../data/dashboard'
 import { formatFactor, type DerivedStats } from '../lib/stats'
 import { TrendIcon } from './Icons'
+import {
+  CARD,
+  CARD_HOVER,
+  DELTA,
+  METER,
+  METER_FILL,
+  ROW_STAGGER,
+  STAT_CARD,
+  STAT_FOOT,
+  STAT_LABEL,
+  STAT_ROW,
+  STAT_VALUE,
+  TABULAR,
+} from './ui'
 
 type StatCardProps = {
   label: string
@@ -13,27 +27,28 @@ type StatCardProps = {
 
 function StatCard({ label, value, tone = 'default', children }: StatCardProps) {
   const toneClass =
-    tone === 'positive' ? ' is-positive' : tone === 'negative' ? ' is-negative' : ''
+    tone === 'positive' ? 'text-green' : tone === 'negative' ? 'text-red' : ''
 
   return (
-    <article className="card stat-card">
-      <p className="stat-label">{label}</p>
-      <p className={`stat-value${toneClass}`}>{value}</p>
-      <div className="stat-foot">{children}</div>
+    <article className={`${CARD} ${CARD_HOVER} ${STAT_CARD}`}>
+      <p className={STAT_LABEL}>{label}</p>
+      <p className={`${STAT_VALUE} ${TABULAR} ${toneClass}`}>{value}</p>
+      <div className={STAT_FOOT}>{children}</div>
     </article>
   )
 }
 
 export function StatCards({ stats }: { stats: DerivedStats }) {
   const winRate = Math.round(stats.winRate)
+  const down = 'text-red [&>svg]:-scale-y-100'
 
   return (
-    <div className="stat-row">
+    <div className={`${STAT_ROW} ${ROW_STAGGER}`}>
       <StatCard
         label="Net P/L"
         value={<AnimatedNumber value={stats.netPl} format={(n) => currency.format(n)} />}
       >
-        <span className={stats.monthPct >= 0 ? 'delta' : 'delta is-down'}>
+        <span className={`${DELTA} ${stats.monthPct >= 0 ? '' : down}`}>
           <TrendIcon />
           {stats.monthPct >= 0 ? '+' : ''}
           {stats.monthPct.toFixed(1)}% this month
@@ -59,8 +74,11 @@ export function StatCards({ stats }: { stats: DerivedStats }) {
         label="Win Rate"
         value={<AnimatedNumber value={stats.winRate} format={(n) => `${Math.round(n)}%`} />}
       >
-        <div className="meter" role="img" aria-label={`${winRate} percent win rate`}>
-          <span style={{ width: `${winRate}%` }} />
+        <div className={METER} role="img" aria-label={`${winRate} percent win rate`}>
+          <span
+            className={`${METER_FILL} animate-meter origin-left`}
+            style={{ width: `${winRate}%` }}
+          />
         </div>
       </StatCard>
 

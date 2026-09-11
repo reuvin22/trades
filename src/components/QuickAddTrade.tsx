@@ -11,7 +11,43 @@ import {
   type TradeEntry,
 } from '../data/tradeForm'
 import { readableFirestoreError } from '../lib/trades'
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, SpinnerIcon } from './Icons'
+import { useToast } from '../lib/toast'
+import { Combobox } from './Combobox'
+import { Select } from './Select'
+import { ArrowDownIcon, ArrowUpIcon, CloseIcon, SpinnerIcon } from './Icons'
+import {
+  ANSWER,
+  COMPLIANCE,
+  COMPLIANCE_ROW,
+  FIELD,
+  FIELD_GRID,
+  FIELD_GROUP,
+  FIELD_LABEL,
+  FIELD_LEGEND,
+  GROUP_GLYPH,
+  INPUT_PAIR,
+  MODAL,
+  MODAL_BODY,
+  MODAL_BUTTONS,
+  MODAL_CLOSE,
+  MODAL_FOOT,
+  MODAL_FORM,
+  MODAL_HEAD,
+  MODAL_NOTE,
+  MODAL_SUB,
+  MODAL_TITLE,
+  MODAL_WIDE,
+  PILL,
+  PILL_ACCENT,
+  TAG_ACTIVE,
+  TAG_CLOUD,
+  TAG_TOGGLE,
+  TOGGLE,
+  TOGGLE_GROUP,
+  TOGGLE_LONG,
+  TOGGLE_SHORT,
+  YES_NO,
+} from './ui'
 
 type QuickAddTradeProps = {
   open: boolean
@@ -31,6 +67,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
   const [showGaps, setShowGaps] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const toast = useToast()
   const formId = useId()
 
   // <dialog> gives us the focus trap, backdrop and Esc handling for free.
@@ -77,10 +114,17 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
 
     try {
       await onSave(trade)
+      // The dialog is about to close, so the confirmation has to live outside it.
+      toast.success(
+        'Trade logged',
+        `${trade.ticker.trim() || 'Your trade'} is in the journal.`,
+      )
       reset()
       onClose()
     } catch (cause) {
-      setSaveError(readableFirestoreError(cause))
+      const message = readableFirestoreError(cause)
+      setSaveError(message)
+      toast.error('Could not save the trade', message)
     } finally {
       setSaving(false)
     }
@@ -91,7 +135,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
   return (
     <dialog
       ref={dialog}
-      className="modal"
+      className={`${MODAL} ${MODAL_WIDE}`}
       aria-labelledby={`${formId}-title`}
       onCancel={(event) => {
         event.preventDefault()
@@ -102,32 +146,32 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
         if (event.target === dialog.current) onClose()
       }}
     >
-      <form className="modal-form" onSubmit={handleSubmit}>
-        <header className="modal-head">
+      <form className={MODAL_FORM} onSubmit={handleSubmit}>
+        <header className={MODAL_HEAD}>
           <div>
-            <h2 className="modal-title" id={`${formId}-title`}>
+            <h2 className={MODAL_TITLE} id={`${formId}-title`}>
               Log a Trade
             </h2>
-            <p className="modal-sub">
+            <p className={MODAL_SUB}>
               Execution, context and mindset — the three things that make a journal
               worth reviewing.
             </p>
           </div>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
-            <PlusIcon size={20} />
+          <button type="button" className={MODAL_CLOSE} onClick={onClose} aria-label="Close">
+            <CloseIcon size={18} />
           </button>
         </header>
 
-        <div className="modal-body">
-          <fieldset className="field-group">
-            <legend>
-              <span className="group-glyph">&#128202;</span>
+        <div className={MODAL_BODY}>
+          <fieldset className={FIELD_GROUP}>
+            <legend className={FIELD_LEGEND}>
+              <span className={GROUP_GLYPH}>&#128202;</span>
               Essential trade data
             </legend>
 
-            <div className="field-grid">
-              <label className="field span-2">
-                <span className="field-label">
+            <div className={FIELD_GRID}>
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>
                   Instrument / Ticker <b>*</b>
                 </span>
                 <input
@@ -138,15 +182,19 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <div className="field span-2">
-                <span className="field-label">Direction</span>
-                <div className="toggle-group">
+              <div className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Direction</span>
+                <div className={TOGGLE_GROUP}>
                   {(['Long', 'Short'] as Direction[]).map((option) => (
                     <button
                       key={option}
                       type="button"
-                      className={`toggle ${option.toLowerCase()}${
-                        trade.direction === option ? ' is-active' : ''
+                      className={`${TOGGLE} ${
+                        trade.direction !== option
+                          ? ''
+                          : option === 'Long'
+                            ? TOGGLE_LONG
+                            : TOGGLE_SHORT
                       }`}
                       aria-pressed={trade.direction === option}
                       onClick={() => update('direction', option)}
@@ -158,11 +206,11 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 </div>
               </div>
 
-              <label className="field span-2">
-                <span className="field-label">
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>
                   Position size <b>*</b>
                 </span>
-                <span className="input-pair">
+                <span className={INPUT_PAIR}>
                   <input
                     type="number"
                     step="any"
@@ -171,7 +219,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                     onChange={(event) => update('size', event.target.value)}
                     placeholder="150"
                   />
-                  <select
+                  <Select
                     value={trade.sizeUnit}
                     onChange={(event) => update('sizeUnit', event.target.value as SizeUnit)}
                     aria-label="Size unit"
@@ -179,12 +227,12 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                     <option>Shares</option>
                     <option>Lots</option>
                     <option>Contracts</option>
-                  </select>
+                  </Select>
                 </span>
               </label>
 
-              <label className="field">
-                <span className="field-label">
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>
                   Entry price <b>*</b>
                 </span>
                 <input
@@ -196,8 +244,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field">
-                <span className="field-label">Exit price</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Exit price</span>
                 <input
                   type="number"
                   step="any"
@@ -207,8 +255,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field">
-                <span className="field-label">
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>
                   Entry timestamp <b>*</b>
                 </span>
                 <input
@@ -218,8 +266,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field">
-                <span className="field-label">Exit timestamp</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Exit timestamp</span>
                 <input
                   type="datetime-local"
                   value={trade.exitAt}
@@ -229,30 +277,25 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
             </div>
           </fieldset>
 
-          <fieldset className="field-group">
-            <legend>
-              <span className="group-glyph">&#128204;</span>
+          <fieldset className={FIELD_GROUP}>
+            <legend className={FIELD_LEGEND}>
+              <span className={GROUP_GLYPH}>&#128204;</span>
               Strategy &amp; risk parameters
             </legend>
 
-            <div className="field-grid">
-              <label className="field span-2">
-                <span className="field-label">Setup / Strategy ID</span>
-                <input
-                  list={`${formId}-setups`}
+            <div className={FIELD_GRID}>
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Setup / Strategy ID</span>
+                <Combobox
                   value={trade.setup}
-                  onChange={(event) => update('setup', event.target.value)}
+                  onChange={(setup) => update('setup', setup)}
+                  options={SETUPS}
                   placeholder="Pick one or name your own"
                 />
-                <datalist id={`${formId}-setups`}>
-                  {SETUPS.map((setup) => (
-                    <option key={setup} value={setup} />
-                  ))}
-                </datalist>
               </label>
 
-              <label className="field span-2">
-                <span className="field-label">Chart screenshot</span>
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Chart screenshot</span>
                 <input
                   type="url"
                   value={trade.screenshot}
@@ -261,8 +304,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field">
-                <span className="field-label">Stop-loss</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Stop-loss</span>
                 <input
                   type="number"
                   step="any"
@@ -272,8 +315,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field">
-                <span className="field-label">Take-profit</span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Take-profit</span>
                 <input
                   type="number"
                   step="any"
@@ -283,8 +326,8 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 />
               </label>
 
-              <label className="field span-4">
-                <span className="field-label">Catalyst / Rationale</span>
+              <label className={`${FIELD} col-span-full`}>
+                <span className={FIELD_LABEL}>Catalyst / Rationale</span>
                 <textarea
                   rows={3}
                   value={trade.rationale}
@@ -295,16 +338,16 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
             </div>
           </fieldset>
 
-          <fieldset className="field-group">
-            <legend>
-              <span className="group-glyph">&#128161;</span>
+          <fieldset className={FIELD_GROUP}>
+            <legend className={FIELD_LEGEND}>
+              <span className={GROUP_GLYPH}>&#128161;</span>
               Outcome &amp; behavioral metrics
             </legend>
 
-            <div className="field-grid">
-              <label className="field span-2">
-                <span className="field-label">Emotional state before</span>
-                <select
+            <div className={FIELD_GRID}>
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Emotional state before</span>
+                <Select
                   value={trade.emotionBefore}
                   onChange={(event) => update('emotionBefore', event.target.value)}
                 >
@@ -314,12 +357,12 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                       {emotion}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
-              <label className="field span-2">
-                <span className="field-label">Emotional state during</span>
-                <select
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Emotional state during</span>
+                <Select
                   value={trade.emotionDuring}
                   onChange={(event) => update('emotionDuring', event.target.value)}
                 >
@@ -329,22 +372,26 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                       {emotion}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
-              <div className="field span-4">
-                <span className="field-label">Plan compliance</span>
-                <div className="compliance">
+              <div className={`${FIELD} col-span-full`}>
+                <span className={FIELD_LABEL}>Plan compliance</span>
+                <div className={COMPLIANCE}>
                   {COMPLIANCE_ROWS.map((row) => (
-                    <div className="compliance-row" key={row.key}>
+                    <div className={COMPLIANCE_ROW} key={row.key}>
                       <span>{row.label}</span>
-                      <div className="yes-no">
+                      <div className={YES_NO}>
                         {(['yes', 'no'] as Compliance[]).map((answer) => (
                           <button
                             key={answer}
                             type="button"
-                            className={`answer ${answer}${
-                              trade[row.key] === answer ? ' is-active' : ''
+                            className={`${ANSWER} ${
+                              trade[row.key] !== answer
+                                ? ''
+                                : answer === 'yes'
+                                  ? TOGGLE_LONG
+                                  : TOGGLE_SHORT
                             }`}
                             aria-pressed={trade[row.key] === answer}
                             onClick={() =>
@@ -360,16 +407,14 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 </div>
               </div>
 
-              <div className="field span-4">
-                <span className="field-label">Mistakes tag</span>
-                <div className="tag-cloud">
+              <div className={`${FIELD} col-span-full`}>
+                <span className={FIELD_LABEL}>Mistakes tag</span>
+                <div className={TAG_CLOUD}>
                   {MISTAKE_TAGS.map((tag) => (
                     <button
                       key={tag}
                       type="button"
-                      className={`tag-toggle${
-                        trade.mistakes.includes(tag) ? ' is-active' : ''
-                      }`}
+                      className={`${TAG_TOGGLE} ${trade.mistakes.includes(tag) ? TAG_ACTIVE : ''}`}
                       aria-pressed={trade.mistakes.includes(tag)}
                       onClick={() => toggleMistake(tag)}
                     >
@@ -383,9 +428,9 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
 
         </div>
 
-        <footer className="modal-foot">
+        <footer className={MODAL_FOOT}>
           <p
-            className="modal-note"
+            className={MODAL_NOTE}
             role={saveError || (showGaps && gaps.length > 0) ? 'alert' : undefined}
           >
             {saveError ||
@@ -394,12 +439,12 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                 : 'Fields marked * are required.')}
           </p>
 
-          <div className="modal-buttons">
-            <button type="button" className="pill" onClick={onClose} disabled={saving}>
+          <div className={MODAL_BUTTONS}>
+            <button type="button" className={PILL} onClick={onClose} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="pill is-accent" disabled={saving}>
-              {saving && <SpinnerIcon className="spinner" size={14} />}
+            <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={saving}>
+              {saving && <SpinnerIcon className="animate-spin" size={14} />}
               {saving ? 'Saving…' : 'Save Trade'}
             </button>
           </div>

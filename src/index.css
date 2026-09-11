@@ -1,190 +1,485 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
 
-/* Dark is the product's native look and the default when nothing is stored. */
-:root,
-:root[data-theme='dark'] {
-  color-scheme: dark;
+/*
+ * The design system, as Tailwind theme tokens.
+ *
+ * Every value here becomes a utility: --color-panel gives bg-panel/text-panel,
+ * --radius-lg gives rounded-lg, --shadow-card gives shadow-card. Nothing in
+ * this project should declare a raw colour; reach for the token.
+ *
+ * Two deliberate choices worth knowing about:
+ *
+ *   --spacing is 1px, not the stock 0.25rem. Every spacing utility is
+ *   therefore literal pixels — p-30 is 30px, gap-22 is 22px. The design was
+ *   authored in pixels and this keeps it that way, but it does mean p-4 is
+ *   4px here rather than the 16px you may expect from other Tailwind work.
+ *
+ *   Dark is the product's native look, so the dark palette is the base and
+ *   the light theme overrides it below. Utilities read var(--color-*), so a
+ *   theme switch is a variable swap and nothing has to carry dark: variants.
+ */
+@theme {
+  --spacing: 1px;
 
   /* Surfaces */
-  --bg-deep: #06050f;
-  --glow-a: rgba(93, 63, 168, 0.42);
-  --glow-b: rgba(58, 40, 122, 0.28);
-  --bg-top: #0b0a1b;
-  --panel: rgba(21, 20, 43, 0.72);
-  --panel-solid: #15142b;
-  --panel-inset: rgba(10, 9, 24, 0.6);
-  --sidebar-top: #1d1252;
-  --sidebar-mid: #150e3b;
-  --sidebar-bottom: #0c0926;
+  --color-bg-deep: #06050f;
+  --color-bg-top: #0b0a1b;
+  --color-glow-a: rgba(93, 63, 168, 0.42);
+  --color-glow-b: rgba(58, 40, 122, 0.28);
+  --color-panel: rgba(21, 20, 43, 0.72);
+  --color-panel-solid: #15142b;
+  --color-panel-inset: rgba(10, 9, 24, 0.6);
+  --color-sidebar-top: #1d1252;
+  --color-sidebar-mid: #150e3b;
+  --color-sidebar-bottom: #0c0926;
 
   /* Neutral overlays — the tint that separates one layer from the next. */
-  --tint-1: rgba(255, 255, 255, 0.045);
-  --tint-2: rgba(255, 255, 255, 0.075);
-  --tint-3: rgba(255, 255, 255, 0.12);
+  --color-tint-1: rgba(255, 255, 255, 0.045);
+  --color-tint-2: rgba(255, 255, 255, 0.075);
+  --color-tint-3: rgba(255, 255, 255, 0.12);
 
   /* Lines */
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.13);
-  --grid: rgba(255, 255, 255, 0.09);
+  --color-line: rgba(255, 255, 255, 0.07);
+  --color-line-strong: rgba(255, 255, 255, 0.13);
+  --color-grid: rgba(255, 255, 255, 0.09);
 
   /* Type */
-  --text: #eceaf8;
-  --text-strong: #ffffff;
-  --text-dim: #a9a7c4;
-  --text-muted: #7b799a;
+  --color-fg: #eceaf8;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #a9a7c4;
+  --color-fg-muted: #7b799a;
 
   /* Accents */
-  --accent: #7c6cf6;
-  --accent-strong: #8f83ff;
-  --accent-ink: #ffffff;
-  --green: #4ade80;
-  --red: #f2555a;
-  --amber: #f6c66c;
-  --cyan: #3fd8ee;
+  --color-accent: #7c6cf6;
+  --color-accent-strong: #8f83ff;
+  --color-accent-ink: #ffffff;
+  --color-green: #4ade80;
+  --color-red: #f2555a;
+  --color-amber: #f6c66c;
+  --color-cyan: #3fd8ee;
 
-  /* Charts */
-  --chart-line: #f3f1ff;
-  --chart-glow: rgba(180, 170, 255, 0.4);
-  --chart-fill-top: rgba(201, 198, 255, 0.85);
-  --chart-fill-mid: rgba(143, 134, 239, 0.35);
-  --chart-fill-bottom: rgba(91, 79, 214, 0.04);
+  /* Charts — referenced by SVG gradient stops as well as utilities. */
+  --color-chart-line: #f3f1ff;
+  --color-chart-glow: rgba(180, 170, 255, 0.4);
+  --color-chart-fill-top: rgba(201, 198, 255, 0.85);
+  --color-chart-fill-mid: rgba(143, 134, 239, 0.35);
+  --color-chart-fill-bottom: rgba(91, 79, 214, 0.04);
 
-  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.3);
-  --shadow-pop: 0 14px 34px rgba(0, 0, 0, 0.5);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --font-sans: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+
+  --ease-out: cubic-bezier(0.22, 0.8, 0.3, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+
+  /* Animations. Keyframes live in the theme so the utilities that drive
+     them (animate-rise, animate-pop) are the only thing components name.
+     Everything here moves transform and opacity only, so it stays on the
+     compositor; the reduced-motion guard in the base layer switches the lot
+     off. */
+  --animate-rise: rise 0.5s var(--ease-out) backwards;
+  --animate-fade: fade 0.55s var(--ease-out) backwards;
+  --animate-pop: pop 0.4s var(--ease-spring) backwards;
+  --animate-slide-left: slide-from-left 0.42s var(--ease-out) backwards;
+  --animate-slide-right: slide-from-right 0.45s var(--ease-out) backwards;
+  --animate-draw: draw 1.15s 0.15s var(--ease-out) backwards;
+  --animate-grow-up: grow-up 0.4s var(--ease-out) backwards;
+  --animate-donut: donut-sweep 0.85s 0.15s var(--ease-out) backwards;
+  --animate-meter: meter-fill 0.9s 0.25s var(--ease-out) backwards;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+
+  @keyframes slide-from-left {
+    from {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+  }
+
+  @keyframes slide-from-right {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+  }
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes grow-up {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  @keyframes donut-sweep {
+    from {
+      opacity: 0;
+      transform: rotate(-200deg) scale(0.86);
+    }
+  }
+
+  @keyframes meter-fill {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  /* Same reasoning as drop-in: the menu moves, its contents do not fade. */
+  @keyframes menu-in {
+    from {
+      transform: translateY(-6px) scale(0.98);
+    }
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.97);
+    }
+  }
+
+  --animate-spin-once: spin-once 0.9s 0.4s var(--ease-out) backwards;
+
+  @keyframes spin-once {
+    from {
+      transform: rotate(-180deg);
+    }
+  }
+
+  /*
+   * Dropdown panels unroll from the control. Deliberately no opacity in the
+   * keyframe: fading in from zero means the options are unreadable for the
+   * first frames, which reads as the list being slow to load rather than as
+   * motion. The data is legible immediately and only the panel moves.
+   */
+  --animate-drop: drop-in 0.13s var(--ease-out);
+
+  @keyframes drop-in {
+    from {
+      transform: translateY(-5px) scaleY(0.97);
+    }
+  }
+
+  /* The chat dock opens upward from a launcher in the corner, so it rises
+     rather than drops. No opacity here either — the conversation should be
+     readable from the first frame. */
+  /* Toasts rise into the corner and leave the way they came. */
+  --animate-toast-in: toast-in 0.22s var(--ease-out);
+  --animate-toast-out: toast-out 0.18s ease-in forwards;
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+    }
+  }
+
+  @keyframes toast-out {
+    to {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+
+  --animate-dock: dock-in 0.18s var(--ease-out);
+
+  @keyframes dock-in {
+    from {
+      transform: translateY(10px) scale(0.98);
+    }
+  }
+
+  --animate-typing: typing-pulse 1.2s infinite ease-in-out;
+
+  @keyframes typing-pulse {
+    0%,
+    60%,
+    100% {
+      opacity: 0.35;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* The login backdrop: three drifting orbs, three drawing ribbons and a
+     panning grid veil. Long, slow and infinite, so they read as ambience
+     rather than as something asking to be watched. */
+  --animate-ribbon: ribbon-draw 9s ease-in-out infinite, ribbon-drift 17s ease-in-out infinite alternate;
+  --animate-orb-a: float-a 19s ease-in-out infinite alternate;
+  --animate-orb-b: float-b 23s ease-in-out infinite alternate;
+  --animate-orb-c: float-c 27s ease-in-out infinite alternate;
+  --animate-veil: veil-pan 34s linear infinite;
+  --animate-card-in: card-in 0.7s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+  --animate-shake: shake 0.4s ease;
+
+  @keyframes ribbon-draw {
+    0% {
+      stroke-dashoffset: 1;
+    }
+    45%,
+    62% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -1;
+    }
+  }
+
+  @keyframes ribbon-drift {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-2%, -3%, 0);
+    }
+  }
+
+  @keyframes float-a {
+    to {
+      transform: translate3d(90px, 70px, 0) scale(1.14);
+    }
+  }
+
+  @keyframes float-b {
+    to {
+      transform: translate3d(-70px, -90px, 0) scale(1.2);
+    }
+  }
+
+  @keyframes float-c {
+    to {
+      transform: translate3d(-90px, 110px, 0) scale(0.88);
+    }
+  }
+
+  @keyframes veil-pan {
+    to {
+      background-position: 64px 64px;
+    }
+  }
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(26px) scale(0.97);
+    }
+  }
+
+  @keyframes shake {
+    25% {
+      transform: translateX(-4px);
+    }
+    50% {
+      transform: translateX(4px);
+    }
+    75% {
+      transform: translateX(-2px);
+    }
+  }
+
+  --animate-pulse-brand: pulse-brand 1.6s ease-in-out infinite;
+
+  @keyframes pulse-brand {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  /* The width at which the sidebar stops being permanent and becomes a
+     drawer. Used as max-shell: throughout the shell. */
+  --breakpoint-shell: 961px;
 }
 
+/*
+ * Shadows live here rather than in @theme, and this is not a style choice.
+ *
+ * Tailwind resolves --shadow-* theme keys at build time and bakes the literal
+ * value into the utility — .shadow-card compiles to the colour itself, not to
+ * var(--shadow-card). A theme override of a --shadow-* key is therefore read
+ * by nobody, and light mode silently renders the dark shadow. Colours and radii
+ * do compile to var(), which is why only these three need the treatment.
+ *
+ * Declared as plain custom properties and used as shadow-[var(--shadow-card)],
+ * they resolve on the element and follow the theme like everything else.
+ */
+:root {
+  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 14px 34px rgba(0, 0, 0, 0.5);
+  /* What a card rises to on hover. Separate from --shadow-pop so a card being
+     pointed at does not borrow the depth of a dialog floating over the page. */
+  --shadow-lift: 0 16px 38px rgba(0, 0, 0, 0.42);
+}
+
+/* Light theme. Only the tokens change; no utility anywhere knows about it. */
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --bg-deep: #eceaf6;
-  --glow-a: rgba(150, 130, 245, 0.3);
-  --glow-b: rgba(120, 110, 220, 0.16);
-  --bg-top: #f6f5fc;
-  --panel: rgba(255, 255, 255, 0.86);
-  --panel-solid: #ffffff;
-  --panel-inset: rgba(240, 238, 250, 0.85);
-  --sidebar-top: #ffffff;
-  --sidebar-mid: #f3f1fb;
-  --sidebar-bottom: #e8e5f7;
+  --color-bg-deep: #eceaf6;
+  --color-bg-top: #f6f5fc;
+  --color-glow-a: rgba(150, 130, 245, 0.3);
+  --color-glow-b: rgba(120, 110, 220, 0.16);
+  --color-panel: rgba(255, 255, 255, 0.86);
+  --color-panel-solid: #ffffff;
+  --color-panel-inset: rgba(240, 238, 250, 0.85);
+  --color-sidebar-top: #ffffff;
+  --color-sidebar-mid: #f3f1fb;
+  --color-sidebar-bottom: #e8e5f7;
 
-  --tint-1: rgba(31, 24, 78, 0.04);
-  --tint-2: rgba(31, 24, 78, 0.07);
-  --tint-3: rgba(31, 24, 78, 0.11);
+  --color-tint-1: rgba(31, 24, 78, 0.04);
+  --color-tint-2: rgba(31, 24, 78, 0.07);
+  --color-tint-3: rgba(31, 24, 78, 0.11);
 
-  --border: rgba(31, 24, 78, 0.1);
-  --border-strong: rgba(31, 24, 78, 0.2);
-  --grid: rgba(31, 24, 78, 0.13);
+  --color-line: rgba(31, 24, 78, 0.1);
+  --color-line-strong: rgba(31, 24, 78, 0.2);
+  --color-grid: rgba(31, 24, 78, 0.13);
 
-  --text: #1b1739;
-  --text-strong: #0e0b26;
-  --text-dim: #4f4a72;
-  --text-muted: #74708f;
+  --color-fg: #1b1739;
+  --color-fg-strong: #0e0b26;
+  --color-fg-dim: #4f4a72;
+  --color-fg-muted: #74708f;
 
-  --accent: #6353e8;
-  --accent-strong: #5443dd;
-  --accent-ink: #ffffff;
-  --green: #17914f;
-  --red: #d02c37;
-  --amber: #b7791f;
-  --cyan: #0d8ba4;
+  --color-accent: #6353e8;
+  --color-accent-strong: #5443dd;
+  --color-accent-ink: #ffffff;
+  --color-green: #17914f;
+  --color-red: #d02c37;
+  --color-amber: #b7791f;
+  --color-cyan: #0d8ba4;
 
-  --chart-line: #4b3ecb;
-  --chart-glow: rgba(99, 83, 232, 0.22);
-  --chart-fill-top: rgba(124, 108, 246, 0.42);
-  --chart-fill-mid: rgba(124, 108, 246, 0.18);
-  --chart-fill-bottom: rgba(124, 108, 246, 0.02);
+  --color-chart-line: #4b3ecb;
+  --color-chart-glow: rgba(99, 83, 232, 0.22);
+  --color-chart-fill-top: rgba(124, 108, 246, 0.42);
+  --color-chart-fill-mid: rgba(124, 108, 246, 0.18);
+  --color-chart-fill-bottom: rgba(124, 108, 246, 0.02);
 
-  --shadow-card: 0 14px 34px rgba(38, 30, 96, 0.09);
-  --shadow-pop: 0 14px 34px rgba(38, 30, 96, 0.18);
+  /*
+   * Light mode sits flat. A 34px drop on a pale ground reads as a card
+   * hovering above the page rather than as part of it, and with ten or more
+   * cards on a screen the whole layout lifts off. The border already does the
+   * separating here, so the shadow only has to keep an edge from dissolving
+   * into the background. Dark mode keeps its depth: there, the shadow is what
+   * separates one dark surface from another.
+   */
+  --shadow-card: 0 1px 2px rgba(38, 30, 96, 0.06);
+  /* Only for things genuinely overlapping the page — menus, dialogs,
+     tooltips — where the lift is the point. */
+  --shadow-pop: 0 6px 16px rgba(38, 30, 96, 0.12);
+  --shadow-lift: 0 2px 6px rgba(38, 30, 96, 0.09);
 }
 
-:root {
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
+/* Reaches elements that only exist in a light theme, for the handful of cases
+   a token swap cannot express — a flipped glyph, a gradient that inverts. */
+@custom-variant light (:root[data-theme='light'] &);
 
-  --font: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
-}
+/*
+ * The whole base layer. It is only what utilities genuinely cannot reach:
+ * the document root, the focus ring, and the scrollbar.
+ */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+  body {
+    background: var(--color-bg-deep);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg-deep);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  transition: background 0.25s ease, color 0.25s ease;
-}
+  /* Preflight unstyles buttons but leaves the cursor and font alone. */
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
 
-h1,
-h2,
-h3,
-h4,
-p {
-  margin: 0;
-}
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 
-button {
-  font: inherit;
-  color: inherit;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
+  /* One global switch for the whole motion layer. Utilities cannot express
+     this: it has to outrank every animation and transition on the page. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-delay: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--tint-3);
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background-clip: content-box;
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-tint-3);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
 }

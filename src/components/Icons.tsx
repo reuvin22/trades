@@ -507,3 +507,37 @@ export function ReceiptIcon({ size = 18, className }: IconProps) {
     </svg>
   )
 }
+
+export function MenuIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={1.8}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={1.8}>
+      <path d="M6 6 18 18M18 6 6 18" />
+    </svg>
+  )
+}
+
+export function ChatIcon({ size = 22, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.5 9.5 0 0 1-2.8-.4L4 21l1.6-4.1A8.2 8.2 0 0 1 3.6 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 8.4 8.4Z" />
+    </svg>
+  )
+}
+
+export function BellOffIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      <path d="m3 3 18 18" />
+    </svg>
+  )
+}

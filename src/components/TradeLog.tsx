@@ -1,5 +1,25 @@
 import type { StoredTrade } from '../lib/trades'
 import { CheckCircleIcon, ChevronRightIcon, XCircleIcon } from './Icons'
+import {
+  CARD,
+  CARD_HEAD,
+  CARD_TITLE,
+  LINK,
+  MONO,
+  NEG,
+  POS,
+  ROW,
+  ROWS_STAGGER,
+  SIDE_BADGE,
+  SIDE_LONG,
+  SIDE_SHORT,
+  TABLE,
+  TABLE_EMPTY,
+  TABLE_WRAP,
+  TD,
+  TH,
+  TICKER,
+} from './ui'
 
 /** The trades that moved the account most, win or lose. */
 function highImpact(trades: StoredTrade[]) {
@@ -26,55 +46,55 @@ export function TradeLog({ trades }: { trades: StoredTrade[] }) {
   const rows = highImpact(trades)
 
   return (
-    <section className="card activity-card">
-      <div className="card-head">
-        <h2 className="card-title">High-Impact Trade Log</h2>
-        <a className="link" href="#/journal">
+    <section className={`${CARD} px-28 pt-26 pb-20`}>
+      <div className={CARD_HEAD}>
+        <h2 className={CARD_TITLE}>High-Impact Trade Log</h2>
+        <a className={LINK} href="#/journal">
           View All Records
           <ChevronRightIcon />
         </a>
       </div>
 
-      <div className="table-wrap">
-        <table className="trades log">
+      <div className={TABLE_WRAP}>
+        <table className={`${TABLE} min-w-620`}>
           <thead>
             <tr>
-              <th scope="col">Ticker</th>
-              <th scope="col">Side</th>
-              <th scope="col">Strategy</th>
-              <th scope="col" className="num">R:R</th>
-              <th scope="col" className="num">P/L (%)</th>
-              <th scope="col" className="mid">Result</th>
+              <th scope="col" className={TH}>Ticker</th>
+              <th scope="col" className={TH}>Side</th>
+              <th scope="col" className={TH}>Strategy</th>
+              <th scope="col" className={`${TH} text-right`}>R:R</th>
+              <th scope="col" className={`${TH} text-right`}>P/L (%)</th>
+              <th scope="col" className={`${TH} text-center`}>Result</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className={ROWS_STAGGER}>
             {rows.map((trade) => {
               const win = (trade.netPl ?? 0) >= 0
 
               return (
-                <tr key={trade.id}>
-                  <td>
-                    <span className="ticker">{trade.ticker || '—'}</span>
+                <tr key={trade.id} className={ROW}>
+                  <td className={`${TD} py-13`}>
+                    <span className={TICKER}>{trade.ticker || '—'}</span>
                   </td>
-                  <td>
+                  <td className={`${TD} py-13`}>
                     <span
-                      className={`side-badge ${trade.direction === 'Long' ? 'long' : 'short'}`}
+                      className={`${SIDE_BADGE} ${trade.direction === 'Long' ? SIDE_LONG : SIDE_SHORT}`}
                     >
                       {trade.direction.toUpperCase()}
                     </span>
                   </td>
-                  <td className="strategy">{trade.setup || 'Unlabelled'}</td>
-                  <td className="num mono">
+                  <td className={`${TD} py-13 text-[13px] text-fg-dim`}>{trade.setup || 'Unlabelled'}</td>
+                  <td className={`${TD} ${MONO} py-13 text-right`}>
                     {trade.riskReward === null ? '—' : `1 : ${trade.riskReward.toFixed(1)}`}
                   </td>
-                  <td className={`num mono ${win ? 'pos' : 'neg'}`}>
+                  <td className={`${TD} ${MONO} py-13 text-right ${win ? POS : NEG}`}>
                     {percentMoved(trade)}
                   </td>
-                  <td className="mid">
+                  <td className={`${TD} py-13 text-center`}>
                     {win ? (
-                      <CheckCircleIcon className="result win" />
+                      <CheckCircleIcon className="inline-block text-green" />
                     ) : (
-                      <XCircleIcon className="result loss" />
+                      <XCircleIcon className="inline-block text-red" />
                     )}
                     <span className="sr-only">{win ? 'Win' : 'Loss'}</span>
                   </td>
@@ -85,7 +105,7 @@ export function TradeLog({ trades }: { trades: StoredTrade[] }) {
         </table>
 
         {rows.length === 0 && (
-          <p className="table-empty">
+          <p className={TABLE_EMPTY}>
             Closed trades will be ranked here by how much they moved the account.
           </p>
         )}

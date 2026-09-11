@@ -2,6 +2,20 @@ import { useMemo } from 'react'
 import { compactCurrency, shortDate } from '../data/dashboard'
 import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
+import {
+  AXIS_LEGEND,
+  CARD,
+  CARD_HEAD,
+  CARD_TITLE,
+  CHART_AREA,
+  CHART_EMPTY,
+  EQUITY_LINE,
+  GRIDLINES,
+  PLOT,
+  PLOT_SVG,
+  X_AXIS,
+  Y_AXIS,
+} from './ui'
 
 const W = 1000
 const H = 360
@@ -81,29 +95,29 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
   }, [series])
 
   return (
-    <section className="card chart-card rolling-card">
-      <div className="card-head">
-        <h2 className="card-title">Rolling Equity Curve</h2>
+    <section className={`${CARD} px-22 pt-20 pb-14`}>
+      <div className={CARD_HEAD}>
+        <h2 className={CARD_TITLE}>Rolling Equity Curve</h2>
 
-        <div className="series-legend">
-          <span className="series realized">Realized</span>
-          <span className="series benchmark">Opening balance</span>
+        <div className="flex flex-none gap-16">
+          <span className="inline-flex items-center gap-7 text-[11.5px] text-fg-dim before:size-8 before:rounded-full before:bg-chart-line before:content-['']">Realized</span>
+          <span className="inline-flex items-center gap-7 text-[11.5px] text-fg-dim before:size-8 before:rounded-full before:border-[1.5px] before:border-fg-muted before:content-['']">Opening balance</span>
         </div>
       </div>
 
-      <p className="axis-legend">
+      <p className={AXIS_LEGEND}>
         x = Time
         <br />Y = Account Equity
       </p>
 
       {paths === null ? (
-        <p className="chart-empty">
+        <p className={CHART_EMPTY}>
           Two or more closed trades will draw your rolling curve here.
         </p>
       ) : (
         <>
-          <div className="plot rolling-plot">
-            <div className="y-axis" aria-hidden="true">
+          <div className={`${PLOT} h-300 [&>div>span]:text-[9.5px]`}>
+            <div className={Y_AXIS} aria-hidden="true">
               {scale.ticks.map((tick) => (
                 <span key={tick} style={{ top: `${(scaleY(tick) / H) * 100}%` }}>
                   {compactCurrency(tick).toUpperCase()}
@@ -112,7 +126,7 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
             </div>
 
             <svg
-              className="plot-svg"
+              className={PLOT_SVG}
               viewBox={`0 0 ${W} ${H}`}
               preserveAspectRatio="none"
               role="img"
@@ -120,27 +134,27 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
             >
               <defs>
                 <linearGradient id="rolling-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-fill-mid)" />
-                  <stop offset="100%" stopColor="var(--chart-fill-bottom)" />
+                  <stop offset="0%" stopColor="var(--color-chart-fill-mid)" />
+                  <stop offset="100%" stopColor="var(--color-chart-fill-bottom)" />
                 </linearGradient>
               </defs>
 
-              <g className="gridlines">
+              <g className={GRIDLINES}>
                 {scale.ticks.map((tick) => (
                   <line key={tick} x1="0" x2={W} y1={scaleY(tick)} y2={scaleY(tick)} />
                 ))}
               </g>
 
-              <path d={paths.area} fill="url(#rolling-fill)" className="chart-area" />
+              <path d={paths.area} fill="url(#rolling-fill)" className={CHART_AREA} />
               <path
                 d={paths.benchmark}
-                className="benchmark-line"
+                className="[animation:fade_0.9s_0.5s_ease_backwards] stroke-fg-muted opacity-70 [stroke-width:1.4] [stroke-dasharray:5_5]"
                 fill="none"
                 vectorEffect="non-scaling-stroke"
               />
               <path
                 d={paths.realized}
-                className="equity-line draw-line"
+                className={EQUITY_LINE}
                 pathLength={1}
                 fill="none"
                 vectorEffect="non-scaling-stroke"
@@ -148,7 +162,7 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
             </svg>
           </div>
 
-          <div className="x-axis" aria-hidden="true">
+          <div className={`${X_AXIS} [&>span]:text-[10.5px]`} aria-hidden="true">
             {xLabels.map(({ index, label }) => (
               <span
                 key={index}

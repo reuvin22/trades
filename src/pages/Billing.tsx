@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { User } from 'firebase/auth'
 import { savePlan, type Profile } from '../lib/profile'
 import { readableFirestoreError } from '../lib/trades'
+import { useToast } from '../lib/toast'
 import { currency } from '../data/dashboard'
 import {
   CardIcon,
@@ -9,7 +10,37 @@ import {
   ReceiptIcon,
   SpinnerIcon,
 } from '../components/Icons'
-import '../styles/account.css'
+import {
+  ACCOUNT_CARD,
+  BILLING_GRID,
+  CARD,
+  DATA_ERROR,
+  EMPTY_BLOCK,
+  MONO,
+  MUTED_NOTE,
+  NOTICE,
+  PAGE_HEAD,
+  PAGE_SUB,
+  PAGE_TITLE,
+  PILL,
+  PILL_ACCENT,
+  PLAN_ACTION,
+  PLAN_BLURB,
+  PLAN_CARD,
+  PLAN_CURRENT,
+  PLAN_CYCLE,
+  PLAN_FEATURES,
+  PLAN_FLAG,
+  PLAN_NAME,
+  PLAN_PRICE,
+  PLAN_ROW,
+  SECTION_TITLE,
+  SEGMENT,
+  SEGMENTED,
+  SEGMENT_ACTIVE,
+  TABLE,
+  TD,
+} from '../components/ui'
 
 type BillingProps = {
   user: User | null
@@ -24,35 +55,34 @@ type Plan = {
   features: string[]
 }
 
+/*
+ * Two plans, matching the two kinds of account the app already recognises in
+ * ACCOUNT_TYPES: someone trading their own capital, and someone reviewing
+ * other traders alongside their own journal.
+ */
 const PLANS: Plan[] = [
   {
-    id: 'starter',
-    name: 'Starter',
-    monthly: 0,
-    blurb: 'Journal by hand, keep the last 90 days.',
-    features: ['Unlimited manual entries', '90 days of history', 'Core dashboard'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
+    id: 'individual',
+    name: 'Individual',
     monthly: 19,
-    blurb: 'Full analytics and the behavioural coach.',
+    blurb: 'For a trader working their own capital, on their own.',
     features: [
-      'Everything in Starter',
-      'Unlimited history',
-      'Analytics engine + AI coach',
-      'CSV export',
+      'Unlimited journal entries and history',
+      'Analytics engine and behavioural leak detection',
+      'The AI coach, on your own trades',
+      'CSV export and broker import',
     ],
   },
   {
-    id: 'desk',
-    name: 'Desk',
+    id: 'coach',
+    name: 'Coach',
     monthly: 49,
-    blurb: 'For funded traders running several accounts.',
+    blurb: 'For mentors reviewing other traders as well as themselves.',
     features: [
-      'Everything in Pro',
-      'Up to 10 broker connections',
-      'Multi-account rollups',
+      'Everything in Individual',
+      'Up to 25 linked student journals',
+      'Side-by-side review and shared annotations',
+      'Cohort reporting across your students',
       'Priority support',
     ],
   },
@@ -65,8 +95,18 @@ export function Billing({ user, profile }: BillingProps) {
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [pending, setPending] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const toast = useToast()
 
-  const activePlan = profile?.plan ?? 'starter'
+  // Plans used to be starter/pro/desk. Anyone still carrying one of those ids
+  // is shown the plan it became, so the page never renders with nothing marked
+  // as current.
+  const LEGACY: Record<string, string> = {
+    starter: 'individual',
+    pro: 'individual',
+    desk: 'coach',
+  }
+  const stored = profile?.plan ?? 'individual'
+  const activePlan = LEGACY[stored] ?? stored
 
   async function choose(plan: Plan) {
     if (!user || plan.id === activePlan) return
@@ -75,15 +115,20 @@ export function Billing({ user, profile }: BillingProps) {
     setError('')
     try {
       await savePlan(user.uid, plan.id)
+      toast.success(
+        `You are on the ${plan.name} plan`,
+        'Nothing was charged — no payment processor is connected yet.',
+      )
     } catch (cause) {
-      setError(readableFirestoreError(cause))
+      const message = readableFirestoreError(cause)
+      setError(message)
+      toast.error('Could not change your plan', message)
     } finally {
       setPending(null)
     }
   }
 
   function priceFor(plan: Plan) {
-    if (plan.monthly === 0) return 'Free'
     // Two months free on the annual cycle.
     const amount = cycle === 'monthly' ? plan.monthly : plan.monthly * 10
     return `${currency.format(amount)}`
@@ -91,18 +136,18 @@ export function Billing({ user, profile }: BillingProps) {
 
   return (
     <>
-      <div className="page-head">
+      <div className={PAGE_HEAD}>
         <div>
-          <h2 className="page-title">Billing</h2>
-          <p className="page-sub">Your plan, payment method and invoice history.</p>
+          <h2 className={PAGE_TITLE}>Billing</h2>
+          <p className={PAGE_SUB}>Your plan, payment method and invoice history.</p>
         </div>
 
-        <div className="segmented" role="group" aria-label="Billing cycle">
+        <div className={SEGMENTED} role="group" aria-label="Billing cycle">
           {(['monthly', 'yearly'] as const).map((option) => (
             <button
               key={option}
               type="button"
-              className={`segment${cycle === option ? ' is-active' : ''}`}
+              className={`${SEGMENT} ${cycle === option ? SEGMENT_ACTIVE : ''}`}
               aria-pressed={cycle === option}
               onClick={() => setCycle(option)}
             >
@@ -112,36 +157,36 @@ export function Billing({ user, profile }: BillingProps) {
         </div>
       </div>
 
-      <div className="notice card" role="status">
+      <div className={`${CARD} ${NOTICE}`} role="status">
         <strong>No payment processor is connected yet.</strong> Choosing a plan records
         it against your account so the app can gate features, but nothing is charged and
         no card details are collected or stored.
       </div>
 
       {error && (
-        <p className="data-error" role="alert">
+        <p className={DATA_ERROR} role="alert">
           {error}
         </p>
       )}
 
-      <div className="plan-row">
+      <div className={PLAN_ROW}>
         {PLANS.map((plan) => {
           const current = plan.id === activePlan
 
           return (
-            <article key={plan.id} className={`card plan-card${current ? ' is-current' : ''}`}>
-              {current && <span className="plan-flag">Current plan</span>}
+            <article key={plan.id} className={`${CARD} ${PLAN_CARD} ${current ? PLAN_CURRENT : ''}`}>
+              {current && <span className={PLAN_FLAG}>Current plan</span>}
 
-              <h3 className="plan-name">{plan.name}</h3>
-              <p className="plan-price">
+              <h3 className={PLAN_NAME}>{plan.name}</h3>
+              <p className={PLAN_PRICE}>
                 {priceFor(plan)}
                 {plan.monthly > 0 && (
-                  <span className="plan-cycle">/{cycle === 'monthly' ? 'mo' : 'yr'}</span>
+                  <span className={PLAN_CYCLE}>/{cycle === 'monthly' ? 'mo' : 'yr'}</span>
                 )}
               </p>
-              <p className="plan-blurb">{plan.blurb}</p>
+              <p className={PLAN_BLURB}>{plan.blurb}</p>
 
-              <ul className="plan-features">
+              <ul className={PLAN_FEATURES}>
                 {plan.features.map((feature) => (
                   <li key={feature}>
                     <CheckIcon />
@@ -152,11 +197,11 @@ export function Billing({ user, profile }: BillingProps) {
 
               <button
                 type="button"
-                className={`pill${current ? '' : ' is-accent'} plan-action`}
+                className={`${PILL} ${current ? '' : PILL_ACCENT} ${PLAN_ACTION}`}
                 disabled={current || pending !== null || !user}
                 onClick={() => void choose(plan)}
               >
-                {pending === plan.id && <SpinnerIcon className="spinner" size={14} />}
+                {pending === plan.id && <SpinnerIcon className="animate-spin" size={14} />}
                 {current ? 'Active' : pending === plan.id ? 'Switching…' : `Choose ${plan.name}`}
               </button>
             </article>
@@ -164,42 +209,42 @@ export function Billing({ user, profile }: BillingProps) {
         })}
       </div>
 
-      <div className="billing-grid">
-        <section className="card account-card">
-          <h3 className="section-title">
+      <div className={BILLING_GRID}>
+        <section className={`${CARD} ${ACCOUNT_CARD}`}>
+          <h3 className={SECTION_TITLE}>
             <CardIcon size={16} />
             Payment method
           </h3>
 
-          <div className="empty-block">
+          <div className={EMPTY_BLOCK}>
             <p>No card on file.</p>
-            <p className="muted-note">
+            <p className={MUTED_NOTE}>
               A card can be added once a payment processor is connected.
             </p>
           </div>
         </section>
 
-        <section className="card account-card">
-          <h3 className="section-title">
+        <section className={`${CARD} ${ACCOUNT_CARD}`}>
+          <h3 className={SECTION_TITLE}>
             <ReceiptIcon size={16} />
             Invoices
           </h3>
 
           {INVOICES.length === 0 ? (
-            <div className="empty-block">
+            <div className={EMPTY_BLOCK}>
               <p>No invoices yet.</p>
-              <p className="muted-note">
+              <p className={MUTED_NOTE}>
                 Paid invoices will be listed here with a download link.
               </p>
             </div>
           ) : (
-            <table className="trades">
+            <table className={TABLE}>
               <tbody>
                 {INVOICES.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td>{invoice.date}</td>
-                    <td className="num mono">{currency.format(invoice.amount)}</td>
-                    <td>{invoice.status}</td>
+                    <td className={TD}>{invoice.date}</td>
+                    <td className={`${TD} ${MONO} text-right`}>{currency.format(invoice.amount)}</td>
+                    <td className={TD}>{invoice.status}</td>
                   </tr>
                 ))}
               </tbody>

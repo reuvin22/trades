@@ -3,7 +3,33 @@ import type { User } from 'firebase/auth'
 import { LANGUAGES, useCoach } from '../lib/coach'
 import { saveCoachLanguage, type Profile } from '../lib/profile'
 import { RobotIcon, SendIcon, UserGlyphIcon } from '../components/Icons'
-import '../styles/coach.css'
+import {
+  BUBBLE,
+  BUBBLE_COACH,
+  BUBBLE_TRADER,
+  CHAT_AVATAR,
+  CHAT_AVATAR_COACH,
+  CHAT_AVATAR_TRADER,
+  COACH_ERROR,
+  COACH_GREETING,
+  COACH_INTRO,
+  COACH_LEDE,
+  COACH_PAGE,
+  COACH_WARNING,
+  COMPOSER,
+  LANGUAGE_CHIP,
+  LANGUAGE_GATE,
+  LANGUAGE_GRID,
+  LANGUAGE_LABEL,
+  LANGUAGE_NATIVE,
+  LANGUAGE_SAVING,
+  SUGGESTION,
+  SUGGESTION_ROW,
+  THREAD,
+  TURN,
+  TURN_TRADER,
+  TYPING,
+} from '../components/ui'
 
 type AiCoachProps = {
   user: User | null
@@ -33,29 +59,29 @@ function LanguagePicker({
   saving: string | null
 }) {
   return (
-    <div className="turn is-coach language-gate">
-      <span className="chat-avatar coach" aria-hidden="true">
+    <div className={`${TURN} ${LANGUAGE_GATE}`}>
+      <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
         <RobotIcon />
       </span>
 
-      <div className="bubble coach">
+      <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
         <p>
           Before we start — which language would you like me to use? I&apos;ll stick
           with it from here.
         </p>
 
-        <div className="language-grid">
+        <div className={LANGUAGE_GRID}>
           {LANGUAGES.map((language) => (
             <button
               key={language.code}
               type="button"
-              className={`language-chip${saving === language.code ? ' is-saving' : ''}`}
+              className={`${LANGUAGE_CHIP} ${saving === language.code ? LANGUAGE_SAVING : ''}`}
               disabled={saving !== null}
               onClick={() => onChoose(language.code)}
             >
-              <span className="language-native">{language.native}</span>
+              <span className={LANGUAGE_NATIVE}>{language.native}</span>
               {language.native !== language.label && (
-                <span className="language-label">{language.label}</span>
+                <span className={LANGUAGE_LABEL}>{language.label}</span>
               )}
             </button>
           ))}
@@ -115,12 +141,12 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
   const started = turns.length > 0
 
   return (
-    <div className="coach-page">
-      <div className="coach-intro">
-        <h2 className="coach-greeting">
+    <div className={COACH_PAGE}>
+      <div className={COACH_INTRO}>
+        <h2 className={COACH_GREETING}>
           {greeting()}, {name}.
         </h2>
-        <p className="coach-lede">
+        <p className={COACH_LEDE}>
           {tradeCount === 0
             ? 'Log a few trades and I can start telling you what your numbers actually say.'
             : `I've read your ${tradeCount} logged ${
@@ -129,29 +155,29 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         </p>
       </div>
 
-      <div className="thread">
+      <div className={THREAD}>
         {language === null ? (
           <LanguagePicker onChoose={chooseLanguage} saving={pendingLanguage} />
         ) : (
           <>
             {!started && (
-              <div className="turn is-coach">
-                <span className="chat-avatar coach" aria-hidden="true">
+              <div className={TURN}>
+                <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
                   <RobotIcon />
                 </span>
-                <div className="bubble coach">
+                <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
                   <p>
                     I only talk about your trading here — your results, your habits, and
                     what the journal shows. Ask me why a week went badly, or where your
                     money is actually going.
                   </p>
 
-                  <div className="suggestions">
+                  <div className={SUGGESTION_ROW}>
                     {SUGGESTIONS.map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
-                        className="suggestion"
+                        className={SUGGESTION}
                         onClick={() => void send(suggestion)}
                         disabled={thinking}
                       >
@@ -165,18 +191,18 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
 
             {turns.map((turn) =>
               turn.role === 'user' ? (
-                <div className="turn is-trader" key={turn.id}>
-                  <div className="bubble trader">{turn.text}</div>
-                  <span className="chat-avatar trader" aria-hidden="true">
+                <div className={`${TURN} ${TURN_TRADER}`} key={turn.id}>
+                  <div className={`${BUBBLE} ${BUBBLE_TRADER}`}>{turn.text}</div>
+                  <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_TRADER}`} aria-hidden="true">
                     <UserGlyphIcon size={17} />
                   </span>
                 </div>
               ) : (
-                <div className="turn is-coach" key={turn.id}>
-                  <span className="chat-avatar coach" aria-hidden="true">
+                <div className={TURN} key={turn.id}>
+                  <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
                     <RobotIcon />
                   </span>
-                  <div className="bubble coach">
+                  <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
                     {turn.text.split('\n').map((line, index) =>
                       line.trim() === '' ? null : <p key={index}>{line}</p>,
                     )}
@@ -186,12 +212,12 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
             )}
 
             {thinking && (
-              <div className="turn is-coach">
-                <span className="chat-avatar coach" aria-hidden="true">
+              <div className={TURN}>
+                <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
                   <RobotIcon />
                 </span>
-                <div className="bubble coach is-typing" aria-label="Coach is thinking">
-                  <span className="typing">
+                <div className={`${BUBBLE} ${BUBBLE_COACH} px-16 py-14`} aria-label="Coach is thinking">
+                  <span className={TYPING}>
                     <i />
                     <i />
                     <i />
@@ -201,7 +227,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
             )}
 
             {error && (
-              <p className="coach-error" role="alert">
+              <p className={COACH_ERROR} role="alert">
                 {error}
               </p>
             )}
@@ -209,7 +235,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         )}
 
         {saveWarning && (
-          <p className="coach-warning" role="status">
+          <p className={COACH_WARNING} role="status">
             {saveWarning}
           </p>
         )}
@@ -217,7 +243,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         <div ref={threadEnd} />
       </div>
 
-      <form className="composer" onSubmit={handleSubmit}>
+      <form className={COMPOSER} onSubmit={handleSubmit}>
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

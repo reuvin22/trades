@@ -3,7 +3,17 @@ import type { User } from 'firebase/auth'
 import { navigate } from '../lib/useHashRoute'
 import { signOutOfApp } from '../lib/useAuth'
 import { CardIcon, LogoutIcon, UserGlyphIcon } from './Icons'
-import '../styles/account.css'
+import {
+  ACCOUNT_AVATAR,
+  ACCOUNT_DANGER,
+  ACCOUNT_EMAIL,
+  ACCOUNT_HEAD,
+  ACCOUNT_ITEMS,
+  ACCOUNT_MENU,
+  ACCOUNT_NAME,
+  AVATAR,
+  AVATAR_INITIALS,
+} from './ui'
 
 type AccountMenuProps = {
   user: User | null
@@ -45,11 +55,11 @@ export function AccountMenu({ user }: AccountMenuProps) {
   const name = user?.displayName?.trim() || user?.email?.split('@')[0] || 'Trader'
 
   return (
-    <div className="account" ref={wrapper}>
+    <div className="relative" ref={wrapper}>
       <button
         ref={trigger}
         type="button"
-        className="avatar"
+        className={AVATAR}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -59,27 +69,27 @@ export function AccountMenu({ user }: AccountMenuProps) {
         {user?.photoURL ? (
           <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
         ) : (
-          <span className="avatar-initials">{name.slice(0, 1).toUpperCase()}</span>
+          <span className={AVATAR_INITIALS}>{name.slice(0, 1).toUpperCase()}</span>
         )}
       </button>
 
       {open && (
-        <div className="account-menu" id={menuId} role="menu">
-          <div className="account-head">
-            <span className="account-avatar" aria-hidden="true">
+        <div className={ACCOUNT_MENU} id={menuId} role="menu">
+          <div className={ACCOUNT_HEAD}>
+            <span className={ACCOUNT_AVATAR} aria-hidden="true">
               {user?.photoURL ? (
                 <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
               ) : (
-                <span className="avatar-initials">{name.slice(0, 1).toUpperCase()}</span>
+                <span className={AVATAR_INITIALS}>{name.slice(0, 1).toUpperCase()}</span>
               )}
             </span>
-            <div className="account-id">
-              <p className="account-name">{name}</p>
-              <p className="account-email">{user?.email ?? 'Preview session'}</p>
+            <div className="min-w-0">
+              <p className={ACCOUNT_NAME}>{name}</p>
+              <p className={ACCOUNT_EMAIL}>{user?.email ?? 'Preview session'}</p>
             </div>
           </div>
 
-          <div className="account-items">
+          <div className={ACCOUNT_ITEMS}>
             <button type="button" role="menuitem" onClick={() => go('profile')}>
               <UserGlyphIcon size={16} />
               My Profile
@@ -90,11 +100,11 @@ export function AccountMenu({ user }: AccountMenuProps) {
             </button>
           </div>
 
-          <div className="account-items is-last">
+          <div className={`${ACCOUNT_ITEMS} border-t border-line`}>
             <button
               type="button"
               role="menuitem"
-              className="is-danger"
+              className={ACCOUNT_DANGER}
               onClick={() => {
                 setOpen(false)
                 void signOutOfApp()

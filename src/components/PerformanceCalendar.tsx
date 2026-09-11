@@ -1,19 +1,32 @@
 import type { CSSProperties } from 'react'
 import { dayKey } from '../lib/stats'
+import { CARD, CARD_HOVER } from './ui'
 
 const WEEKS = 16
 
+/** Fixed heat colours: these are data values, not theme surfaces, so they hold
+ *  the same reading in either theme. */
+const HEAT = [
+  'bg-[#f0484c]',
+  'bg-[#bb2f33]',
+  'bg-[#7c2226]',
+  'bg-tint-2',
+  'bg-[#1f7a45]',
+  'bg-[#2fae5c]',
+  'bg-[#45d97a]',
+]
+
 /** Buckets a day's P&L against the largest absolute day in the window. */
 function heatClass(result: number | null, scale: number) {
-  if (result === null || result === 0) return 'cell is-flat'
+  if (result === null || result === 0) return HEAT[3]
 
   const share = scale === 0 ? 0 : result / scale
-  if (share > 0.5) return 'cell pos-3'
-  if (share > 0.2) return 'cell pos-2'
-  if (share > 0) return 'cell pos-1'
-  if (share > -0.2) return 'cell neg-1'
-  if (share > -0.5) return 'cell neg-2'
-  return 'cell neg-3'
+  if (share > 0.5) return HEAT[6]
+  if (share > 0.2) return HEAT[5]
+  if (share > 0) return HEAT[4]
+  if (share > -0.2) return HEAT[2]
+  if (share > -0.5) return HEAT[1]
+  return HEAT[0]
 }
 
 export function PerformanceCalendar({ dailyPl }: { dailyPl: Map<string, number> }) {
@@ -31,33 +44,34 @@ export function PerformanceCalendar({ dailyPl }: { dailyPl: Map<string, number> 
     cells.push({ key, value: dailyPl.get(key) ?? null })
   }
 
-  const scale = Math.max(
-    1,
-    ...cells.map((cell) => Math.abs(cell.value ?? 0)),
-  )
+  const scale = Math.max(1, ...cells.map((cell) => Math.abs(cell.value ?? 0)))
 
   return (
-    <article className="card calendar-card">
-      <p className="calendar-head">
-        Performance Calendar <span>Last {WEEKS} Weeks</span>
+    <article className={`${CARD} ${CARD_HOVER} px-20 pt-18 pb-16`}>
+      <p className="text-[10.5px] font-medium tracking-[0.13em] text-fg-dim uppercase">
+        Performance Calendar{' '}
+        <span className="ml-6 tracking-[0.04em] text-fg-muted normal-case">
+          Last {WEEKS} Weeks
+        </span>
       </p>
 
       <div
-        className="heatmap"
+        className="mt-14 mb-12 grid grid-flow-col grid-rows-7 auto-cols-fr gap-3"
         role="img"
         aria-label={`Daily profit and loss over the last ${WEEKS} weeks`}
       >
         {cells.map((cell, index) => (
           <span
             key={cell.key}
-            className={heatClass(cell.value, scale)}
+            /* Each cell pops in 5ms after the one before, off its own index. */
+            className={`aspect-square animate-pop rounded-[2px] [animation-delay:calc(var(--i)*5ms)] ${heatClass(cell.value, scale)}`}
             title={cell.value === null ? cell.key : `${cell.key}: ${cell.value.toFixed(2)}`}
             style={{ '--i': index } as CSSProperties}
           />
         ))}
       </div>
 
-      <div className="calendar-legend">
+      <div className="flex justify-between text-[9.5px] tracking-[0.13em] text-fg-muted uppercase">
         <span>Loss</span>
         <span>Profit</span>
       </div>

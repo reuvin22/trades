@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { smoothPath } from '../lib/curve'
 
 const W = 1200
@@ -19,28 +18,40 @@ const RIBBONS = [0, 1, 2].map((band) => {
   return smoothPath(points)
 })
 
-export function LoginBackdrop() {
-  const orbs = useMemo(
-    () => [
-      { className: 'orb orb-a' },
-      { className: 'orb orb-b' },
-      { className: 'orb orb-c' },
-    ],
-    [],
-  )
+/** Blurred colour, drifting on its own clock so the three never sync up. */
+const ORB = 'absolute rounded-full opacity-55 blur-[70px] will-change-transform'
 
+const ORBS = [
+  `${ORB} animate-orb-a -top-140 -left-80 size-460 bg-[color-mix(in_srgb,var(--color-accent)_60%,transparent)]`,
+  `${ORB} animate-orb-b -bottom-120 left-[34%] size-380 bg-[color-mix(in_srgb,#3f6bff_55%,transparent)]`,
+  `${ORB} animate-orb-c top-[18%] -right-150 size-420 bg-[color-mix(in_srgb,#a02ecb_45%,transparent)]`,
+]
+
+/** Each ribbon runs the same pair of animations, offset so they stagger. */
+const RIBBON = 'animate-ribbon [stroke-width:1.6] [stroke-dasharray:1]'
+const RIBBON_PHASE = [
+  'opacity-50',
+  'opacity-32 [animation-delay:-3s,-5s]',
+  'opacity-20 [animation-delay:-6s,-11s]',
+]
+
+export function LoginBackdrop() {
   return (
-    <div className="login-backdrop" aria-hidden="true">
-      {orbs.map((orb) => (
-        <span key={orb.className} className={orb.className} />
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {ORBS.map((orb) => (
+        <span key={orb} className={orb} />
       ))}
 
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid slice"
+      >
         <defs>
           <linearGradient id="ribbon-stroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--chart-line)" stopOpacity="0" />
-            <stop offset="35%" stopColor="var(--chart-line)" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="var(--accent-strong)" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="var(--color-chart-line)" stopOpacity="0" />
+            <stop offset="35%" stopColor="var(--color-chart-line)" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="var(--color-accent-strong)" stopOpacity="0.9" />
           </linearGradient>
         </defs>
 
@@ -48,7 +59,7 @@ export function LoginBackdrop() {
           <path
             key={index}
             d={ribbon}
-            className={`ribbon ribbon-${index + 1}`}
+            className={`${RIBBON} ${RIBBON_PHASE[index]}`}
             pathLength={1}
             fill="none"
             stroke="url(#ribbon-stroke)"
@@ -56,7 +67,8 @@ export function LoginBackdrop() {
         ))}
       </svg>
 
-      <span className="grid-veil" />
+      {/* Grid, faded out towards the edges by the mask. */}
+      <span className="absolute inset-0 animate-veil bg-[linear-gradient(var(--color-grid)_1px,transparent_1px),linear-gradient(90deg,var(--color-grid)_1px,transparent_1px)] bg-[size:64px_64px] opacity-25 [mask-image:radial-gradient(circle_at_50%_40%,#000_0%,transparent_72%)]" />
     </div>
   )
 }

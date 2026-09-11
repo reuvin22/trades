@@ -4,7 +4,22 @@ import { readableAuthError, signOutOfApp } from '../lib/useAuth'
 import { sendVerificationEmail } from '../lib/verification'
 import { LoginBackdrop } from '../components/LoginBackdrop'
 import { MailIcon, SpinnerIcon } from '../components/Icons'
-import '../styles/login.css'
+import {
+  CARD,
+  GOOGLE_BUTTON,
+  LINK_BUTTON,
+  LOGIN_CARD,
+  LOGIN_ERROR,
+  LOGIN_SHELL,
+  LOGIN_SUB,
+  LOGIN_SUBMIT,
+  LOGIN_SWITCH,
+  LOGIN_TITLE,
+  VERIFY_GLYPH,
+  VERIFY_HINT,
+  VERIFY_MAIN,
+  VERIFY_STATUS,
+} from '../components/ui'
 
 type VerifyEmailProps = {
   user: User
@@ -74,18 +89,18 @@ export function VerifyEmail({ user, onRecheck, viaGoogle, isNewAccount }: Verify
   }
 
   return (
-    <div className="login verify">
+    <div className={`${LOGIN_SHELL} grid-cols-1`}>
       <LoginBackdrop />
 
-      <section className="verify-main">
-        <div className="login-card card">
-          <span className="verify-glyph">
+      <section className={VERIFY_MAIN}>
+        <div className={`${CARD} ${LOGIN_CARD}`}>
+          <span className={VERIFY_GLYPH}>
             <MailIcon size={26} />
           </span>
 
-          <h2 className="login-title">Confirm your email</h2>
+          <h2 className={LOGIN_TITLE}>Confirm your email</h2>
 
-          <p className="login-sub">
+          <p className={LOGIN_SUB}>
             {viaGoogle ? (
               <>
                 {isNewAccount ? 'This is the first sign-in for ' : 'We still need to confirm '}
@@ -101,48 +116,48 @@ export function VerifyEmail({ user, onRecheck, viaGoogle, isNewAccount }: Verify
           </p>
 
           {status && (
-            <p className="verify-status" role="status">
+            <p className={VERIFY_STATUS} role="status">
               {status}
             </p>
           )}
 
           {error && (
-            <p className="login-error" role="alert">
+            <p className={LOGIN_ERROR} role="alert">
               {error}
             </p>
           )}
 
           <button
             type="button"
-            className="login-submit"
+            className={LOGIN_SUBMIT}
             onClick={handleCheck}
             disabled={checking}
           >
-            {checking && <SpinnerIcon className="spinner" />}
+            {checking && <SpinnerIcon className="animate-spin" />}
             {checking ? 'Checking…' : "I've confirmed it"}
           </button>
 
           <button
             type="button"
-            className="login-sso"
+            className={GOOGLE_BUTTON}
             onClick={handleResend}
             disabled={cooldown > 0}
           >
             {cooldown > 0 ? `Resend in ${cooldown}s` : 'Send the verification email'}
           </button>
 
-          <p className="login-switch">
+          <p className={LOGIN_SWITCH}>
             Wrong account?{' '}
             <button
               type="button"
-              className="link-button"
+              className={LINK_BUTTON}
               onClick={() => void signOutOfApp()}
             >
               Sign out
             </button>
           </p>
 
-          <p className="verify-hint">
+          <p className={VERIFY_HINT}>
             This page checks automatically every few seconds — you can leave it open.
           </p>
         </div>

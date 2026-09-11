@@ -1,3 +1,12 @@
+import {
+  ADMIN_GRID,
+  CRUMBS,
+  PAGE_ACTIONS,
+  PAGE_HEAD,
+  PAGE_TITLE,
+  PILL,
+  PILL_ACCENT,
+} from '../../components/ui'
 import { AdminStats } from '../../components/admin/AdminStats'
 import { BrokerStatus } from '../../components/admin/BrokerStatus'
 import { PlatformActivity } from '../../components/admin/PlatformActivity'
@@ -7,20 +16,20 @@ import { DownloadIcon, PlusIcon } from '../../components/Icons'
 export function AdminDashboard() {
   return (
     <>
-      <div className="page-head">
+      <div className={PAGE_HEAD}>
         <div>
-          <p className="crumbs">
+          <p className={CRUMBS}>
             Admin <span>/</span> Platform Overview
           </p>
-          <h2 className="page-title">Dashboard</h2>
+          <h2 className={`${PAGE_TITLE} mt-6`}>Dashboard</h2>
         </div>
 
-        <div className="page-actions">
-          <button type="button" className="pill">
+        <div className={PAGE_ACTIONS}>
+          <button type="button" className={PILL}>
             <DownloadIcon />
             Export Data
           </button>
-          <button type="button" className="pill is-accent">
+          <button type="button" className={`${PILL} ${PILL_ACCENT}`}>
             <PlusIcon size={14} />
             New Integration
           </button>
@@ -29,7 +38,7 @@ export function AdminDashboard() {
 
       <AdminStats />
 
-      <div className="admin-grid">
+      <div className={ADMIN_GRID}>
         <RevenueGrowth />
         <PlatformActivity />
       </div>

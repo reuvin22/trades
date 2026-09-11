@@ -3,6 +3,28 @@ import { currency, signed } from '../data/dashboard'
 import { JOURNAL_TRADES, type JournalTrade } from '../data/journal'
 import type { StoredTrade } from '../lib/trades'
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons'
+import {
+  CARD,
+  CHIP,
+  MONO,
+  NEG,
+  PAGER_ACTIVE,
+  PAGER_BUTTON,
+  POS,
+  RESULT_BADGE,
+  RESULT_LOSS,
+  RESULT_WIN,
+  ROW,
+  ROWS_STAGGER,
+  SIDE_BADGE,
+  SIDE_LONG,
+  SIDE_SHORT,
+  TABLE,
+  TABLE_EMPTY,
+  TD,
+  TH,
+  TICKER,
+} from './ui'
 
 const PAGE_SIZE = 8
 
@@ -51,49 +73,49 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
     : rows
 
   return (
-    <section className="card journal-card">
-      <div className="table-wrap">
-        <table className="trades journal">
+    <section className={`${CARD} overflow-hidden p-0`}>
+      <div className="overflow-x-auto">
+        <table className={`${TABLE} min-w-860`}>
           <thead>
-            <tr>
-              <th scope="col">Ticker</th>
-              <th scope="col">Date</th>
-              <th scope="col">Setup</th>
-              <th scope="col">{live ? 'Size' : 'Broker'}</th>
-              <th scope="col">Strategy</th>
-              <th scope="col">Result</th>
-              <th scope="col" className="num">P&amp;L</th>
+            <tr className="bg-tint-1">
+              <th scope="col" className={`${TH} px-18 py-14`}>Ticker</th>
+              <th scope="col" className={`${TH} px-18 py-14`}>Date</th>
+              <th scope="col" className={`${TH} px-18 py-14`}>Setup</th>
+              <th scope="col" className={`${TH} px-18 py-14`}>{live ? 'Size' : 'Broker'}</th>
+              <th scope="col" className={`${TH} px-18 py-14`}>Strategy</th>
+              <th scope="col" className={`${TH} px-18 py-14`}>Result</th>
+              <th scope="col" className={`${TH} px-18 py-14 text-right`}>P&amp;L</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className={ROWS_STAGGER}>
             {visible.map((trade) => (
-              <tr key={trade.id}>
-                <td>
-                  <span className="ticker-cell">
-                    <span className={`dot ${trade.side === 'Long' ? 'up' : 'down'}`} />
-                    <span className="ticker">{trade.ticker}</span>
-                    <span className={`side-badge ${trade.side === 'Long' ? 'long' : 'short'}`}>
+              <tr key={trade.id} className={ROW}>
+                <td className={`${TD} px-18 py-16`}>
+                  <span className="inline-flex items-center gap-9">
+                    <span className={`size-7 flex-none rounded-full ${trade.side === 'Long' ? 'bg-green shadow-[0_0_8px_color-mix(in_srgb,var(--color-green)_70%,transparent)]' : 'bg-red shadow-[0_0_8px_color-mix(in_srgb,var(--color-red)_70%,transparent)]'}`} />
+                    <span className={TICKER}>{trade.ticker}</span>
+                    <span className={`${SIDE_BADGE} ${trade.side === 'Long' ? SIDE_LONG : SIDE_SHORT}`}>
                       {trade.side.toUpperCase()}
                     </span>
                   </span>
                 </td>
-                <td className="stacked">
+                <td className={`${TD} flex flex-col px-18 py-16 text-[12.5px] leading-[1.35]`}>
                   <span>{trade.date}</span>
-                  <span className="muted">{trade.time}</span>
+                  <span className="text-fg-muted">{trade.time}</span>
                 </td>
-                <td className="dim">{trade.setup}</td>
-                <td className="dim">{trade.broker}</td>
-                <td>
-                  <span className="chip soft">{trade.strategy}</span>
+                <td className={`${TD} px-18 py-16 text-[13px] text-fg-dim`}>{trade.setup}</td>
+                <td className={`${TD} px-18 py-16 text-[13px] text-fg-dim`}>{trade.broker}</td>
+                <td className={`${TD} px-18 py-16`}>
+                  <span className={`${CHIP} rounded-sm bg-tint-2 px-11`}>{trade.strategy}</span>
                 </td>
-                <td>
+                <td className={`${TD} px-18 py-16`}>
                   <span
-                    className={`result-badge ${trade.result === 'Winner' ? 'win' : 'loss'}`}
+                    className={`${RESULT_BADGE} ${trade.result === 'Winner' ? RESULT_WIN : RESULT_LOSS}`}
                   >
                     {trade.result}
                   </span>
                 </td>
-                <td className={`num mono ${trade.pl >= 0 ? 'pos' : 'neg'}`}>
+                <td className={`${TD} ${MONO} px-18 py-16 text-right ${trade.pl >= 0 ? POS : NEG}`}>
                   {trade.pl >= 0 ? signed(trade.pl) : `-${currency.format(Math.abs(trade.pl))}`}
                 </td>
               </tr>
@@ -102,7 +124,7 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
         </table>
 
         {live && visible.length === 0 && (
-          <p className="table-empty">
+          <p className={TABLE_EMPTY}>
             {loading
               ? 'Loading your journal…'
               : 'No trades logged yet. Use Quick Add Trade to record your first one.'}
@@ -110,15 +132,15 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
         )}
       </div>
 
-      <div className="table-foot">
-        <p className="foot-count">
+      <div className="flex flex-wrap items-center justify-between gap-16 border-t border-line px-20 pt-16 pb-18">
+        <p className="text-[12.5px] text-fg-muted">
           Showing {visible.length} of {total} trades
         </p>
 
-        <nav className="pager" aria-label="Trade pages">
+        <nav className="flex items-center gap-6" aria-label="Trade pages">
           <button
             type="button"
-            className="pager-step"
+            className={PAGER_BUTTON}
             aria-label="Previous page"
             disabled={current === 1}
             onClick={() => setPage(Math.max(1, current - 1))}
@@ -131,7 +153,7 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
               <button
                 key={number}
                 type="button"
-                className={`pager-page${current === number ? ' is-active' : ''}`}
+                className={`${PAGER_BUTTON} ${current === number ? PAGER_ACTIVE : ''}`}
                 aria-current={current === number ? 'page' : undefined}
                 onClick={() => setPage(number)}
               >
@@ -142,7 +164,7 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
 
           <button
             type="button"
-            className="pager-step"
+            className={PAGER_BUTTON}
             aria-label="Next page"
             disabled={current === (live ? pageCount : 3)}
             onClick={() => setPage(Math.min(live ? pageCount : 3, current + 1))}
