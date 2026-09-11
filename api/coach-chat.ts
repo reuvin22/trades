@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { adminAuth, adminDb } from './_firebase-admin'
 import { summarise, type RawTrade } from './_trade-summary'
-import { DEFAULT_MODEL, GeminiError } from './_gemini'
+import { explainOpenRouterError, OpenRouterError } from './_openrouter'
 import { askCoach, buildSystemPrompt, type CoachTurn } from './_coach'
 
 /**
@@ -11,7 +11,6 @@ import { askCoach, buildSystemPrompt, type CoachTurn } from './_coach'
  * so the coach can only ever talk about trades the trader actually logged.
  */
 
-const MODEL = process.env.GEMINI_MODEL ?? DEFAULT_MODEL
 const MAX_TRADES = 300
 /** How much conversation to carry. Older turns fall away to bound the cost. */
 const HISTORY_LIMIT = 20
@@ -27,7 +26,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
     return bad(response, 405, 'Use POST.')
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) return bad(response, 501, 'The coach is not configured on the server.')
 
   const header = request.headers.authorization ?? ''
@@ -35,7 +34,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
   if (idToken === '') return bad(response, 401, 'Missing bearer token.')
 
   let uid: string
-  let displayName = ''
+  let displayName: string
   try {
     const decoded = await adminAuth().verifyIdToken(idToken, true)
     if (!decoded.email_verified) return bad(response, 403, 'Confirm your email first.')
@@ -79,32 +78,17 @@ export default async function handler(request: VercelRequest, response: VercelRe
     const trades = snapshot.docs.map((doc) => doc.data() as RawTrade)
     const summary = trades.length === 0 ? null : summarise(trades)
 
-    const reply = await askCoach(
+    const { text, model } = await askCoach(
       [...history, { role: 'user', text: message }],
       buildSystemPrompt(summary, language, displayName),
       apiKey,
-      MODEL,
     )
 
-    return response.status(200).json({ reply, tradeCount: trades.length })
+    return response.status(200).json({ reply: text, model, tradeCount: trades.length })
   } catch (cause) {
-    if (cause instanceof GeminiError) {
+    if (cause instanceof OpenRouterError) {
       console.error('Coach failure', cause.status, cause.detail ?? cause.message)
-
-      if (cause.status === 403) {
-        return bad(
-          response,
-          502,
-          'Gemini denied this project. Enable the Generative Language API and billing for the key.',
-        )
-      }
-      if (cause.status === 404) {
-        return bad(response, 502, `Model "${MODEL}" is not available to this project.`)
-      }
-      if (cause.status === 429) {
-        return bad(response, 429, 'The coach is rate limited right now. Try again shortly.')
-      }
-      return bad(response, 502, 'The coach could not answer just now.')
+      return bad(response, cause.status === 429 ? 429 : 502, explainOpenRouterError(cause))
     }
 
     console.error('Coach failed', cause instanceof Error ? cause.message : cause)

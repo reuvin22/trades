@@ -18,7 +18,7 @@ body,
 .card,
 .sidebar,
 .chip,
-.search input {
+.field input {
   transition:
     background-color 0.28s ease,
     border-color 0.28s ease,
@@ -194,9 +194,6 @@ body,
   transform: scale(1.12);
 }
 
-.tab.is-active::after {
-  animation: pop 0.3s var(--ease-out) backwards;
-}
 
 /* ----------------------------------------------------------------- cards -- */
 

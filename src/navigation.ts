@@ -3,7 +3,6 @@ import {
   ActivityIcon,
   AnalyticsIcon,
   AuditIcon,
-  BrokerIcon,
   CalendarIcon,
   CoachIcon,
   DashboardIcon,
@@ -35,7 +34,6 @@ export const TRADER_NAV: NavItem[] = [
   { route: 'calendar', label: 'Calendar', icon: CalendarIcon },
   { route: 'analytics', label: 'Analytics', icon: AnalyticsIcon },
   { route: 'coach', label: 'AI Coach', icon: CoachIcon },
-  { route: 'brokers', label: 'Broker Connections', icon: BrokerIcon },
   { route: 'settings', label: 'Settings', icon: SettingsIcon },
 ]
 

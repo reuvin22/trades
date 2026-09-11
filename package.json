@@ -16,7 +16,8 @@
     "check:env": "node scripts/check-env.mjs",
     "prebuild": "node scripts/check-env.mjs",
     "postbuild": "node scripts/check-env.mjs --dist",
-    "vercel:env": "node scripts/vercel-env.mjs"
+    "vercel:env": "node scripts/vercel-env.mjs",
+    "test:coach": "node scripts/test-coach.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

@@ -63,7 +63,7 @@ including on Vercel.
 | --- | --- |
 | `VITE_FIREBASE_*` (all 7) | **Config** — public by design |
 | `BREVO_API_KEY` | **Secret** |
-| `GEMINI_API_KEY` | **Secret** |
+| `OPENROUTER_API_KEY` | **Secret** |
 | `FIREBASE_SERVICE_ACCOUNT` | **Secret** |
 | `APP_URL` | Config — just a URL |
 
@@ -77,9 +77,9 @@ They are read only by the serverless function in `api/`.
 | --- | --- |
 | `BREVO_API_KEY` | Brevo transactional key. Can send mail as you — treat as a password. |
 | `BREVO_SENDER_EMAIL` | A sender address **verified in Brevo**, or sends will be rejected. |
-| `BREVO_SENDER_NAME` | Display name on the email. Defaults to `TradeX`. |
-| `GEMINI_API_KEY` | Gemini key for the behavioural-leak card. From [AI Studio](https://aistudio.google.com/apikey). |
-| `GEMINI_MODEL` | Optional. Defaults to `gemini-flash-latest`, an alias that survives model retirements. |
+| `BREVO_SENDER_NAME` | Display name on the email. Defaults to `RadEx`. |
+| `OPENROUTER_API_KEY` | Powers the behavioural-leak card and the AI Coach. From [openrouter.ai/keys](https://openrouter.ai/keys). |
+| `OPENROUTER_MODEL` | Optional. A slug, or a comma-separated fallback chain. Defaults to free models that fall through on rate limits. |
 | `FIREBASE_SERVICE_ACCOUNT` | The entire contents of `trading.json`, on one line. |
 | `APP_URL` | e.g. `https://your-project.vercel.app`, used to build the return link. |
 

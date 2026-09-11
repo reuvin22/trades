@@ -142,88 +142,20 @@
 
 /* --------------------------------------------------------------- topbar -- */
 
+/* Only the action cluster lives here now. Flex with an end justification keeps
+   it in exactly the position the old three-column grid put it. */
 .topbar {
-  display: grid;
-  grid-template-columns: minmax(220px, 410px) 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 26px;
   padding: 18px 30px;
-}
-
-.search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 16px;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.search input {
-  width: 100%;
-  padding: 11px 16px 11px 44px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--tint-1);
-  outline: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.search input::placeholder {
-  color: var(--text-muted);
-}
-
-.search input:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-
-.search input::-webkit-search-cancel-button {
-  filter: invert(0.5);
-}
-
-.tabs {
-  display: flex;
-  gap: 26px;
-}
-
-.tab {
-  position: relative;
-  padding: 6px 2px;
-  font-size: 15px;
-  color: var(--text-muted);
-  transition: color 0.15s ease;
-}
-
-.tab:hover {
-  color: var(--text-dim);
-}
-
-.tab.is-active {
-  color: var(--text-strong);
-}
-
-.tab.is-active::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -2px;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 16px;
-  justify-self: end;
 }
 
 .icon-button {
@@ -880,19 +812,6 @@
 
   .quick-add {
     margin-top: 22px;
-  }
-
-  .topbar {
-    grid-template-columns: 1fr auto;
-    row-gap: 14px;
-  }
-
-  .tabs {
-    grid-column: 1;
-  }
-
-  .search {
-    grid-column: 1 / -1;
   }
 
   .content,

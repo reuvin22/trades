@@ -29,6 +29,9 @@ export type Profile = {
   markets?: string[]
   bio?: string
 
+  /** Chosen once on the AI Coach's first visit. */
+  coachLanguage?: string
+
   // Written by the billing page.
   plan?: string
   planSince?: Date | null
@@ -106,6 +109,12 @@ export async function saveProfileDetails(user: User, details: ProfileDetails) {
     { ...details, updatedAt: serverTimestamp() },
     { merge: true },
   )
+}
+
+/** Remembers the language the coach should reply in. */
+export async function saveCoachLanguage(uid: string, coachLanguage: string) {
+  if (!db) throw new Error('Firestore is not configured.')
+  await setDoc(profileRef(uid), { coachLanguage }, { merge: true })
 }
 
 /** Records the chosen plan. No payment processor is wired up yet. */

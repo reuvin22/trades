@@ -1,5 +1,5 @@
 import type { TradeSummary } from './_trade-summary'
-import { DEFAULT_MODEL, GeminiError } from './_gemini'
+import { complete, type ChatMessage } from './_openrouter'
 
 /**
  * The AI Coach conversation.
@@ -40,11 +40,72 @@ direct, a little dry. You are talking, not writing a report.
   Just plain conversational sentences, like a message.
 - At most three or four sentences per reply unless they ask for more.
 - Use their real numbers, but round them and say them the way a person would:
-  "about two hundred quid a trade", "roughly two out of three".
+  "about two hundred a trade", "roughly two out of three".
 - Do not open with pleasantries every time. Get to the point.
 - Never moralise. They are an adult. If they did something costly, say what it
   cost and move on.
-- If the data does not support an answer, say so plainly rather than guessing.`
+- If the data does not support an answer, say so plainly rather than guessing.
+- Never show your reasoning or think out loud. Give the reply only.`
+
+/**
+ * A flat digest of the figures a coach reaches for most.
+ *
+ * Smaller models derive these unreliably from the nested JSON — one produced a
+ * confident "two out of three" for a 50% win rate — so the arithmetic is done
+ * here and handed over already computed. The full JSON still follows for
+ * anything this does not cover.
+ */
+function headlineFacts(summary: TradeSummary): string {
+  const money = (value: number) =>
+    `${value < 0 ? '-' : ''}${Math.abs(Math.round(value)).toLocaleString('en-US')}`
+
+  const wins = Math.round((summary.winRate / 100) * summary.closedCount)
+  const lines = [
+    `Total trades logged: ${summary.tradeCount} (${summary.closedCount} closed)`,
+    `Wins: ${wins}. Losses: ${summary.closedCount - wins}.`,
+    `Win rate: ${Math.round(summary.winRate)}%`,
+    `Net P&L overall: ${money(summary.netPl)}`,
+    `Average winning trade: ${money(summary.avgWin)}`,
+    `Average losing trade: -${money(summary.avgLoss)}`,
+    summary.profitFactor === null
+      ? 'Profit factor: not computable (no losses yet)'
+      : `Profit factor: ${summary.profitFactor}`,
+    summary.avgHoldMinutes === null
+      ? 'Average hold time: not recorded'
+      : `Average hold time: ${Math.round(summary.avgHoldMinutes)} minutes`,
+    `Worst losing streak: ${summary.worstStreak} in a row`,
+    `Trades taken right after a loss: ${summary.afterLoss.count}, together ${money(
+      summary.afterLoss.netPl,
+    )}, winning ${Math.round(summary.afterLoss.winRate)}% of the time`,
+    summary.afterLoss.medianMinutesToReentry === null
+      ? 'Median time back in after a loss: not enough same-session data'
+      : `Median time back in after a loss (same session): ${summary.afterLoss.medianMinutesToReentry} minutes`,
+    summary.afterLoss.avgSizeChangePct === null
+      ? 'Position size change after a loss: not recorded'
+      : `Position size change after a loss: ${summary.afterLoss.avgSizeChangePct}%`,
+    `Plan compliance: entry ${summary.planCompliance.entry}%, exit ${summary.planCompliance.exit}%, management ${summary.planCompliance.management}%`,
+  ]
+
+  const worstSetup = summary.bySetup[0]
+  if (worstSetup) {
+    lines.push(
+      `Worst setup by money: ${worstSetup.label} — ${worstSetup.trades} trades, ${money(
+        worstSetup.netPl,
+      )}`,
+    )
+  }
+
+  const worstHour = summary.byHour[0]
+  if (worstHour) {
+    lines.push(
+      `Worst hour of the day: ${worstHour.label} — ${worstHour.trades} trades, ${money(
+        worstHour.netPl,
+      )}`,
+    )
+  }
+
+  return lines.map((line) => `- ${line}`).join('\n')
+}
 
 export function buildSystemPrompt(
   summary: TradeSummary | null,
@@ -54,23 +115,27 @@ export function buildSystemPrompt(
   const who = displayName ? `The trader's name is ${displayName}.` : ''
 
   const data = summary
-    ? `Here is everything you know about their trading. It is computed from the
-trades they logged in this app, and it is the only source you may draw on:
+    ? `Here is everything you know about their trading, computed from the trades
+they logged in this app. It is the only source you may draw on. These headline
+figures are already worked out — quote them, do not recalculate them:
+
+${headlineFacts(summary)}
+
+Full breakdown, for anything the headlines do not cover:
 
 ${JSON.stringify(summary, null, 1)}`
     : `They have not logged enough trades yet for you to analyse anything. Be
 honest about that. Encourage them to log a few and tell them what you will be
 able to see once they do.`
 
-  return `You are the AI Coach inside TradeX, a trading journal app. ${who}
+  return `You are the AI Coach inside RadEx, a trading journal app. ${who}
 
 ${REFUSAL_GUIDANCE}
 
 ${TONE_GUIDANCE}
 
-Reply in ${language}. Every word, including numbers written as words. If they
-write to you in a different language, still reply in ${language} unless they
-explicitly ask you to switch.
+Reply in ${language}. Every word of it. If they write to you in a different
+language, still reply in ${language} unless they explicitly ask you to switch.
 
 ${data}`
 }
@@ -79,51 +144,23 @@ export async function askCoach(
   history: CoachTurn[],
   systemPrompt: string,
   apiKey: string,
-  model = DEFAULT_MODEL,
-): Promise<string> {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+  models?: string[],
+): Promise<{ text: string; model: string }> {
+  const messages: ChatMessage[] = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(
+      (turn): ChatMessage => ({
+        role: turn.role === 'user' ? 'user' : 'assistant',
+        content: turn.text,
+      }),
+    ),
+  ]
 
-  const response = await fetch(`${endpoint}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: history.map((turn) => ({
-        role: turn.role === 'user' ? 'user' : 'model',
-        parts: [{ text: turn.text }],
-      })),
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.95,
-        maxOutputTokens: 500,
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-      ],
-    }),
+  return complete({
+    messages,
+    apiKey,
+    models,
+    temperature: 0.7,
+    maxTokens: 1200,
   })
-
-  if (!response.ok) {
-    const detail = await response.text()
-    throw new GeminiError('Gemini rejected the request', response.status, detail.slice(0, 400))
-  }
-
-  const payload = (await response.json()) as {
-    candidates?: {
-      content?: { parts?: { text?: string }[] }
-      finishReason?: string
-    }[]
-  }
-
-  const candidate = payload.candidates?.[0]
-  const text = candidate?.content?.parts?.map((part) => part.text ?? '').join('').trim()
-
-  if (!text) {
-    throw new GeminiError('Gemini returned no content', 502, candidate?.finishReason)
-  }
-
-  return text
 }

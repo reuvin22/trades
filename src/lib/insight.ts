@@ -32,7 +32,7 @@ type Payload = {
 }
 
 /**
- * Fetches the Gemini-written behavioural leak for the signed-in trader.
+ * Fetches the model-written behavioural leak for the signed-in trader.
  *
  * `tradeCount` is a dependency rather than the trades themselves: the server
  * reads the journal directly, so the count is only here to re-run the request

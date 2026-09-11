@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
  * Exercises the behavioural-leak prompt against a synthetic journal, so the
- * Gemini wiring can be checked without signing in or spending real trades.
+ * wiring can be checked without signing in or spending real trades.
  *
- *   npm run test:leak                  -> a trader with a revenge-trading habit
- *   npm run test:leak -- clean         -> a disciplined trader (expects "low")
- *   npm run test:leak -- revenge gemini-2.5-flash
+ *   npm run test:leak            a trader with a revenge-trading habit
+ *   npm run test:leak -- clean   a disciplined trader (expects severity low)
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
+import { warnAboutKey, ERROR_HELP } from './_key-check.mjs'
 
 function loadEnv() {
   const path = resolve(process.cwd(), '.env.local')
@@ -26,12 +26,8 @@ function loadEnv() {
 }
 
 const env = { ...loadEnv(), ...process.env }
-const apiKey = env.GEMINI_API_KEY
-
-if (!apiKey) {
-  console.error('\n  GEMINI_API_KEY is not set in .env.local\n')
-  process.exit(1)
-}
+const apiKey = env.OPENROUTER_API_KEY
+if (!warnAboutKey(apiKey)) process.exit(1)
 
 const esbuild = resolve(
   'node_modules/.bin',
@@ -48,10 +44,21 @@ async function load(file) {
 }
 
 const { summarise } = await load('api/_trade-summary.ts')
-const { generateLeak, DEFAULT_MODEL } = await load('api/_gemini.ts')
+const { generateLeak } = await load('api/_leak-prompt.ts')
 
-const [, , shape = 'revenge', modelArg] = process.argv
-const model = modelArg || env.GEMINI_MODEL || DEFAULT_MODEL
+const shape = process.argv[2] || 'revenge'
+const models = env.OPENROUTER_MODEL
+  ? env.OPENROUTER_MODEL.split(',').map((m) => m.trim()).filter(Boolean)
+  : undefined
+
+/** Deterministic RNG so a run is reproducible and reviewable. */
+function rng(seed) {
+  let state = seed
+  return () => {
+    state = (state * 1664525 + 1013904223) % 4294967296
+    return state / 4294967296
+  }
+}
 
 /**
  * The app stores what an <input type="datetime-local"> produces: a local wall
@@ -66,18 +73,7 @@ function localStamp(date) {
   )
 }
 
-/** Deterministic RNG so a run is reproducible and reviewable. */
-function rng(seed) {
-  let state = seed
-  return () => {
-    state = (state * 1664525 + 1013904223) % 4294967296
-    return state / 4294967296
-  }
-}
-
 /**
- * Builds a journal with a deliberate, known pattern.
- *
  * "revenge": disciplined baseline, but after any loss the next entry comes
  * within minutes at double size and loses more often than it wins.
  * "clean": the same baseline with no post-loss distortion at all.
@@ -101,16 +97,17 @@ function buildTrades(kind) {
       entry.setHours(9 + n * 2, 30 + Math.floor(random() * 20))
 
       if (chasing) {
-        // Straight back in, three or four minutes after the loss closed.
-        entry.setTime(new Date(previous.exitAt).getTime() + (3 + Math.floor(random() * 2)) * 60000)
+        entry.setTime(
+          new Date(previous.exitAt).getTime() + (3 + Math.floor(random() * 2)) * 60000,
+        )
       }
 
       const size = chasing ? 320 : 150
-      const holdMinutes = chasing ? 12 + Math.floor(random() * 10) : 40 + Math.floor(random() * 60)
+      const holdMinutes = chasing
+        ? 12 + Math.floor(random() * 10)
+        : 40 + Math.floor(random() * 60)
       const exit = new Date(entry.getTime() + holdMinutes * 60000)
 
-      // Baseline is a real edge: ~56% win rate, winners bigger than losers.
-      // Revenge trades invert both.
       const won = chasing ? random() < 0.22 : random() < 0.56
       const netPl = won
         ? Math.round((chasing ? 90 : 210) + random() * 120)
@@ -146,26 +143,45 @@ function buildTrades(kind) {
   return trades
 }
 
-const trades = buildTrades(shape)
-const summary = summarise(trades)
+const summary = summarise(buildTrades(shape))
 
-console.log(`\n  Shape          ${shape}`)
-console.log(`  Model          ${model}`)
-console.log(`  Trades         ${summary.tradeCount} (${summary.closedCount} closed)`)
-console.log(`  Net P&L        ${summary.netPl}`)
-console.log(`  Win rate       ${summary.winRate}%`)
-console.log(`  After a loss   ${summary.afterLoss.count} trades, net ${summary.afterLoss.netPl}, ` +
-  `win rate ${summary.afterLoss.winRate}%`)
-console.log(`  Same-session   ${summary.afterLoss.sameSessionCount} re-entries, median ${summary.afterLoss.medianMinutesToReentry} min`)
-console.log(`  Size change    ${summary.afterLoss.avgSizeChangePct}%`)
+console.log(`\n  shape          ${shape}`)
+console.log(`  trades         ${summary.tradeCount} (${summary.closedCount} closed)`)
+console.log(`  net P&L        ${summary.netPl}`)
+console.log(`  win rate       ${summary.winRate}%`)
+console.log(
+  `  after a loss   ${summary.afterLoss.count} trades, net ${summary.afterLoss.netPl}, ` +
+    `win rate ${summary.afterLoss.winRate}%`,
+)
+console.log(
+  `  same-session   ${summary.afterLoss.sameSessionCount} re-entries, ` +
+    `median ${summary.afterLoss.medianMinutesToReentry} min`,
+)
+console.log(`  size change    ${summary.afterLoss.avgSizeChangePct}%`)
 
 const started = Date.now()
-const result = await generateLeak(summary, apiKey, model)
-const elapsed = ((Date.now() - started) / 1000).toFixed(1)
 
-console.log(`\n  --- Gemini responded in ${elapsed}s ---\n`)
+let outcome
+try {
+  outcome = await generateLeak(summary, apiKey, models)
+} catch (error) {
+  console.log()
+  console.log(`  ${error.message} (${error.status ?? '?'})`)
+  if (error.detail) {
+    console.log(`  ${String(error.detail).replace(/\s+/g, ' ').slice(0, 200)}`)
+  }
+  const help = ERROR_HELP[error.status]
+  if (help) console.log(`  ${help}`)
+  console.log()
+  process.exit(1)
+}
+
+const elapsed = ((Date.now() - started) / 1000).toFixed(1)
+const { result, model } = outcome
+
+console.log(`\n  --- answered in ${elapsed}s by ${model} ---\n`)
 console.log(`  title           ${result.title}`)
 console.log(`  severity        ${result.severity}`)
 console.log(`  costLabel       ${result.costLabel}`)
-console.log(`\n  finding\n    ${result.finding.replace(/\n/g, '\n    ')}`)
-console.log(`\n  recommendation\n    ${result.recommendation.replace(/\n/g, '\n    ')}\n`)
+console.log(`\n  finding\n    ${result.finding}`)
+console.log(`\n  recommendation\n    ${result.recommendation}\n`)

@@ -49,10 +49,6 @@
   margin-top: 6px;
 }
 
-.admin-topbar {
-  grid-template-columns: minmax(220px, 460px) 1fr;
-}
-
 .terminal-chip {
   display: inline-flex;
   align-items: center;

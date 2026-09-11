@@ -11,7 +11,7 @@ export function Sidebar({ route, onQuickAdd }: SidebarProps) {
   return (
     <aside className="sidebar">
       <a className="brand" href="#/dashboard">
-        <h1 className="brand-name">TradeX</h1>
+        <h1 className="brand-name">RadEx</h1>
         <p className="brand-sub">Pro Trader Account</p>
       </a>
 

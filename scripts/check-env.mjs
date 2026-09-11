@@ -11,6 +11,7 @@
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { describeOpenRouterKey } from './_key-check.mjs'
 
 const RED = '[31m'
 const GREEN = '[32m'
@@ -18,13 +19,16 @@ const DIM = '[2m'
 const OFF = '[0m'
 
 /** Names that must never be exposed, whatever they are prefixed with. */
-const SECRET_NAME = /(SECRET|PRIVATE|PASSWORD|CREDENTIAL|SERVICE_ACCOUNT|BREVO|GEMINI|_TOKEN)/i
+// Deliberately NOT matching a bare "API_KEY": VITE_FIREBASE_API_KEY is public
+// by design, and flagging it would block every build.
+const SECRET_NAME = /(SECRET|PRIVATE|PASSWORD|CREDENTIAL|SERVICE_ACCOUNT|BREVO|OPENROUTER|GEMINI|_TOKEN)/i
 
 /** Value shapes that are unambiguously credentials. */
 const SECRET_VALUE = [
   { pattern: /^xkeysib-/, what: 'a Brevo API key' },
   { pattern: /BEGIN [A-Z ]*PRIVATE KEY/, what: 'a private key' },
   { pattern: /"type"\s*:\s*"service_account"/, what: 'a service account' },
+  { pattern: /^sk-or-/, what: 'an OpenRouter key' },
   { pattern: /^sk-/, what: 'an API secret key' },
   { pattern: /^ghp_|^github_pat_/, what: 'a GitHub token' },
 ]
@@ -103,6 +107,13 @@ if (process.argv.includes('--dist')) {
     if (shape) {
       problems.push(`${name} is VITE_-prefixed but its value looks like ${shape.what}.`)
     }
+  }
+
+  // A warning, not a failure: key formats change, and a deploy should not be
+  // blocked by our guess about one.
+  if (env.OPENROUTER_API_KEY) {
+    const key = describeOpenRouterKey(env.OPENROUTER_API_KEY)
+    if (!key.ok) console.warn(`${DIM}  ! OPENROUTER_API_KEY: ${key.note}${OFF}`)
   }
 
   if (problems.length === 0) {

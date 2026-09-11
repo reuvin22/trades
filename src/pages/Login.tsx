@@ -116,15 +116,15 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
 
       <section className="login-aside">
         <div className="login-brand">
-          <h1 className="brand-name">TradeX</h1>
+          <h1 className="brand-name">RadEx</h1>
           <p className="brand-sub">Pro Trader Account</p>
         </div>
 
         <div>
           <h2 className="login-pitch">
-            The journal that argues
+            Know Your Trades.
             <br />
-            with your worst habits.
+            Grow Your Edge.
           </h2>
 
           <ul className="login-points">
@@ -297,7 +297,7 @@ export function Login({ theme, onToggleTheme, onPreview }: LoginProps) {
           </form>
 
           <p className="login-switch">
-            {mode === 'signin' ? 'New to TradeX? ' : 'Already have an account? '}
+            {mode === 'signin' ? 'New to RadEx? ' : 'Already have an account? '}
             <button
               type="button"
               className="link-button"

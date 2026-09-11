@@ -56,7 +56,7 @@ function TraderView({
     case 'analytics':
       return <Analytics trades={trades} />
     case 'coach':
-      return <AiCoach />
+      return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'profile':
       return <Profile user={user} profile={profile} />
     case 'billing':
@@ -109,7 +109,7 @@ function App() {
   if (pending) {
     return (
       <div className="auth-splash">
-        <h1 className="brand-name">TradeX</h1>
+        <h1 className="brand-name">RadEx</h1>
         <p className="brand-sub">Restoring your session…</p>
       </div>
     )

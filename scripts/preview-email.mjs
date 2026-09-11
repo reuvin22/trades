@@ -32,7 +32,7 @@ writeFileSync(
     link: 'https://trading-journal-43d07.firebaseapp.com/__/auth/action?mode=verifyEmail&oobCode=EXAMPLE',
     name: 'Reuvin Hernandez',
     gifUrl: '/email/verify.gif',
-    brand: 'TradeX',
+    brand: 'RadEx',
   }),
   'utf8',
 )
@@ -43,7 +43,7 @@ console.log('    npm run dev   ->   http://localhost:5173/../email-preview.html'
 console.log('\n  Plain-text part:\n')
 console.log(
   module
-    .verificationText({ link: 'https://…/verify?oobCode=EXAMPLE', name: 'Reuvin Hernandez', brand: 'TradeX' })
+    .verificationText({ link: 'https://…/verify?oobCode=EXAMPLE', name: 'Reuvin Hernandez', brand: 'RadEx' })
     .split('\n')
     .map((line) => `    ${line}`)
     .join('\n'),

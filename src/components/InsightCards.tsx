@@ -138,7 +138,7 @@ export function BehavioralLeakCard({
 
           <p className="leak-note">
             <SparkleIcon size={11} />
-            Written by Gemini from your logged trades
+            Written from your logged trades
           </p>
         </>
       )}

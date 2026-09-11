@@ -12,7 +12,7 @@
  * precedence when present, which is what you need to point a preview or staging
  * deployment at a different Firebase project.
  *
- * Nothing secret belongs in this file. The Brevo key, the Gemini key and the
+ * Nothing secret belongs in this file. The Brevo key, the OpenRouter key and the
  * service account are read from process.env inside api/ and never reach here.
  */
 export const FIREBASE_WEB_CONFIG = {

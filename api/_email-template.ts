@@ -139,7 +139,7 @@ export function verificationHtml({ link, name, gifUrl, brand }: TemplateInput): 
           nothing will be activated without this confirmation.
         </p>
         <p style="margin:0;font-size:12px;line-height:1.65;color:#9793ad;">
-          &copy; ${new Date().getFullYear()} ${safeBrand} &middot; Trading journal &amp; performance analytics
+          &copy; ${new Date().getFullYear()} ${safeBrand} &middot; Know Your Trades. Grow Your Edge.
         </p>
       </td></tr>
       </table>
@@ -170,5 +170,5 @@ This link expires in one hour and can be used once.
 Didn't create a ${brand} account? Ignore this email and nothing will be activated.
 
 — ${brand}
-Trading journal and performance analytics`
+Know Your Trades. Grow Your Edge.`
 }

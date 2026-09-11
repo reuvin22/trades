@@ -137,86 +137,82 @@
   }
 }
 
-/* ---------------------------------------------------- embedded analysis -- */
 
-.revenge-chart {
-  margin: 16px 0 0;
-  padding: 14px 16px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--panel-inset);
-}
+/* ------------------------------------------------------- language choice -- */
 
-.revenge-head {
+.language-gate {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px;
+  animation: rise 0.5s 0.1s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
 }
 
-.revenge-title {
-  font-size: 13px;
-  font-weight: 500;
+.language-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.language-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 13px;
+  text-align: left;
   color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--tint-1);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
-.revenge-total {
-  font-family: var(--mono);
-  font-size: 13px;
+.language-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+.language-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.language-chip.is-saving {
+  opacity: 1;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.language-native {
+  font-size: 13.5px;
   font-weight: 500;
-  color: var(--cyan);
 }
 
-.revenge-axis {
-  margin-top: 4px;
-  text-align: right;
-  font-size: 8px;
+.language-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.coach-error {
+  padding: 11px 15px;
+  font-size: 12.5px;
   line-height: 1.5;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 32%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--red) 9%, transparent);
 }
 
-.revenge-plot {
-  position: relative;
-  height: 190px;
-  margin-top: 2px;
-  padding-left: 34px;
+.bubble.coach p + p {
+  margin-top: 10px;
 }
 
-.revenge-plot svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.revenge-y {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 34px;
-}
-
-.revenge-y span {
-  position: absolute;
-  right: 7px;
-  transform: translateY(-50%);
-  font-size: 7.5px;
-  color: var(--text-muted);
-}
-
-.revenge-line {
-  stroke: var(--chart-line);
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-}
-
-.revenge-x {
-  display: flex;
-  justify-content: space-between;
-  margin: 5px 0 0 34px;
-  font-size: 7.5px;
-  color: var(--text-muted);
+/* Keep the composer reachable while a long conversation scrolls. */
+.coach-page .composer {
+  position: sticky;
+  bottom: 16px;
 }
 
 /* -------------------------------------------------------------- composer -- */
@@ -273,4 +269,42 @@
   .bubble.trader {
     max-width: 78%;
   }
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.suggestion {
+  padding: 7px 13px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--tint-1);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.suggestion:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coach-warning {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  border: 1px solid color-mix(in srgb, var(--amber) 34%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
 }

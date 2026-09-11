@@ -1,7 +1,6 @@
-import { useState } from 'react'
 import type { Theme } from '../../lib/useTheme'
 import { ThemeToggle } from '../TopBar'
-import { BellIcon, MonitorIcon, SearchIcon, UserGlyphIcon } from '../Icons'
+import { BellIcon, MonitorIcon, UserGlyphIcon } from '../Icons'
 
 type AdminTopBarProps = {
   theme: Theme
@@ -9,21 +8,8 @@ type AdminTopBarProps = {
 }
 
 export function AdminTopBar({ theme, onToggleTheme }: AdminTopBarProps) {
-  const [query, setQuery] = useState('')
-
   return (
     <header className="topbar admin-topbar">
-      <div className="search">
-        <SearchIcon className="search-icon" />
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search trades, tickers, or setups..."
-          aria-label="Search the platform"
-        />
-      </div>
-
       <div className="topbar-actions">
         <button type="button" className="icon-button" aria-label="Notifications">
           <BellIcon />

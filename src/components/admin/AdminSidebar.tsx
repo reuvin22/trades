@@ -11,7 +11,7 @@ export function AdminSidebar({ route, onQuickAdd }: AdminSidebarProps) {
   return (
     <aside className="sidebar admin-sidebar">
       <a className="brand" href="#/dashboard" title="Back to the trader app">
-        <h1 className="brand-name">TradeX</h1>
+        <h1 className="brand-name">RadEx</h1>
         <p className="brand-sub">Admin Dashboard</p>
       </a>
 

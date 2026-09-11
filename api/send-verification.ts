@@ -75,7 +75,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       url: `${appUrl}/#/login`,
     })
 
-    const brand = process.env.BREVO_SENDER_NAME ?? 'TradeX'
+    const brand = process.env.BREVO_SENDER_NAME ?? 'RadEx'
 
     const sent = await fetch(BREVO_ENDPOINT, {
       method: 'POST',
