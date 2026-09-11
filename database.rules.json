@@ -1,0 +1,103 @@
+// Realtime Database rules — the chat feature, and nothing else.
+// Deploy with: firebase deploy --only database
+//
+// This is the one database a browser talks to directly, because a message has
+// to arrive in under a second. Everything else — the journal, the profile, the
+// coach — lives in Firestore and is served only through the API, whose rules
+// deny every direct client read.
+//
+// So these rules are the whole boundary for chat. The browser authenticates
+// with a custom token minted by GET /api/v1/chat/token, which is issued only
+// for the uid the session cookie already names; what that token can then reach
+// is decided entirely here.
+//
+// A thread id is the two participants' uids sorted and joined with '_', so
+// membership is readable off the key with no lookup. The checks match
+// uid + '_' at the start or '_' + uid at the end rather than a bare contains(),
+// so one uid cannot pass by being a substring of another.
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    // The public face of an account, mirrored here so the dock can render a
+    // name and avatar without a round trip to the API. Each person writes only
+    // their own, and the shape is pinned so nothing else can be smuggled in.
+    "profiles": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['name'])",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "email": { ".validate": "newData.isString() && newData.val().length <= 320" },
+        "photoURL": { ".validate": "newData.isString() && newData.val().length <= 2000" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "contacts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+
+        // Two writers, deliberately. You may add anyone to your own list, and
+        // you may add yourself to someone else's — that second case is what
+        // puts a new conversation in the other person's dock. Neither lets you
+        // put a third party into a stranger's list.
+        "$otherUid": {
+          ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
+          ".validate": "newData.isBoolean() && newData.val() == true"
+        }
+      }
+    },
+
+    "threads": {
+      "$threadId": {
+        ".read": "auth != null && ($threadId.beginsWith(auth.uid + '_') || $threadId.endsWith('_' + auth.uid))",
+
+        "messages": {
+          "$messageId": {
+            // !data.exists() makes a message write-once: no edits, no deletes.
+            ".write": "auth != null && ($threadId.beginsWith(auth.uid + '_') || $threadId.endsWith('_' + auth.uid)) && !data.exists()",
+            ".validate": "newData.hasChildren(['from', 'text', 'at'])",
+
+            "from": { ".validate": "newData.val() == auth.uid" },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+            },
+            // ServerValue.TIMESTAMP resolves to `now`, so a client cannot
+            // backdate a message to slip in under someone's read marker.
+            "at": { ".validate": "newData.val() == now" },
+
+            "$other": { ".validate": false }
+          }
+        },
+
+        // When each participant last had the thread open. Both members read it
+        // — that is what makes a sent message show as seen — but you can only
+        // stamp your own, and only with the server's clock.
+        "reads": {
+          "$uid": {
+            ".write": "auth != null && auth.uid == $uid && ($threadId.beginsWith(auth.uid + '_') || $threadId.endsWith('_' + auth.uid))",
+            ".validate": "newData.val() == now"
+          }
+        },
+
+        "$other": { ".validate": false }
+      }
+    },
+
+    // Presence, kept to people who have you in their contacts.
+    "status": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('contacts').child(auth.uid).child($uid).exists())",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['online', 'at'])",
+
+        "online": { ".validate": "newData.isBoolean()" },
+        "at": { ".validate": "newData.val() == now" },
+
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

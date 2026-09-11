@@ -139,9 +139,11 @@ export function registerWithPassword(
  * produces is an ID token, which goes to the API once and is verified there
  * against the Firebase project before any session exists.
  *
- * The token is never stored. `signOut` clears the SDK's own copy immediately,
- * because the only credential this app should hold afterwards is the HttpOnly
- * cookie the API set, which script on this page cannot read.
+ * The SDK stays signed in afterwards, because live chat needs a Firebase
+ * session to hold its websocket open. That session is not what authorises this
+ * app — the HttpOnly cookie is, and it is the only thing the API accepts — and
+ * what the Firebase one can reach is bounded by database.rules.json: chat, and
+ * nothing else. `signOutOfApp` ends both.
  */
 export async function signInWithGoogle(): Promise<AuthUser | null> {
   const instance = auth
@@ -157,19 +159,11 @@ export async function signInWithGoogle(): Promise<AuthUser | null> {
   const credential = await signInWithPopup(instance, provider)
   const idToken = await credential.user.getIdToken()
 
-  try {
-    const wire = await apiFetch<SessionWire>('/api/v1/auth/google', {
-      method: 'POST',
-      body: { id_token: idToken },
-    })
-    return toUser(wire)
-  } finally {
-    // Whether or not the exchange worked, the SDK's session has done its job.
-    // Leaving it signed in would keep a second, refreshable credential in the
-    // browser alongside the cookie — two sources of truth, one of them readable
-    // by any script on the page.
-    await signOut(instance).catch(() => {})
-  }
+  const wire = await apiFetch<SessionWire>('/api/v1/auth/google', {
+    method: 'POST',
+    body: { id_token: idToken },
+  })
+  return toUser(wire)
 }
 
 /** Firebase's popup errors are not fit to show a person. */
@@ -210,7 +204,11 @@ export function sendPasswordReset(email: string) {
   })
 }
 
-export function signOutOfApp() {
+export async function signOutOfApp() {
+  // Both sessions. The cookie is what authorises the API; the Firebase one
+  // holds the chat websocket open, and leaving it behind would keep a signed-out
+  // browser subscribed to conversations.
+  if (auth) await signOut(auth).catch(() => {})
   return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }
 

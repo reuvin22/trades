@@ -3,10 +3,13 @@ import {
   addContact,
   formatSeenTime,
   formatTime,
+  markSeen,
   sendMessage,
+  useChatConnection,
   useContacts,
-  useThread,
   type Contact as ChatContact,
+  type ChatMessage,
+  type Person as ChatPerson,
 } from '../lib/chat'
 import { useDirectorySearch, type DirectoryEntry } from '../lib/directory'
 import { readableApiError } from '../lib/api'
@@ -77,13 +80,20 @@ type Person = {
   accent: string
 }
 
-function toPerson(entry: DirectoryEntry): Person {
+/**
+ * Two shapes arrive here and both render the same row: a directory hit from
+ * the API's search, and a live profile from the chat database. They differ
+ * only in what the name field is called.
+ */
+function toPerson(entry: DirectoryEntry | ChatPerson): Person {
+  const name = 'displayName' in entry ? entry.displayName : entry.name
+
   return {
     uid: entry.uid,
-    name: displayNameFor(entry.displayName, entry.email),
+    name: displayNameFor(name, entry.email),
     email: entry.email,
     photoURL: entry.photoURL,
-    initials: initialsFor(entry.displayName, entry.email),
+    initials: initialsFor(name, entry.email),
     accent: accentFor(entry.uid),
   }
 }
@@ -241,8 +251,8 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   const me = user?.uid ?? null
   const signedIn = me !== null
 
-  const { contacts, error: contactsError, reload } = useContacts(signedIn, open)
-  const { thread, error: threadError } = useThread(open ? activeId : null, me)
+  const { ready, error: connectionError } = useChatConnection(user)
+  const contacts = useContacts(user, ready)
 
   const active = contacts.find((entry) => entry.person.uid === activeId) ?? null
   const unread = contacts.reduce((sum, entry) => sum + entry.unread, 0)
@@ -268,7 +278,21 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   useEffect(() => {
     const node = threadBox.current
     if (node) node.scrollTop = node.scrollHeight
-  }, [activeId, thread])
+  }, [activeId, active?.messages])
+
+  /*
+   * Stamp the open conversation as read.
+   *
+   * Runs on new arrivals too, so a message that lands while you are looking at
+   * it is marked without a click — which is what the other side sees as "Seen".
+   * Guarded on there actually being something unread, which is what stops it
+   * looping: the write updates the thread, the effect reruns, and now finds
+   * nothing to do.
+   */
+  useEffect(() => {
+    if (!open || me === null || active === null || active.unread === 0) return
+    markSeen(me, active.person.uid).catch(() => {})
+  }, [open, me, active])
 
   function select(uid: string) {
     setActiveId(uid)
@@ -277,12 +301,13 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   }
 
   async function add(entry: DirectoryEntry) {
+    if (me === null) return
+
     setAdding(false)
     select(entry.uid)
 
     try {
-      await addContact(entry.uid)
-      await reload()
+      await addContact(me, entry.uid)
     } catch (cause) {
       setFailure(readableApiError(cause))
     }
@@ -292,16 +317,17 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     event.preventDefault()
 
     const text = draft.trim()
-    if (text === '' || activeId === null) return
+    if (text === '' || activeId === null || me === null) return
 
     // Cleared first: the message is on its way, and a composer that stays full
-    // invites a second send of the same thing.
+    // invites a second send of the same thing. Nothing else is needed here —
+    // the SDK echoes the message into the listener before the server has even
+    // acknowledged it, so it is on screen by the time this returns.
     setDraft('')
     setFailure(null)
 
     try {
-      await sendMessage(activeId, text)
-      await reload()
+      await sendMessage(me, activeId, text)
     } catch (cause) {
       setDraft(text)
       setFailure(readableApiError(cause))
@@ -315,16 +341,16 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
    * having seen everything before it, so marking each one would be noise.
    */
   const receipt = useMemo(() => {
-    if (!thread || thread.seenAt === null || me === null) return null
+    if (active === null || active.seenAt === null || me === null) return null
 
-    const seen = thread.seenAt
-    const mine = thread.messages.filter(
+    const seen = active.seenAt
+    const mine = active.messages.filter(
       (message) => message.sender === me && message.sentAt <= seen,
     )
     const last = mine[mine.length - 1]
 
     return last ? { messageId: last.id, at: seen } : null
-  }, [thread, me])
+  }, [active, me])
 
   /*
    * Why the dock cannot do anything, when it cannot.
@@ -334,7 +360,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
    */
   const unavailable = !signedIn
     ? 'Sign in with an account to message other traders.'
-    : contactsError
+    : connectionError
 
   const person = active ? toPerson(active.person) : null
 
@@ -437,11 +463,11 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
               ) : (
                 <>
                   <header className={DOCK_MAIN_HEAD}>
-                    <Avatar person={person} online={thread?.online ?? false} />
+                    <Avatar person={person} online={active?.online ?? false} />
                     <div className="min-w-0">
                       <p className={DOCK_CONTACT_NAME}>{person.name}</p>
                       <p className={DOCK_CONTACT_ROLE}>
-                        {thread?.online ? 'Online now' : person.email}
+                        {active?.online ? 'Online now' : person.email}
                       </p>
                     </div>
 
@@ -455,14 +481,14 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                   </header>
 
                   <div className={DOCK_THREAD} ref={threadBox}>
-                    {thread === null ? (
+                    {active === null ? (
                       <p className={DOCK_EMPTY}>Loading…</p>
-                    ) : thread.messages.length === 0 ? (
+                    ) : active.messages.length === 0 ? (
                       <p className={DOCK_EMPTY}>
                         No messages yet. Say something to {person.name.split(' ')[0]}.
                       </p>
                     ) : (
-                      thread.messages.map((message) => (
+                      active.messages.map((message: ChatMessage) => (
                         <div key={message.id} className="contents">
                           <div
                             className={`${DOCK_BUBBLE} ${
@@ -484,9 +510,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     )}
                   </div>
 
-                  {(failure ?? threadError) !== null && (
-                    <p className={DOCK_ERROR}>{failure ?? threadError}</p>
-                  )}
+                  {failure !== null && <p className={DOCK_ERROR}>{failure}</p>}
 
                   <form className={DOCK_COMPOSER} onSubmit={send}>
                     <input

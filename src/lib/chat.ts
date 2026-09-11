@@ -1,19 +1,46 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { API_BASE, apiFetch, date, readableApiError } from './api'
-import { toEntry, type DirectoryEntry } from './directory'
+import { useEffect, useMemo, useState } from 'react'
+import { signInWithCustomToken } from 'firebase/auth'
+import {
+  limitToLast,
+  onDisconnect,
+  onValue,
+  push,
+  query,
+  ref,
+  serverTimestamp,
+  set,
+  update,
+} from 'firebase/database'
+import { apiFetch, readableApiError } from './api'
+import { auth, rtdb } from './firebase'
+import type { AuthUser } from './useAuth'
 
 /**
- * Chat, through the API.
+ * Chat, on the Realtime Database, read straight from the browser.
  *
- * The Realtime Database is gone from the client along with everything else
- * Firebase. What replaced its live listeners is polling, which is the honest
- * trade: a browser that can subscribe to a database is a browser holding
- * credentials for it.
+ * The one feature that does not go through the API, for one reason: speed. A
+ * message has to land in well under a second, and a request proxied through a
+ * free-tier instance cannot do that — polling gave ten seconds, and even
+ * server-sent events added a hop and a cold start. RTDB gives the browser a
+ * websocket, so a message arrives as fast as Firebase can push it, and a
+ * message you send appears instantly because the SDK echoes it locally before
+ * the server has acknowledged it.
  *
- * Polling is paced by what is actually on screen — see `POLL_OPEN` and
- * `POLL_IDLE` — so a closed dock costs one request a minute rather than one a
- * second.
+ * The session cookie is still the source of truth. `connect` exchanges it for a
+ * Firebase custom token at GET /api/v1/chat/token, minted only for the uid the
+ * cookie already names, and what that token can reach is bounded by
+ * database.rules.json — chat, and nothing else. The journal stays in Firestore,
+ * which denies every direct client read.
+ *
+ *   /profiles/{uid}                   name, email, photo
+ *   /contacts/{uid}/{otherUid}        true
+ *   /threads/{threadId}/messages/{id} { from, text, at }
+ *   /threads/{threadId}/reads/{uid}   when they last looked
+ *   /status/{uid}                     { online, at }
  */
+
+/** How much history a conversation keeps in memory. */
+const HISTORY = 100
 
 export type ChatMessage = {
   id: string
@@ -23,8 +50,16 @@ export type ChatMessage = {
   sentAt: Date
 }
 
+export type Person = {
+  uid: string
+  name: string
+  email: string
+  photoURL: string
+}
+
 export type Contact = {
-  person: DirectoryEntry
+  person: Person
+  messages: ChatMessage[]
   unread: number
   lastText: string
   lastAt: Date | null
@@ -33,360 +68,278 @@ export type Contact = {
   online: boolean
 }
 
-export type Thread = {
-  person: DirectoryEntry
-  messages: ChatMessage[]
-  seenAt: Date | null
-  online: boolean
+/**
+ * The conversation between two people, whoever asks.
+ *
+ * Sorted so both sides derive the same id, which is what lets the security
+ * rules read membership straight off the key.
+ */
+export function threadIdFor(a: string, b: string): string {
+  return [a, b].sort().join('_')
 }
 
-type MessageWire = { id: string; sender: string; text: string; sent_at: string }
-
-type ContactWire = {
-  person: Parameters<typeof toEntry>[0]
-  unread: number
-  last_text: string
-  last_at: string | null
-  seen_at: string | null
-  online: boolean
+function toDate(value: unknown): Date | null {
+  return typeof value === 'number' ? new Date(value) : null
 }
 
-type ThreadWire = {
-  person: Parameters<typeof toEntry>[0]
-  messages: MessageWire[]
-  seen_at: string | null
-  online: boolean
-}
+function toPerson(uid: string, raw: unknown): Person {
+  const data = (raw ?? {}) as Record<string, unknown>
+  const email = String(data.email ?? '')
 
-function toMessage(wire: MessageWire): ChatMessage {
   return {
-    id: wire.id,
-    sender: wire.sender,
-    text: wire.text,
-    sentAt: date(wire.sent_at) ?? new Date(),
+    uid,
+    name: String(data.name ?? '') || email.split('@')[0] || 'Trader',
+    email,
+    photoURL: String(data.photoURL ?? ''),
   }
 }
 
-function toContact(wire: ContactWire): Contact {
-  return {
-    person: toEntry(wire.person),
-    unread: wire.unread,
-    lastText: wire.last_text,
-    lastAt: date(wire.last_at),
-    seenAt: date(wire.seen_at),
-    online: wire.online,
+/* ------------------------------------------------------------- connection */
+
+/**
+ * Trade the session cookie for a Firebase credential, then publish who we are.
+ *
+ * The profile write is what lets everyone else render a name and avatar off
+ * the same websocket, instead of asking the API about each contact.
+ */
+async function connect(user: AuthUser): Promise<void> {
+  if (!auth || !rtdb) throw new Error('Live chat is not configured in this build.')
+
+  if (auth.currentUser?.uid !== user.uid) {
+    const { token } = await apiFetch<{ token: string }>('/api/v1/chat/token')
+    await signInWithCustomToken(auth, token)
   }
+
+  await set(ref(rtdb, `profiles/${user.uid}`), {
+    name: user.displayName || user.email?.split('@')[0] || 'Trader',
+    email: user.email ?? '',
+    photoURL: user.photoURL,
+  })
 }
 
-function toThread(wire: ThreadWire): Thread {
-  return {
-    person: toEntry(wire.person),
-    messages: wire.messages.map(toMessage),
-    seenAt: date(wire.seen_at),
-    online: wire.online,
-  }
+export type Connection = {
+  ready: boolean
+  error: string | null
+}
+
+/**
+ * Holds the live connection open for as long as someone is signed in.
+ *
+ * Presence rides on it. `onDisconnect` is registered with the server *before*
+ * going online, so the offline write lands even when the tab dies without
+ * warning — a crash, a lost network, a killed process. It is re-registered on
+ * every reconnect, because the server drops the handler once it fires.
+ */
+export function useChatConnection(user: AuthUser | null): Connection {
+  const [state, setState] = useState<Connection>({ ready: false, error: null })
+
+  useEffect(() => {
+    if (!user || !rtdb) return
+
+    const database = rtdb
+    const mine = ref(database, `status/${user.uid}`)
+
+    let live = true
+    let stopPresence = () => {}
+
+    connect(user)
+      .then(() => {
+        if (!live) return
+        setState({ ready: true, error: null })
+
+        stopPresence = onValue(ref(database, '.info/connected'), (snapshot) => {
+          if (snapshot.val() !== true) return
+
+          onDisconnect(mine)
+            .set({ online: false, at: serverTimestamp() })
+            .then(() => set(mine, { online: true, at: serverTimestamp() }))
+            .catch(() => {})
+        })
+      })
+      .catch((cause: unknown) => {
+        if (live) setState({ ready: false, error: readableApiError(cause) })
+      })
+
+    return () => {
+      live = false
+      stopPresence()
+      // Leaving the app is going offline, the same as closing the tab.
+      set(mine, { online: false, at: serverTimestamp() }).catch(() => {})
+    }
+  }, [user])
+
+  return state
 }
 
 /* ------------------------------------------------------------------ writes */
 
-export async function addContact(uid: string): Promise<Contact> {
-  const wire = await apiFetch<ContactWire>('/api/v1/chat/contacts', {
-    method: 'POST',
-    body: { uid },
+/**
+ * Put two people in each other's contact lists.
+ *
+ * Both sides, in one write: a conversation nobody can see from the other end
+ * is not a conversation. The rules allow the second half precisely because the
+ * only foreign key you can create is your own.
+ */
+export async function addContact(me: string, them: string): Promise<void> {
+  if (!rtdb) throw new Error('Live chat is not configured.')
+
+  await update(ref(rtdb), {
+    [`contacts/${me}/${them}`]: true,
+    [`contacts/${them}/${me}`]: true,
   })
-  return toContact(wire)
 }
 
-export async function sendMessage(uid: string, text: string): Promise<ChatMessage> {
-  const wire = await apiFetch<MessageWire>(`/api/v1/chat/threads/${uid}/messages`, {
-    method: 'POST',
-    body: { text },
+/** Appends a message. The server stamps the time; the client never does. */
+export async function sendMessage(me: string, them: string, text: string): Promise<void> {
+  if (!rtdb) throw new Error('Live chat is not configured.')
+
+  const trimmed = text.trim()
+  if (trimmed === '') return
+
+  await push(ref(rtdb, `threads/${threadIdFor(me, them)}/messages`), {
+    from: me,
+    text: trimmed,
+    at: serverTimestamp(),
   })
-  return toMessage(wire)
 }
 
 /**
- * Stamps the thread as seen and returns it as it now stands.
+ * Stamps the thread as seen, now.
  *
  * One timestamp per participant is the whole read-receipt mechanism: a message
- * counts as seen once the other person's stamp is at or past it, so one write
- * covers everything that arrived before it.
+ * counts as seen once the other person's stamp is at or past it, so a single
+ * write covers everything that arrived before it.
  */
-export async function markSeen(uid: string): Promise<Thread> {
-  const wire = await apiFetch<ThreadWire>(`/api/v1/chat/threads/${uid}/seen`, {
-    method: 'POST',
-  })
-  return toThread(wire)
+export async function markSeen(me: string, them: string): Promise<void> {
+  if (!rtdb) return
+
+  await set(ref(rtdb, `threads/${threadIdFor(me, them)}/reads/${me}`), serverTimestamp())
 }
+
+/* --------------------------------------------------------------- listeners */
+
+type ThreadState = {
+  messages: ChatMessage[]
+  reads: Record<string, number>
+}
+
+const EMPTY: ThreadState = { messages: [], reads: {} }
 
 /**
- * The live connection: one EventSource, shared by the whole dock.
+ * Everyone the signed-in trader talks to, live.
  *
- * The server sends a nudge naming whoever's conversation moved — not the
- * message itself — and listeners refetch through the ordinary endpoints. That
- * keeps one code path for reading data, and makes a dropped event harmless:
- * the next fetch reads current state regardless of how many nudges preceded it.
- *
- * Polling stays as the fallback, slowed right down while the stream is live.
- * Some corporate proxies buffer server-sent events into uselessness, and a
- * sleeping free-tier instance drops every open connection — neither should mean
- * a chat that silently stops updating.
+ * Four subscriptions per contact — messages, read markers, profile, presence —
+ * on one shared websocket. That is not a request each: the cost is the
+ * connection, which is already open, so opening a conversation is instant
+ * because its messages are already here.
  */
-type Listener = (uid: string) => void
+export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
+  const me = user?.uid ?? null
 
-const listeners = new Set<Listener>()
-let source: EventSource | null = null
-let connected = false
-let retry = 0
-
-/** Backoff between reconnects, so a server that is down is not hammered. */
-const RETRY_BASE_MS = 1_000
-const RETRY_MAX_MS = 30_000
-
-function notify(uid: string) {
-  for (const listener of listeners) listener(uid)
-}
-
-function open() {
-  if (source !== null) return
-
-  // EventSource cannot set headers, which is exactly why the session is a
-  // cookie: same-origin through the proxy, so the browser attaches it here as
-  // it does on every other request.
-  source = new EventSource(`${API_BASE}/api/v1/chat/stream`, {
-    withCredentials: true,
-  })
-
-  source.addEventListener('open', () => {
-    connected = true
-    retry = 0
-  })
-
-  source.addEventListener('change', (event) => {
-    try {
-      const data = JSON.parse((event as MessageEvent<string>).data) as { uid?: string }
-      if (data.uid) notify(data.uid)
-    } catch {
-      // A malformed line is not worth breaking the stream over; the next
-      // poll picks up whatever changed.
-    }
-  })
-
-  source.addEventListener('error', () => {
-    // EventSource reconnects itself, but only for a connection it believes is
-    // recoverable — and it retries at a fixed interval. Closing and backing
-    // off by hand is both gentler on a sleeping instance and recovers from the
-    // cases the browser gives up on.
-    connected = false
-    source?.close()
-    source = null
-
-    retry += 1
-    const wait = Math.min(RETRY_BASE_MS * 2 ** (retry - 1), RETRY_MAX_MS)
-    window.setTimeout(() => {
-      if (listeners.size > 0) open()
-    }, wait)
-  })
-}
-
-function close() {
-  source?.close()
-  source = null
-  connected = false
-  retry = 0
-}
-
-/**
- * Subscribe to live changes for as long as the component is mounted.
- *
- * One connection is shared however many components ask: browsers cap
- * simultaneous connections per origin, and a dock that opened two would spend
- * that budget on saying the same thing twice.
- */
-export function useChatStream(enabled: boolean, onChange: Listener): boolean {
-  const [live, setLive] = useState(false)
-  const latest = useRef(onChange)
+  const [uids, setUids] = useState<string[]>([])
+  const [threads, setThreads] = useState<Record<string, ThreadState>>({})
+  const [people, setPeople] = useState<Record<string, Person>>({})
+  const [online, setOnline] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    latest.current = onChange
-  }, [onChange])
+    if (!rtdb || !me || !ready) return
+
+    return onValue(ref(rtdb, `contacts/${me}`), (snapshot) => {
+      const value = (snapshot.val() ?? {}) as Record<string, boolean>
+      setUids(Object.keys(value).filter((uid) => value[uid]))
+    })
+  }, [me, ready])
+
+  // Joined into a string: a fresh array identity on every render would tear
+  // every subscription down and rebuild it each time.
+  const watching = useMemo(() => [...uids].sort().join(','), [uids])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!rtdb || !me || !ready || watching === '') return
 
-    const listener: Listener = (uid) => latest.current(uid)
-    listeners.add(listener)
-    open()
+    const database = rtdb
 
-    // The connection state lives outside React, so it is sampled rather than
-    // pushed. A second is far below anything a person notices, and it only
-    // decides how often the fallback poll runs.
-    const timer = window.setInterval(() => setLive(connected), 1_000)
+    const stops = watching.split(',').flatMap((them) => {
+      const threadId = threadIdFor(me, them)
 
-    return () => {
-      listeners.delete(listener)
-      window.clearInterval(timer)
-      if (listeners.size === 0) close()
-    }
-  }, [enabled])
+      return [
+        onValue(
+          query(ref(database, `threads/${threadId}/messages`), limitToLast(HISTORY)),
+          (snapshot) => {
+            const messages: ChatMessage[] = []
+            // forEach, not Object.entries: this is the only read that preserves
+            // the ordering the query just applied.
+            snapshot.forEach((child) => {
+              const value = (child.val() ?? {}) as Record<string, unknown>
+              messages.push({
+                id: child.key ?? '',
+                sender: String(value.from ?? ''),
+                text: String(value.text ?? ''),
+                // A message echoed locally before the server answers has no
+                // timestamp yet. Treat it as just-now so it sorts last — this
+                // is what makes your own message appear the instant you send.
+                sentAt: toDate(value.at) ?? new Date(),
+              })
+            })
 
-  return live
-}
+            setThreads((current) => ({
+              ...current,
+              [them]: { ...(current[them] ?? EMPTY), messages },
+            }))
+          },
+        ),
 
-/* ------------------------------------------------------------------- polls */
+        onValue(ref(database, `threads/${threadId}/reads`), (snapshot) => {
+          const reads = (snapshot.val() ?? {}) as Record<string, number>
+          setThreads((current) => ({
+            ...current,
+            [them]: { ...(current[them] ?? EMPTY), reads },
+          }))
+        }),
 
-/*
- * Polling intervals — the fallback, not the mechanism. The stream delivers
- * changes in well under a second; these only matter when it is not connected,
- * which happens behind proxies that buffer server-sent events and while a
- * free-tier instance is waking up.
- *
- * With the stream live they stretch right out: something still has to catch
- * the change that arrived during a reconnect, but it no longer has to be
- * quick about it.
- */
-const POLL_OPEN = 4_000
-const POLL_IDLE = 60_000
-const POLL_THREAD = 3_000
-/** Safety net while the stream is connected. */
-const POLL_BACKUP = 45_000
+        onValue(ref(database, `profiles/${them}`), (snapshot) => {
+          setPeople((current) => ({ ...current, [them]: toPerson(them, snapshot.val()) }))
+        }),
 
-/**
- * Repeats `run` on an interval, and once immediately.
- *
- * setTimeout chained after each completion rather than setInterval: a slow
- * response should delay the next request, not stack up behind it. A hidden tab
- * is skipped entirely, which is what stops a backgrounded dock polling all day.
- */
-function usePoll(run: () => Promise<void>, everyMs: number | null): void {
-  const latest = useRef(run)
+        onValue(ref(database, `status/${them}/online`), (snapshot) => {
+          setOnline((current) => ({ ...current, [them]: snapshot.val() === true }))
+        }),
+      ]
+    })
 
-  useEffect(() => {
-    latest.current = run
-  }, [run])
+    return () => stops.forEach((stop) => stop())
+  }, [me, ready, watching])
 
-  useEffect(() => {
-    if (everyMs === null) return
+  /** Newest conversation first, so whoever just wrote rises to the top. */
+  return useMemo(() => {
+    if (me === null) return []
 
-    let live = true
-    let timer = 0
+    const built: Contact[] = uids.map((uid) => {
+      const thread = threads[uid] ?? EMPTY
+      const last = thread.messages[thread.messages.length - 1]
+      const seenByMe = thread.reads[me] ?? 0
 
-    const tick = async () => {
-      if (!live) return
-      if (document.visibilityState === 'visible') {
-        await latest.current().catch(() => {})
+      return {
+        person: people[uid] ?? toPerson(uid, null),
+        messages: thread.messages,
+        unread: thread.messages.filter(
+          (message) => message.sender !== me && message.sentAt.getTime() > seenByMe,
+        ).length,
+        lastText: last?.text ?? '',
+        lastAt: last?.sentAt ?? null,
+        seenAt: toDate(thread.reads[uid]),
+        online: online[uid] ?? false,
       }
-      if (live) timer = window.setTimeout(tick, everyMs)
-    }
+    })
 
-    void tick()
-
-    return () => {
-      live = false
-      window.clearTimeout(timer)
-    }
-  }, [everyMs])
+    return built.sort((left, right) => {
+      const gap = (right.lastAt?.getTime() ?? 0) - (left.lastAt?.getTime() ?? 0)
+      return gap !== 0 ? gap : left.person.name.localeCompare(right.person.name)
+    })
+  }, [me, uids, threads, people, online])
 }
 
-export type ContactsState = {
-  contacts: Contact[]
-  error: string | null
-  reload: () => Promise<void>
-}
-
-/**
- * The contact list, polled.
- *
- * Listing also marks the caller present — presence is a heartbeat on the
- * server rather than a connection, so it survives a dropped request and a
- * closed laptop without a disconnect handler.
- */
-export function useContacts(signedIn: boolean, dockOpen: boolean): ContactsState {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [error, setError] = useState<string | null>(null)
-
-  const reload = useCallback(async () => {
-    if (!signedIn) return
-    try {
-      const body = await apiFetch<{ contacts: ContactWire[] }>('/api/v1/chat/contacts')
-      setContacts(body.contacts.map(toContact))
-      setError(null)
-    } catch (cause) {
-      setError(readableApiError(cause))
-    }
-  }, [signedIn])
-
-  // Any thread moving changes the contact list — a new message, a read
-  // receipt, an unread count. So every nudge refetches it, whoever it names.
-  const live = useChatStream(signedIn, useCallback(() => void reload(), [reload]))
-
-  usePoll(
-    reload,
-    signedIn ? (live ? POLL_BACKUP : dockOpen ? POLL_OPEN : POLL_IDLE) : null,
-  )
-
-  return { contacts, error, reload }
-}
-
-export type ThreadState = {
-  thread: Thread | null
-  error: string | null
-  reload: () => Promise<void>
-}
-
-/**
- * One conversation, polled while it is on screen.
- *
- * The read stamp is written by the poll itself when something is unread, which
- * is what lets the other side see "seen" without this tab doing anything else.
- */
-export function useThread(uid: string | null, me: string | null): ThreadState {
-  // Keyed by the conversation it belongs to. Derived freshness rather than a
-  // reset effect, so the previous thread's messages can never appear for a
-  // frame under the new person's name.
-  const [state, setState] = useState<{
-    uid: string | null
-    thread: Thread | null
-    error: string | null
-  }>({ uid: null, thread: null, error: null })
-
-  const reload = useCallback(async () => {
-    if (uid === null || me === null) return
-
-    try {
-      const wire = await apiFetch<ThreadWire>(`/api/v1/chat/threads/${uid}`)
-      const next = toThread(wire)
-
-      // Anything from them that we have not stamped yet. Marking seen returns
-      // the thread, so this costs no extra round trip.
-      const unseen = next.messages.some((message) => message.sender !== me)
-      setState({ uid, thread: unseen ? await markSeen(uid) : next, error: null })
-    } catch (cause) {
-      setState({ uid, thread: null, error: readableApiError(cause) })
-    }
-  }, [uid, me])
-
-  const live = useChatStream(
-    uid !== null,
-    useCallback(
-      (changed: string) => {
-        // Ignore nudges about other conversations: this hook renders one.
-        if (changed === uid) void reload()
-      },
-      [uid, reload],
-    ),
-  )
-
-  usePoll(reload, uid === null ? null : live ? POLL_BACKUP : POLL_THREAD)
-
-  const fresh = state.uid === uid
-
-  return {
-    thread: fresh ? state.thread : null,
-    error: fresh ? state.error : null,
-    reload,
-  }
-}
+/* ---------------------------------------------------------------- display */
 
 /**
  * A message's time: the clock for today, the weekday for this past week, and
