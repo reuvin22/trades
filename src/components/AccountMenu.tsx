@@ -105,9 +105,35 @@ export function AccountMenu({ user }: AccountMenuProps) {
               type="button"
               role="menuitem"
               className={ACCOUNT_DANGER}
-              onClick={() => {
+              onClick={async () => {
                 setOpen(false)
-                void signOutOfApp()
+                /*
+                 * Ask the API to clear the cookie, then reload.
+                 *
+                 * The reload is the point, not a shortcut. Signing out has to
+                 * discard everything belonging to the person leaving — the
+                 * journal in memory, their contacts, the coach conversation —
+                 * and a full reload is the only way to be sure none of it
+                 * survives into the next session on a shared machine.
+                 *
+                 * It also replaces the signal that went with Firebase's
+                 * onAuthStateChanged: nothing else tells the app the session
+                 * ended, because a cookie the page cannot read is a cookie the
+                 * page cannot watch.
+                 *
+                 * Errors are swallowed deliberately. The endpoint clears the
+                 * cookie whether or not it recognises the session, and a
+                 * network failure must not leave someone stuck signed in with
+                 * no way out — the reload happens regardless.
+                 */
+                try {
+                  await signOutOfApp()
+                } catch {
+                  // Nothing to report: leaving is the only outcome that matters.
+                } finally {
+                  window.location.assign('/#/login')
+                  window.location.reload()
+                }
               }}
             >
               <LogoutIcon size={16} />
