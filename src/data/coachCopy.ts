@@ -59,7 +59,7 @@ const ENGLISH: CoachCopy = {
   lede: (count) =>
     `I've read your ${count} logged ${count === 1 ? 'trade' : 'trades'}. Ask me anything about how you're doing.`,
   intro:
-    'I only talk about your trading here — your results, your habits, and what the journal shows. Ask me why a week went badly, or where your money is actually going.',
+    "I talk about your trading here — your results, your habits, and the way you handle yourself at the screen. Ask me why a week went badly, where your money is going, or how to build the discipline underneath it.",
   suggestions: [
     'How am I actually doing?',
     'Where is my money going?',
@@ -94,7 +94,7 @@ const FILIPINO: CoachCopy = {
   lede: (count) =>
     `Nabasa ko na ang ${count} na naka-log mong trade. Itanong mo sa akin kung kumusta ka na.`,
   intro:
-    'Dito, ang trading mo lang ang pinag-uusapan natin — ang mga resulta mo, ang mga ugali mo, at ang nakikita sa journal. Itanong mo kung bakit masama ang isang linggo, o kung saan talaga napupunta ang pera mo.',
+    "Dito pinag-uusapan natin ang trading mo — ang mga resulta mo, ang mga ugali mo, at kung paano mo dinadala ang sarili mo sa harap ng screen. Itanong mo kung bakit masama ang isang linggo, saan napupunta ang pera mo, o paano bubuuin ang disiplina sa likod niyan.",
   suggestions: [
     'Kumusta ba talaga ako?',
     'Saan napupunta ang pera ko?',
@@ -132,7 +132,7 @@ const SPANISH: CoachCopy = {
       ? 'He leído tu operación registrada. Pregúntame lo que quieras sobre cómo vas.'
       : `He leído tus ${count} operaciones registradas. Pregúntame lo que quieras sobre cómo vas.`,
   intro:
-    'Aquí solo hablo de tu trading: tus resultados, tus hábitos y lo que muestra el diario. Pregúntame por qué fue mal una semana, o adónde se va realmente tu dinero.',
+    "Aquí hablamos de tu trading: tus resultados, tus hábitos y cómo te manejas delante de la pantalla. Pregúntame por qué fue mal una semana, adónde se va tu dinero, o cómo construir la disciplina que hay detrás.",
   suggestions: [
     '¿Cómo voy realmente?',
     '¿Adónde se va mi dinero?',
@@ -168,7 +168,7 @@ const INDONESIAN: CoachCopy = {
   lede: (count) =>
     `Saya sudah membaca ${count} transaksi yang kamu catat. Tanya apa saja tentang perkembanganmu.`,
   intro:
-    'Di sini saya hanya membahas trading kamu — hasilmu, kebiasaanmu, dan apa yang terlihat di jurnal. Tanyakan kenapa satu minggu berjalan buruk, atau ke mana sebenarnya uangmu pergi.',
+    "Di sini kita membahas trading kamu — hasilmu, kebiasaanmu, dan bagaimana kamu membawa diri di depan layar. Tanyakan kenapa satu minggu berjalan buruk, ke mana uangmu pergi, atau bagaimana membangun disiplin di baliknya.",
   suggestions: [
     'Sebenarnya bagaimana perkembangan saya?',
     'Ke mana perginya uang saya?',
@@ -202,7 +202,7 @@ const CHINESE: CoachCopy = {
   ledeEmpty: '先记录几笔交易，我才能开始告诉你这些数字究竟说明了什么。',
   lede: (count) => `我看完了你记录的 ${count} 笔交易。想知道自己做得怎么样，随便问。`,
   intro:
-    '在这里我只谈你的交易——你的结果、你的习惯，以及日志里显示的东西。可以问我某一周为什么很糟，或者你的钱到底花在了哪里。',
+    "在这里我们聊你的交易——你的结果、你的习惯，以及你在盘前的状态。可以问我某一周为什么很糟、你的钱去了哪里，或者怎么建立支撑这一切的纪律。",
   suggestions: ['我到底做得怎么样？', '我的钱都去哪了？', '我应该停止做什么？'],
   placeholder: '问问某次交易、某个习惯，或者一段连亏…',
   placeholderLocked: '先选一种语言…',
@@ -230,7 +230,7 @@ const JAPANESE: CoachCopy = {
     'まずは取引をいくつか記録してください。そうすれば、数字が実際に何を示しているかを話せます。',
   lede: (count) => `記録された${count}件の取引を読みました。調子について何でも聞いてください。`,
   intro:
-    'ここではあなたのトレードの話だけをします——結果、習慣、そして記録が示していること。ある週がなぜ悪かったのか、お金が実際どこへ消えているのか、聞いてください。',
+    "ここではあなたのトレードの話をします——結果、習慣、そして画面の前での自分の扱い方。ある週がなぜ悪かったのか、お金がどこへ消えているのか、その土台になる規律をどう作るのか、聞いてください。",
   suggestions: [
     '実際のところ、調子はどうですか？',
     'お金はどこへ消えていますか？',
@@ -262,7 +262,7 @@ const KOREAN: CoachCopy = {
     '먼저 거래를 몇 건 기록해 주세요. 그래야 숫자가 실제로 무엇을 말하는지 알려드릴 수 있습니다.',
   lede: (count) => `기록하신 거래 ${count}건을 모두 읽었습니다. 요즘 어떤지 무엇이든 물어보세요.`,
   intro:
-    '여기서는 당신의 매매 이야기만 합니다 — 결과, 습관, 그리고 일지에 드러난 것들. 어떤 주가 왜 나빴는지, 돈이 실제로 어디로 가는지 물어보세요.',
+    "여기서는 당신의 매매 이야기를 합니다 — 결과, 습관, 그리고 화면 앞에서 스스로를 다루는 방식. 어떤 주가 왜 나빴는지, 돈이 어디로 가는지, 그 밑바탕이 되는 규율을 어떻게 만들지 물어보세요.",
   suggestions: [
     '제 성적은 실제로 어떤가요?',
     '제 돈은 어디로 가고 있나요?',
@@ -295,7 +295,7 @@ const HINDI: CoachCopy = {
   lede: (count) =>
     `मैंने आपके दर्ज किए हुए ${count} ट्रेड पढ़ लिए हैं। अपनी प्रगति के बारे में कुछ भी पूछिए।`,
   intro:
-    'यहाँ मैं सिर्फ़ आपकी ट्रेडिंग की बात करता हूँ — आपके नतीजे, आपकी आदतें, और जो जर्नल दिखाता है। पूछिए कि कोई हफ़्ता ख़राब क्यों गया, या आपका पैसा असल में कहाँ जा रहा है।',
+    "यहाँ हम आपकी ट्रेडिंग की बात करते हैं — आपके नतीजे, आपकी आदतें, और स्क्रीन के सामने आप खुद को कैसे संभालते हैं। पूछिए कि कोई हफ़्ता ख़राब क्यों गया, आपका पैसा कहाँ जा रहा है, या उसके पीछे का अनुशासन कैसे बनाएँ।",
   suggestions: [
     'असल में मैं कैसा कर रहा हूँ?',
     'मेरा पैसा कहाँ जा रहा है?',
@@ -331,7 +331,7 @@ const PORTUGUESE: CoachCopy = {
       ? 'Já li a sua operação registrada. Pergunte o que quiser sobre como você está indo.'
       : `Já li as suas ${count} operações registradas. Pergunte o que quiser sobre como você está indo.`,
   intro:
-    'Aqui eu só falo sobre o seu trading — seus resultados, seus hábitos e o que o diário mostra. Pergunte por que uma semana foi ruim, ou para onde o seu dinheiro está indo de verdade.',
+    "Aqui a gente fala do seu trading — seus resultados, seus hábitos e como você se comporta na frente da tela. Pergunte por que uma semana foi ruim, para onde está indo o seu dinheiro, ou como construir a disciplina por trás disso.",
   suggestions: [
     'Como eu estou indo de verdade?',
     'Para onde está indo o meu dinheiro?',
@@ -369,7 +369,7 @@ const FRENCH: CoachCopy = {
       ? "J'ai lu votre trade enregistré. Demandez-moi ce que vous voulez sur votre progression."
       : `J'ai lu vos ${count} trades enregistrés. Demandez-moi ce que vous voulez sur votre progression.`,
   intro:
-    "Ici, je ne parle que de votre trading — vos résultats, vos habitudes, et ce que montre le journal. Demandez-moi pourquoi une semaine s'est mal passée, ou où part réellement votre argent.",
+    "Ici on parle de votre trading — vos résultats, vos habitudes, et la façon dont vous vous tenez devant l'écran. Demandez-moi pourquoi une semaine s'est mal passée, où part votre argent, ou comment bâtir la discipline qui soutient tout ça.",
   suggestions: [
     "Où j'en suis vraiment ?",
     'Où part mon argent ?',
@@ -407,7 +407,7 @@ const GERMAN: CoachCopy = {
       ? 'Ich habe deinen erfassten Trade gelesen. Frag mich alles dazu, wie es läuft.'
       : `Ich habe deine ${count} erfassten Trades gelesen. Frag mich alles dazu, wie es läuft.`,
   intro:
-    'Hier geht es nur um dein Trading — deine Ergebnisse, deine Gewohnheiten und das, was das Journal zeigt. Frag mich, warum eine Woche schlecht lief oder wohin dein Geld tatsächlich geht.',
+    "Hier reden wir über dein Trading — deine Ergebnisse, deine Gewohnheiten und wie du dich vor dem Bildschirm im Griff hast. Frag, warum eine Woche schlecht lief, wohin dein Geld geht, oder wie du die Disziplin dahinter aufbaust.",
   suggestions: ['Wie läuft es wirklich?', 'Wohin geht mein Geld?', 'Was sollte ich lassen?'],
   placeholder: 'Frag nach einer Session, einer Gewohnheit oder einer Verlustserie…',
   placeholderLocked: 'Wähle eine Sprache, um zu starten…',
