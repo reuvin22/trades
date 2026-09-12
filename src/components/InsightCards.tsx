@@ -5,8 +5,12 @@ import { AlertIcon, BoltIcon, RefreshIcon, SparkleIcon } from './Icons'
 import {
   CARD,
   CARD_HOVER,
+  INSIGHT_ACTION,
+  INSIGHT_ACTION_TEXT,
   INSIGHT_BODY,
   INSIGHT_CARD,
+  INSIGHT_COST,
+  INSIGHT_COST_VALUE,
   INSIGHT_KICKER,
   INSIGHT_TITLE,
   NEG,
@@ -137,18 +141,18 @@ export function BehavioralLeakCard({
           <p className={INSIGHT_BODY}>{leak.result.finding}</p>
 
           {leak.result.costLabel && (
-            <p className="mt-14 flex items-baseline justify-between gap-12 border-t border-line pt-12 text-[11.5px] text-fg-muted">
-              <span>Estimated cost</span>
-              <strong className={`${NEG} font-mono text-[14px] font-medium`}>
+            <p className={INSIGHT_COST}>
+              <span className="flex-none">Estimated cost</span>
+              <strong className={`${NEG} ${INSIGHT_COST_VALUE}`}>
                 {leak.result.costLabel}
               </strong>
             </p>
           )}
 
           {leak.result.recommendation && (
-            <p className="mt-12 flex items-start gap-8 rounded-sm bg-tint-1 px-12 py-10 text-[12px] leading-[1.55] text-fg-dim [&>svg]:mt-2 [&>svg]:flex-none [&>svg]:text-accent-strong">
+            <p className={INSIGHT_ACTION}>
               <SparkleIcon size={13} />
-              {leak.result.recommendation}
+              <span className={INSIGHT_ACTION_TEXT}>{leak.result.recommendation}</span>
             </p>
           )}
 

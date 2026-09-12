@@ -29,6 +29,8 @@ import {
   SUGGESTION,
   SUGGESTION_ROW,
   THREAD,
+  THREAD_ANCHOR,
+  THREAD_REPLY,
   TURN,
   TURN_TRADER,
   TYPING,
@@ -135,10 +137,39 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
 
   const { turns, thinking, error, loading, send } = useCoach(language ?? 'English')
   const threadEnd = useRef<HTMLDivElement>(null)
+  const newestReply = useRef<HTMLDivElement>(null)
 
-  // Keep the newest turn in view as the conversation grows.
+  /*
+   * Keep the newest turn in view as the conversation grows.
+   *
+   * Two things were wrong with doing this on its own. The scroll ran in the
+   * effect, before the browser had laid out a reply that had just made the
+   * page several hundred pixels taller, so it landed short of the bottom it
+   * was aiming at — hence the frame.
+   *
+   * And the bottom is not always where to land. The coach answers in
+   * paragraphs now; dropping someone at the end of one means scrolling back up
+   * to find where it started. So a reply too tall to take in at a glance gets
+   * its first line put at the top of the screen instead, and everything else —
+   * short answers, the trader's own message, the thinking dots — stays pinned
+   * to the bottom the way a conversation should be.
+   */
   useEffect(() => {
-    threadEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    const frame = requestAnimationFrame(() => {
+      const reply = newestReply.current
+      const tall =
+        !thinking &&
+        reply !== null &&
+        reply.getBoundingClientRect().height > window.innerHeight * 0.7
+
+      if (tall) {
+        reply.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        threadEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      }
+    })
+
+    return () => cancelAnimationFrame(frame)
   }, [turns.length, thinking])
 
   async function chooseLanguage(choice: string) {
@@ -240,7 +271,13 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                   </span>
                 </div>
               ) : (
-                <div className={TURN} key={turn.id}>
+                <div
+                  className={`${TURN} ${THREAD_REPLY}`}
+                  key={turn.id}
+                  // Only the newest, and only if it is the last thing in the
+                  // thread — that is the one the scroll may need to align to.
+                  ref={turn.id === turns[turns.length - 1]?.id ? newestReply : null}
+                >
                   <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
                     <RobotIcon />
                   </span>
@@ -293,7 +330,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
           </p>
         )}
 
-        <div ref={threadEnd} />
+        <div ref={threadEnd} className={THREAD_ANCHOR} />
       </div>
 
       <form data-tour="coach" className={COMPOSER} onSubmit={handleSubmit}>

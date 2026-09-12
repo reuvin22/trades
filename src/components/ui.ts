@@ -145,9 +145,9 @@ export const INSIGHT_CARD = 'px-20 pt-18 pb-20'
 export const INSIGHT_KICKER =
   'flex items-center gap-8 text-[10.5px] font-medium tracking-[0.15em] text-fg-dim uppercase'
 export const INSIGHT_TITLE =
-  'mt-12 text-[18px] font-medium tracking-[-0.01em] text-fg-strong'
+  'mt-12 text-[18px] font-medium tracking-[-0.01em] text-fg-strong break-words hyphens-auto'
 export const INSIGHT_BODY =
-  'mt-8 text-[13.5px] leading-[1.55] text-fg-dim [&_strong]:font-medium'
+  'mt-8 text-[13.5px] leading-[1.55] text-fg-dim break-words hyphens-auto [&_strong]:font-medium'
 
 /** Loading placeholder bars. */
 export const SHIMMER =
@@ -1135,3 +1135,41 @@ export const SPLASH_STATUS =
 export const LANGUAGE_CHANGE =
   'mt-14 inline-flex items-center gap-7 rounded-full border border-line bg-tint-1 px-13 py-7 text-[11.5px] text-fg-dim transition-[color,border-color] duration-150 hover:border-accent hover:text-fg'
 export const LANGUAGE_CHANGE_NAME = 'font-medium text-fg'
+
+/**
+ * Scroll targets in the coach thread.
+ *
+ * The composer is sticky at the foot of the page, so it floats over the last
+ * stretch of the conversation. Scrolling the end of the thread flush to the
+ * bottom of the screen therefore parks the final line behind it — the answer
+ * arrived, the page scrolled, and the last thing the coach said was still not
+ * readable. The margin is the composer's height plus its offset plus air.
+ */
+export const THREAD_ANCHOR = 'scroll-mb-86'
+
+/** The matching clearance at the top, for a reply too tall to take in at once
+ *  and aligned to the top of the screen instead of the bottom. */
+export const THREAD_REPLY = 'scroll-mt-20'
+
+/**
+ * The behavioural leak card's cost row and recommendation.
+ *
+ * Both sit in a 320px rail and both hold model-written text, which is a
+ * combination that has to be assumed hostile. The cost label is allowed 60
+ * characters by the API and used to be laid out as one unbreakable monospace
+ * line opposite its own label — "-$3,706 over 15 rule-breaking trades" wants
+ * about 500px and had 280, so it ran straight out of the card.
+ *
+ * So the row wraps instead of overflowing: the two halves sit side by side
+ * while they fit and stack when they do not.
+ */
+export const INSIGHT_COST =
+  'mt-14 flex flex-wrap items-baseline justify-between gap-x-12 gap-y-2 border-t border-line pt-12 text-[11.5px] text-fg-muted'
+export const INSIGHT_COST_VALUE =
+  'min-w-0 font-mono text-[13px] font-medium break-words'
+
+export const INSIGHT_ACTION =
+  'mt-12 flex items-start gap-8 rounded-sm bg-tint-1 px-12 py-10 text-[12px] leading-[1.55] text-fg-dim [&>svg]:mt-2 [&>svg]:flex-none [&>svg]:text-accent-strong'
+/** min-w-0 so a long recommendation wraps inside the flex row rather than
+ *  forcing the box wider than the rail. */
+export const INSIGHT_ACTION_TEXT = 'min-w-0 break-words'
