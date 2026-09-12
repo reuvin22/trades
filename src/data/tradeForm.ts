@@ -146,3 +146,27 @@ export function missingRequired(trade: TradeEntry): string[] {
   if (trade.entryAt === '') gaps.push('Entry timestamp')
   return gaps
 }
+
+/**
+ * What is wrong with the entry beyond a field simply being blank.
+ *
+ * The API refuses an exit that precedes its entry, and rightly — every derived
+ * figure is built on that ordering. But finding out by round trip returns a
+ * validation envelope with an empty field name, which points at nothing the
+ * form can highlight. Catching it here says which two inputs disagree, before
+ * anything is sent.
+ */
+export function inconsistencies(trade: TradeEntry): string[] {
+  const problems: string[] = []
+
+  if (trade.entryAt !== '' && trade.exitAt !== '') {
+    const opened = new Date(trade.entryAt).getTime()
+    const closed = new Date(trade.exitAt).getTime()
+
+    if (!Number.isNaN(opened) && !Number.isNaN(closed) && closed < opened) {
+      problems.push('Exit time is before entry time')
+    }
+  }
+
+  return problems
+}

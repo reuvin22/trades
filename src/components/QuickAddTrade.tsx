@@ -5,6 +5,7 @@ import {
   EMPTY_TRADE,
   MISTAKE_TAGS,
   SETUPS,
+  inconsistencies,
   missingRequired,
   type Compliance,
   type Direction,
@@ -39,7 +40,6 @@ import {
   MODAL_WIDE,
   PILL,
   PILL_ACCENT,
-  TAG_ACTIVE,
   TAG_CLOUD,
   TAG_TOGGLE,
   TOGGLE,
@@ -104,7 +104,10 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    if (missingRequired(trade).length > 0) {
+    // Both checks before anything is sent. The API refuses an exit that
+    // precedes its entry, but its answer names no field, so the form would
+    // have nothing to point at.
+    if (missingRequired(trade).length > 0 || inconsistencies(trade).length > 0) {
       setShowGaps(true)
       return
     }
@@ -131,6 +134,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
   }
 
   const gaps = missingRequired(trade)
+  const wrong = inconsistencies(trade)
 
   return (
     <dialog
@@ -414,7 +418,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                     <button
                       key={tag}
                       type="button"
-                      className={`${TAG_TOGGLE} ${trade.mistakes.includes(tag) ? TAG_ACTIVE : ''}`}
+                      className={TAG_TOGGLE}
                       aria-pressed={trade.mistakes.includes(tag)}
                       onClick={() => toggleMistake(tag)}
                     >
@@ -431,12 +435,18 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
         <footer className={MODAL_FOOT}>
           <p
             className={MODAL_NOTE}
-            role={saveError || (showGaps && gaps.length > 0) ? 'alert' : undefined}
+            role={
+              saveError || (showGaps && (gaps.length > 0 || wrong.length > 0))
+                ? 'alert'
+                : undefined
+            }
           >
             {saveError ||
-              (showGaps && gaps.length > 0
-                ? `Still needed: ${gaps.join(', ')}`
-                : 'Fields marked * are required.')}
+              (showGaps && wrong.length > 0
+                ? wrong.join('. ')
+                : showGaps && gaps.length > 0
+                  ? `Still needed: ${gaps.join(', ')}`
+                  : 'Fields marked * are required.')}
           </p>
 
           <div className={MODAL_BUTTONS}>

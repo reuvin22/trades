@@ -339,9 +339,25 @@ export const ANSWER =
   'min-w-52 rounded-[6px] border border-line px-12 py-5 text-[11.5px] font-medium text-fg-muted transition-[color,background-color,border-color] duration-150'
 
 export const TAG_CLOUD = 'flex flex-wrap gap-7'
+/**
+ * A pill that toggles. Selected state rides on `aria-pressed`, which the button
+ * already has to set for screen readers — so the styling cannot drift out of
+ * step with what is announced.
+ *
+ * It has to be a variant rather than a second class string appended by the
+ * caller. `bg-tint-1` and `bg-accent` are both background utilities, and which
+ * one wins is decided by their order in the generated stylesheet, not by the
+ * order they appear in the class attribute — so the selected style was a coin
+ * toss, and it landed wrong. A variant is generated after the base utility and
+ * reliably beats it.
+ */
 export const TAG_TOGGLE =
-  'rounded-full border border-line bg-tint-1 px-12 py-6 text-[11.5px] text-fg-dim transition-[color,background-color,border-color] duration-150 hover:border-line-strong hover:text-fg-strong'
-export const TAG_ACTIVE = 'border-transparent bg-accent text-accent-ink'
+  'rounded-full border border-line bg-tint-1 px-12 py-6 text-[11.5px] text-fg-dim ' +
+  'transition-[color,background-color,border-color,box-shadow] duration-150 ' +
+  'hover:border-line-strong hover:text-fg-strong ' +
+  'aria-pressed:border-transparent aria-pressed:bg-accent aria-pressed:font-medium ' +
+  'aria-pressed:text-accent-ink aria-pressed:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_22%,transparent)] ' +
+  'aria-pressed:hover:bg-accent-strong aria-pressed:hover:text-accent-ink'
 
 /* --------------------------------------------------------------- account */
 

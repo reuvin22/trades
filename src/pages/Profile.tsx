@@ -33,7 +33,6 @@ import {
   SAVE_ERROR,
   SAVE_NOTE,
   SECTION_TITLE,
-  TAG_ACTIVE,
   TAG_CLOUD,
   TAG_TOGGLE,
 } from '../components/ui'
@@ -305,7 +304,7 @@ export function Profile({ user, profile }: ProfileProps) {
                   <button
                     key={market}
                     type="button"
-                    className={`${TAG_TOGGLE} ${form.markets.includes(market) ? TAG_ACTIVE : ''}`}
+                    className={TAG_TOGGLE}
                     aria-pressed={form.markets.includes(market)}
                     onClick={() => toggleMarket(market)}
                   >
