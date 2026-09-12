@@ -26,6 +26,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login'
 import { Placeholder } from './pages/Placeholder'
 import { Profile } from './pages/Profile'
+import { Settings } from './pages/Settings'
 import { TradeJournal } from './pages/TradeJournal'
 import { VerifyEmail } from './pages/VerifyEmail'
 import { AdminShell } from './pages/admin/AdminShell'
@@ -69,6 +70,8 @@ function TraderView({
       return <Profile user={user} profile={profile} />
     case 'billing':
       return <Billing user={user} profile={profile} />
+    case 'settings':
+      return <Settings profile={profile} />
     default:
       return <Placeholder title={labelForRoute(route)} />
   }

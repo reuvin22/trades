@@ -28,6 +28,22 @@ export type Profile = {
   /** Chosen once on the AI Coach's first visit. */
   coachLanguage?: string
 
+  // -- Trading setup, edited on Settings ---------------------------------
+  // These are what let the coach measure execution against a standard the
+  // trader set, rather than guessing at one from position sizes alone.
+  marketType?: MarketType | null
+  fundingType?: FundingType | null
+  propFirm?: string
+  accountSize?: number | null
+  riskPerTradePct?: number | null
+  maxDailyLossPct?: number | null
+  /** Reward planned per unit of risk: 2 means risking one to make two. */
+  targetR?: number | null
+  maxTradesPerDay?: number | null
+  strategies?: string[]
+  /** The non-negotiables, in their own words. */
+  tradingRules?: string
+
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
 
@@ -37,6 +53,65 @@ export type Profile = {
 
 /** The three kinds of account the app recognises. */
 export type AccountType = 'student' | 'coach' | 'individual'
+
+export type MarketType =
+  | 'forex'
+  | 'crypto'
+  | 'futures'
+  | 'stocks'
+  | 'options'
+  | 'indices'
+  | 'mixed'
+
+/** Whose money is at risk. A funded account has rules someone else wrote and a
+ *  drawdown that ends it rather than denting it. */
+export type FundingType = 'personal' | 'prop_firm' | 'demo'
+
+export const MARKET_TYPES: { value: MarketType; label: string }[] = [
+  { value: 'forex', label: 'Forex' },
+  { value: 'crypto', label: 'Crypto' },
+  { value: 'futures', label: 'Futures' },
+  { value: 'stocks', label: 'Stocks' },
+  { value: 'options', label: 'Options' },
+  { value: 'indices', label: 'Indices' },
+  { value: 'mixed', label: 'A mix' },
+]
+
+export const FUNDING_TYPES: {
+  value: FundingType
+  label: string
+  blurb: string
+}[] = [
+  {
+    value: 'personal',
+    label: 'My own money',
+    blurb: 'A personal account, funded by you.',
+  },
+  {
+    value: 'prop_firm',
+    label: 'Prop firm',
+    blurb: 'Funded by a firm, under their rules and their drawdown limit.',
+  },
+  {
+    value: 'demo',
+    label: 'Demo',
+    blurb: 'Practising. The habits are real even though the money is not.',
+  },
+]
+
+/** Offered as chips; anything else can be typed in. */
+export const COMMON_STRATEGIES = [
+  'Breakout',
+  'Liquidity sweep',
+  'Fair value gap',
+  'Order block',
+  'VWAP reclaim',
+  'Trend pullback',
+  'Opening range break',
+  'Supply and demand',
+  'Mean reversion',
+  'Scalping',
+]
 
 export const ACCOUNT_TYPES: {
   value: AccountType
@@ -106,6 +181,16 @@ function toProfile(wire: ProfileWire): Profile {
     markets: Array.isArray(wire.markets) ? wire.markets.map(String) : [],
     bio: String(wire.bio ?? ''),
     coachLanguage: (wire.coach_language as string) ?? undefined,
+    marketType: (wire.market_type as MarketType) ?? null,
+    fundingType: (wire.funding_type as FundingType) ?? null,
+    propFirm: String(wire.prop_firm ?? ''),
+    accountSize: num(wire.account_size),
+    riskPerTradePct: num(wire.risk_per_trade_pct),
+    maxDailyLossPct: num(wire.max_daily_loss_pct),
+    targetR: num(wire.target_r),
+    maxTradesPerDay: num(wire.max_trades_per_day),
+    strategies: Array.isArray(wire.strategies) ? wire.strategies.map(String) : [],
+    tradingRules: String(wire.trading_rules ?? ''),
     plan: String(wire.plan ?? 'individual'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),
@@ -128,6 +213,42 @@ export async function saveProfileDetails(details: ProfileDetails): Promise<Profi
       trading_style: details.tradingStyle,
       markets: details.markets,
       bio: details.bio,
+    },
+  })
+  return toProfile(wire)
+}
+
+/** What the trader edits on Settings. Every number may be null — "not set" is
+ *  a real state, and the coach is told to ask rather than assume a limit. */
+export type TradingSetup = {
+  marketType: MarketType | null
+  fundingType: FundingType | null
+  propFirm: string
+  accountSize: number | null
+  riskPerTradePct: number | null
+  maxDailyLossPct: number | null
+  targetR: number | null
+  maxTradesPerDay: number | null
+  strategies: string[]
+  tradingRules: string
+}
+
+export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: {
+      market_type: setup.marketType,
+      funding_type: setup.fundingType,
+      // Only meaningful alongside a prop firm, and left behind as stale text
+      // otherwise — clearing it here keeps the record honest.
+      prop_firm: setup.fundingType === 'prop_firm' ? setup.propFirm : '',
+      account_size: setup.accountSize,
+      risk_per_trade_pct: setup.riskPerTradePct,
+      max_daily_loss_pct: setup.maxDailyLossPct,
+      target_r: setup.targetR,
+      max_trades_per_day: setup.maxTradesPerDay,
+      strategies: setup.strategies,
+      trading_rules: setup.tradingRules,
     },
   })
   return toProfile(wire)

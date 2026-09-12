@@ -13,6 +13,7 @@ export type TradeEntry = {
   exitAt: string
 
   setup: string
+  session: TradingSession
   rationale: string
   stopLoss: string
   takeProfit: string
@@ -25,6 +26,30 @@ export type TradeEntry = {
   emotionBefore: string
   emotionDuring: string
   mistakes: string[]
+}
+
+/**
+ * Which session the trade was taken in.
+ *
+ * The empty string is a real answer, not a missing one: a trader who does not
+ * know says so, and the server works it out from the entry time rather than
+ * leaving a hole in the statistics. Stored lowercase — it is an identifier,
+ * and SESSIONS carries the label.
+ */
+export type TradingSession = 'asia' | 'london' | 'newyork' | ''
+
+export const SESSIONS: { value: TradingSession; label: string }[] = [
+  { value: 'asia', label: 'Asia' },
+  { value: 'london', label: 'London' },
+  { value: 'newyork', label: 'New York' },
+  { value: '', label: 'No idea' },
+]
+
+/** Shown under the picker so the choice is informed rather than a guess. */
+export const SESSION_HOURS: Record<Exclude<TradingSession, ''>, string> = {
+  asia: 'Roughly 21:00-07:00 UTC — Sydney and Tokyo.',
+  london: 'Roughly 07:00-12:00 UTC.',
+  newyork: 'Roughly 12:00-21:00 UTC.',
 }
 
 export const SETUPS = [
@@ -76,6 +101,7 @@ export const EMPTY_TRADE: TradeEntry = {
   entryAt: '',
   exitAt: '',
   setup: '',
+  session: '',
   rationale: '',
   stopLoss: '',
   takeProfit: '',

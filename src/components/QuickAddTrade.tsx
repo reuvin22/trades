@@ -4,6 +4,8 @@ import {
   EMOTIONS,
   EMPTY_TRADE,
   MISTAKE_TAGS,
+  SESSIONS,
+  SESSION_HOURS,
   SETUPS,
   inconsistencies,
   missingRequired,
@@ -23,6 +25,7 @@ import {
   FIELD,
   FIELD_GRID,
   FIELD_GROUP,
+  FIELD_HINT,
   FIELD_LABEL,
   FIELD_LEGEND,
   GROUP_GLYPH,
@@ -297,6 +300,28 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                   placeholder="Pick one or name your own"
                 />
               </label>
+
+              <div className={`${FIELD} col-span-full`}>
+                <span className={FIELD_LABEL}>Session</span>
+                <div className={TOGGLE_GROUP}>
+                  {SESSIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={TOGGLE}
+                      aria-pressed={trade.session === option.value}
+                      onClick={() => update('session', option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <span className={FIELD_HINT}>
+                  {trade.session === ''
+                    ? 'Left unknown, this is worked out from the entry time.'
+                    : SESSION_HOURS[trade.session]}
+                </span>
+              </div>
 
               <label className={`${FIELD} col-span-2`}>
                 <span className={FIELD_LABEL}>Chart screenshot</span>

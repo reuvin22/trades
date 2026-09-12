@@ -36,7 +36,7 @@ export const TRADER_NAV: NavItem[] = [
   { route: 'calendar', label: 'Calendar', icon: CalendarIcon },
   { route: 'analytics', label: 'Analytics', icon: AnalyticsIcon },
   { route: 'coach', label: 'AI Coach', icon: CoachIcon },
-  { route: 'settings', label: 'Settings', icon: SettingsIcon, disabled: true },
+  { route: 'settings', label: 'Settings', icon: SettingsIcon },
 ]
 
 export const ADMIN_NAV: NavSection[] = [

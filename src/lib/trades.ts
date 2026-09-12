@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
-import type { TradeEntry } from '../data/tradeForm'
+import type { TradeEntry, TradingSession } from '../data/tradeForm'
 
 /**
  * The journal, through the API.
@@ -23,6 +23,7 @@ export type StoredTrade = {
   entryAt: string
   exitAt: string
   setup: string
+  session: TradingSession
   rationale: string
   stopLoss: number | null
   takeProfit: number | null
@@ -77,6 +78,7 @@ function toStored(wire: TradeWire): StoredTrade {
     entryAt,
     exitAt,
     setup: String(wire.setup ?? ''),
+    session: (wire.session ?? '') as TradingSession,
     rationale: String(wire.rationale ?? ''),
     stopLoss: num(wire.stop_loss),
     takeProfit: num(wire.take_profit),
@@ -113,6 +115,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     entry_at: toIso(trade.entryAt),
     exit_at: toIso(trade.exitAt),
     setup: trade.setup.trim(),
+    session: trade.session,
     rationale: trade.rationale.trim(),
     stop_loss: toNumber(trade.stopLoss),
     take_profit: toNumber(trade.takeProfit),
