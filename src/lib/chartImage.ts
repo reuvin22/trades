@@ -61,17 +61,34 @@ function load(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Re-encode a chart small enough to send.
+ * Chat images get a tighter budget than charts.
+ *
+ * They are read inline in a 380px dock rather than studied for price levels,
+ * and every one is stored in the conversation rather than sent once and
+ * forgotten — so a thread of generous screenshots is a thread that takes a
+ * while to open. Encryption inflates whatever comes out of here by about a
+ * third before it reaches the database, which this leaves room for.
+ */
+const CHAT_EDGE = 1_000
+const CHAT_CHARACTERS = 120_000
+
+type Budget = { maxEdge: number; maxCharacters: number }
+
+/**
+ * Re-encode an image small enough to send.
  *
  * Returns a JPEG data URL. Throws when the file is not an image the browser
  * can decode, or when even the lowest quality will not fit — a photograph of a
  * trading desk rather than a screenshot of a chart, say.
  */
-export async function prepareChart(file: File): Promise<string> {
+export async function prepareImage(
+  file: File,
+  { maxEdge, maxCharacters }: Budget,
+): Promise<string> {
   if (!isImage(file)) throw new Error('That file is not an image.')
 
   const image = await load(file)
-  const scale = Math.min(1, MAX_EDGE / Math.max(image.width, image.height))
+  const scale = Math.min(1, maxEdge / Math.max(image.width, image.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(image.width * scale))
   canvas.height = Math.max(1, Math.round(image.height * scale))
@@ -87,8 +104,24 @@ export async function prepareChart(file: File): Promise<string> {
 
   for (const quality of QUALITIES) {
     const encoded = canvas.toDataURL('image/jpeg', quality)
-    if (encoded.length <= MAX_CHARACTERS) return encoded
+    if (encoded.length <= maxCharacters) return encoded
   }
 
   throw new Error('That image is too large. Try cropping it to just the chart.')
+}
+
+/** A chart for the coach to read: big enough that axis labels survive. */
+export function prepareChart(file: File): Promise<string> {
+  return prepareImage(file, {
+    maxEdge: MAX_EDGE,
+    maxCharacters: MAX_CHARACTERS,
+  })
+}
+
+/** An image for a chat message: smaller, because it is read inline and kept. */
+export function prepareChatImage(file: File): Promise<string> {
+  return prepareImage(file, {
+    maxEdge: CHAT_EDGE,
+    maxCharacters: CHAT_CHARACTERS,
+  })
 }

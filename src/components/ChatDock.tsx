@@ -22,12 +22,14 @@ import {
   type Person as ChatPerson,
 } from '../lib/chat'
 import { useDirectorySearch, type DirectoryEntry } from '../lib/directory'
+import { ACCEPTED, imageFromPaste, prepareChatImage } from '../lib/chartImage'
 import { readableApiError } from '../lib/api'
 import type { AuthUser } from '../lib/useAuth'
 import { accentFor, displayNameFor, initialsFor } from '../data/messages'
 import {
   ChatIcon,
   CloseIcon,
+  ImageIcon,
   SearchIcon,
   SeenIcon,
   PencilIcon,
@@ -39,6 +41,7 @@ import {
 import {
   DOCK_ADD,
   DOCK_ASIDE,
+  DOCK_ATTACH,
   DOCK_ASIDE_HEAD,
   DOCK_ASIDE_TITLE,
   DOCK_AVATAR,
@@ -58,6 +61,7 @@ import {
   DOCK_CONTACT_NAME,
   DOCK_CONTACT_ROLE,
   DOCK_EMPTY,
+  DOCK_IMAGE,
   DOCK_ERROR,
   DOCK_LAUNCHER,
   DOCK_LAUNCHER_BADGE,
@@ -85,6 +89,9 @@ import {
   DOCK_SEND,
   DOCK_THREAD,
   DOCK_TIME,
+  DOCK_TRAY,
+  DOCK_TRAY_NAME,
+  DOCK_TRAY_THUMB,
   DOCK_UNREAD,
   MODAL_CLOSE,
 } from './ui'
@@ -353,6 +360,19 @@ function Bubble({
         }}
       >
         {message.editedAt !== null && <span className={DOCK_EDITED}>edited</span>}
+        {message.image && (
+          <img
+            className={DOCK_IMAGE}
+            src={message.image}
+            alt={message.text || 'Shared image'}
+            // The dock is narrow and a tall screenshot would push the rest of
+            // the conversation off screen, so it opens full size in a tab.
+            onClick={(event) => {
+              event.stopPropagation()
+              window.open(message.image, '_blank', 'noopener,noreferrer')
+            }}
+          />
+        )}
         {message.text}
         <span className={DOCK_TIME}>{formatTime(message.sentAt)}</span>
       </div>
@@ -457,6 +477,8 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   /** The message whose hold-menu is open, and the one being rewritten. */
   const [held, setHeld] = useState<string | null>(null)
   const [editing, setEditing] = useState<ChatMessage | null>(null)
+  /** A picture waiting to go with the next message, already downscaled. */
+  const [attached, setAttached] = useState<string | null>(null)
 
   // Anywhere else is a dismissal — the usual contract for a context menu.
   useEffect(() => {
@@ -509,6 +531,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   function select(uid: string | null) {
     setActiveId(uid)
     setDraft('')
+    setAttached(null)
     setFailure(null)
     setHeld(null)
     setEditing(null)
@@ -531,27 +554,51 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     event.preventDefault()
 
     const text = draft.trim()
-    if (text === '' || activeId === null || me === null) return
+    // A picture can carry the message on its own.
+    if ((text === '' && attached === null) || activeId === null || me === null) return
 
     // Cleared first: the message is on its way, and a composer that stays full
     // invites a second send of the same thing. Nothing else is needed here —
     // the SDK echoes the write into the listener before the server has even
     // acknowledged it, so it is on screen by the time this returns.
     const rewriting = editing
+    const picture = attached
     setDraft('')
+    setAttached(null)
     setEditing(null)
     setFailure(null)
 
     try {
       if (rewriting !== null) {
+        // Only the words move. The rules pin the picture the same way they pin
+        // the sender and the time, so an edit cannot swap it.
         await editMessage(me, activeId, rewriting.id, text)
       } else {
-        await sendMessage(me, activeId, text)
+        await sendMessage(me, activeId, text, picture ?? undefined)
       }
     } catch (cause) {
       setDraft(text)
+      setAttached(picture)
       setEditing(rewriting)
       setFailure(readableApiError(cause))
+    }
+  }
+
+  /**
+   * Take one image from a paste or the file picker.
+   *
+   * Shrunk before it is held, so the thumbnail only appears once it is
+   * something that will actually send — a photo too big fails here rather than
+   * after a caption has been written for it.
+   */
+  async function attach(file: File | null) {
+    if (!file) return
+    setFailure(null)
+
+    try {
+      setAttached(await prepareChatImage(file))
+    } catch (cause) {
+      setFailure(cause instanceof Error ? cause.message : 'That image could not be used.')
     }
   }
 
@@ -748,14 +795,58 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     </p>
                   )}
 
-                  <form className={DOCK_COMPOSER} onSubmit={send}>
+                  {attached !== null && (
+                    <div className={DOCK_TRAY}>
+                      <img className={DOCK_TRAY_THUMB} src={attached} alt="" />
+                      <span className={DOCK_TRAY_NAME}>Image ready to send</span>
+                      <button
+                        type="button"
+                        className={DOCK_ATTACH}
+                        onClick={() => setAttached(null)}
+                        aria-label="Remove image"
+                      >
+                        <CloseIcon size={14} />
+                      </button>
+                    </div>
+                  )}
+
+                  <form
+                    className={DOCK_COMPOSER}
+                    onSubmit={send}
+                    // On the form rather than the input: someone who has just
+                    // taken a screenshot has usually not clicked into the text
+                    // field first.
+                    onPaste={(event) =>
+                      void attach(imageFromPaste(event.clipboardData.items))
+                    }
+                  >
+                    {/* An edit may change the words, never the picture — the
+                        database rules pin it, so the control goes away. */}
+                    {editing === null && (
+                      <label className={DOCK_ATTACH} title="Send an image">
+                        <ImageIcon size={16} />
+                        <span className="sr-only">Send an image</span>
+                        <input
+                          type="file"
+                          accept={ACCEPTED}
+                          className="hidden"
+                          onChange={(event) => {
+                            void attach(event.target.files?.[0] ?? null)
+                            event.target.value = ''
+                          }}
+                        />
+                      </label>
+                    )}
+
                     <input
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
                       placeholder={
                         editing !== null
                           ? 'Rewrite your message…'
-                          : `Message ${person.name.split(' ')[0]}…`
+                          : attached !== null
+                            ? 'Add a caption, or just send…'
+                            : `Message ${person.name.split(' ')[0]}…`
                       }
                       aria-label={
                         editing !== null ? 'Edit your message' : `Message ${person.name}`
@@ -764,7 +855,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     <button
                       type="submit"
                       className={DOCK_SEND}
-                      disabled={draft.trim() === ''}
+                      disabled={draft.trim() === '' && attached === null}
                       aria-label="Send"
                     >
                       <SendIcon size={16} />

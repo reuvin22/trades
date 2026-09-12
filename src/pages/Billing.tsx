@@ -24,6 +24,7 @@ import {
   PAGE_TITLE,
   PILL,
   PILL_ACCENT,
+  PILL_IDLE,
   PLAN_ACTION,
   PLAN_BLURB,
   PLAN_CARD,
@@ -198,7 +199,7 @@ export function Billing({ user, profile }: BillingProps) {
 
               <button
                 type="button"
-                className={`${PILL} ${current ? '' : PILL_ACCENT} ${PLAN_ACTION}`}
+                className={`${PILL} ${current ? PILL_IDLE : PILL_ACCENT} ${PLAN_ACTION}`}
                 disabled={current || pending !== null || !user}
                 onClick={() => void choose(plan)}
               >

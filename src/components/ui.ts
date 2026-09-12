@@ -32,11 +32,22 @@ export const PAGE_TITLE = 'text-[27px] font-semibold tracking-[-0.02em] text-fg-
 export const PAGE_SUB = 'mt-3 text-[13px] text-fg-muted'
 export const PAGE_ACTIONS = 'flex flex-none gap-10'
 
+/*
+ * Shape only. Colour belongs to exactly one of the two state classes below,
+ * never here: Tailwind settles bg-tint-1 against bg-accent by their order in
+ * the stylesheet, not by the order they appear in a class attribute, and
+ * bg-tint-1 comes later. A base colour here therefore beat PILL_ACCENT and
+ * painted every primary button in the app — Save settings, Save profile, Log
+ * trade — as a dim grey pill that read as disabled.
+ */
 export const PILL =
-  'inline-flex items-center gap-8 rounded-[9px] border border-line bg-tint-1 px-15 py-9 text-[12.5px] font-medium text-fg-dim transition-[color,border-color,background-color,transform] duration-150 hover:border-line-strong hover:bg-tint-2 hover:text-fg-strong active:scale-[0.97]'
+  'inline-flex items-center gap-8 rounded-[9px] border px-15 py-9 text-[12.5px] font-medium transition-[color,border-color,background-color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'
+
+export const PILL_IDLE =
+  'border-line bg-tint-1 text-fg-dim hover:border-line-strong hover:bg-tint-2 hover:text-fg-strong'
 
 export const PILL_ACCENT =
-  'border-transparent bg-accent text-accent-ink hover:bg-accent-strong hover:text-accent-ink'
+  'border-transparent bg-accent text-accent-ink shadow-[0_6px_18px_-8px_var(--color-accent)] hover:bg-accent-strong hover:text-accent-ink'
 
 /* --------------------------------------------------------------- numerals */
 
@@ -398,6 +409,11 @@ export const IDENTITY_AVATAR =
 export const ACCOUNT_ACTIONS =
   'flex flex-wrap items-center justify-between gap-16 px-20 py-14'
 export const SAVE_NOTE = 'text-[12.5px] text-fg-muted'
+/** The row a form is submitted from. The rule above it separates "still
+ *  editing" from "done", which a bare button floating under the last field
+ *  does not do. */
+export const SAVE_BAR =
+  'flex flex-wrap items-center gap-14 border-t border-line pt-20'
 export const SAVE_ERROR = 'text-red'
 
 export const META_LIST =
@@ -1219,3 +1235,21 @@ export const CHART_DROP =
 /** The chart as it appears in the trader's own bubble, once sent. */
 export const CHART_SENT =
   'mt-8 max-h-320 w-full rounded-sm border border-[color-mix(in_srgb,#fff_28%,transparent)] object-contain'
+
+/**
+ * A picture in a chat message, and the tray for one waiting to be sent.
+ *
+ * The dock is 380px wide, so a tall screenshot rendered at its natural size
+ * would push the rest of the conversation off screen. It is capped and
+ * clickable instead — full size opens in a tab.
+ */
+export const DOCK_IMAGE =
+  'mb-6 block max-h-260 w-full cursor-zoom-in rounded-xs border border-[color-mix(in_srgb,#fff_22%,transparent)] object-contain'
+
+export const DOCK_TRAY =
+  'flex items-center gap-9 border-t border-line px-13 py-9 text-[11.5px] text-fg-dim'
+export const DOCK_TRAY_THUMB =
+  'size-34 flex-none rounded-xs border border-line object-cover'
+export const DOCK_TRAY_NAME = 'min-w-0 flex-1 truncate'
+export const DOCK_ATTACH =
+  'grid size-32 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'

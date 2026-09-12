@@ -54,6 +54,9 @@ export type ChatMessage = {
   editedAt: Date | null
   /** Set when the sender removed it. The message stays, as a tombstone. */
   deletedAt: Date | null
+  /** An attached picture as a data URL, decrypted for display. Absent on a
+   *  message that carried only words, and cleared when one is deleted. */
+  image?: string
 }
 
 export type Person = {
@@ -249,17 +252,27 @@ export async function addContact(me: string, them: string): Promise<void> {
 }
 
 /** Appends a message. The server stamps the time; the client never does. */
-export async function sendMessage(me: string, them: string, text: string): Promise<void> {
+export async function sendMessage(
+  me: string,
+  them: string,
+  text: string,
+  image?: string,
+): Promise<void> {
   if (!rtdb) throw new Error('Live chat is not configured.')
 
   const trimmed = text.trim()
-  if (trimmed === '') return
+  // A picture can carry the message on its own, so empty is only empty when
+  // nothing came with it.
+  if (trimmed === '' && !image) return
 
-  // Encrypted here, before the write. The database never sees the words.
+  // Encrypted here, before the write. The database never sees the words — and
+  // the picture goes through exactly the same door, so a leaked backup holds
+  // ciphertext either way.
   await push(ref(rtdb, `threads/${threadIdFor(me, them)}/messages`), {
     from: me,
     text: await encryptMessage(them, trimmed),
     at: serverTimestamp(),
+    ...(image ? { image: await encryptMessage(them, image) } : {}),
   })
 }
 
@@ -305,6 +318,9 @@ export async function deleteMessage(
 
   await update(ref(rtdb, `threads/${threadIdFor(me, them)}/messages/${messageId}`), {
     text: '',
+    // Removed outright, like the text. A tombstone that still showed the
+    // picture would not be much of a tombstone.
+    image: null,
     deletedAt: serverTimestamp(),
   })
 }
@@ -399,6 +415,7 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
                 sentAt: toDate(value.at) ?? new Date(),
                 editedAt: toDate(value.editedAt),
                 deletedAt: toDate(value.deletedAt),
+                image: value.image ? String(value.image) : undefined,
               })
             })
 
@@ -415,6 +432,11 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
               messages.map(async (message) => ({
                 ...message,
                 text: await decryptMessage(them, message.text),
+                // Same key, same door. An image that will not open shows as
+                // absent rather than as a broken picture.
+                image: message.image
+                  ? await decryptMessage(them, message.image)
+                  : undefined,
               })),
             ).then((readable) =>
               setThreads((current) => ({
@@ -462,7 +484,11 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
         unread: thread.messages.filter(
           (message) => message.sender !== me && message.sentAt.getTime() > seenByMe,
         ).length,
-        lastText: last?.deletedAt ? 'Message deleted' : (last?.text ?? ''),
+        // A picture with no caption would otherwise preview as a blank line in
+        // the contact list, which reads as nothing having been sent.
+        lastText: last?.deletedAt
+          ? 'Message deleted'
+          : last?.text || (last?.image ? 'Photo' : ''),
         lastAt: last?.sentAt ?? null,
         seenAt: toDate(thread.reads[uid]),
         online: isOnline(status[uid]),

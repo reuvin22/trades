@@ -71,10 +71,27 @@
               ".validate": "newData.val() == now || (data.exists() && newData.val() == data.val())"
             },
 
-            // Empty only for a deleted message, whose text is cleared rather
-            // than kept around where a rule change could expose it again.
+            // Empty only for a deleted message, or one carrying a picture and
+            // no words. A deleted message's text is cleared rather than kept
+            // around where a rule change could expose it again.
             "text": {
-              ".validate": "newData.isString() && newData.val().length <= 2000 && (newData.val().length > 0 || newData.parent().child('deletedAt').exists())"
+              ".validate": "newData.isString() && newData.val().length <= 2000 && (newData.val().length > 0 || newData.parent().child('deletedAt').exists() || newData.parent().child('image').exists())"
+            },
+
+            // An attached picture, encrypted in the browser exactly like the
+            // text, so what lands here is ciphertext either way.
+            //
+            // Immutable once written, like 'from' and 'at': an edit may change
+            // the words, never the picture. Deleting removes the child
+            // entirely — a tombstone that still showed the image would not be
+            // much of a tombstone — and a removal is not validated, so nothing
+            // here has to permit it.
+            //
+            // The ceiling is the browser's own budget plus the third that
+            // encryption adds, with room to spare. It is a limit on abuse, not
+            // a size the client should ever approach.
+            "image": {
+              ".validate": "newData.isString() && newData.val().length <= 400000 && (!data.exists() || data.val() == newData.val())"
             },
 
             // Both stamped with the server clock, so 'edited' and 'deleted'

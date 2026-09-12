@@ -25,7 +25,7 @@ import {
   PILL,
   PILL_ACCENT,
   SAVE_ERROR,
-  SAVE_NOTE,
+  SAVE_BAR,
   SECTION_TITLE,
   TAG_CLOUD,
   TAG_TOGGLE,
@@ -352,7 +352,7 @@ export function Settings({ profile }: SettingsProps) {
         </p>
       )}
 
-      <div className={SAVE_NOTE}>
+      <div className={SAVE_BAR}>
         <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={saving}>
           {saving && <SpinnerIcon size={14} />}
           {saving ? 'Saving…' : 'Save settings'}
