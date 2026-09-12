@@ -7,7 +7,8 @@ export type CoachTurn = {
   text: string
 }
 
-/** Offered on the first visit; the choice is stored on the profile. */
+/** Offered on first visit and whenever the trader reopens the picker; the
+ *  choice is stored on the profile. */
 export const LANGUAGES = [
   { code: 'English', label: 'English', native: 'English' },
   { code: 'Filipino', label: 'Filipino', native: 'Tagalog' },
@@ -15,6 +16,7 @@ export const LANGUAGES = [
   { code: 'Bahasa Indonesia', label: 'Indonesian', native: 'Bahasa Indonesia' },
   { code: 'Simplified Chinese', label: 'Chinese', native: '简体中文' },
   { code: 'Japanese', label: 'Japanese', native: '日本語' },
+  { code: 'Korean', label: 'Korean', native: '한국어' },
   { code: 'Hindi', label: 'Hindi', native: 'हिन्दी' },
   { code: 'Portuguese', label: 'Portuguese', native: 'Português' },
   { code: 'French', label: 'French', native: 'Français' },

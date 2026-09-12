@@ -1124,3 +1124,14 @@ export const SPLASH_TAGLINE =
 export const SPLASH_STATUS =
   'animate-fade text-[11.5px] tracking-[0.04em] text-fg-muted uppercase ' +
   '[animation-delay:360ms]'
+
+/**
+ * The control that reopens the language picker.
+ *
+ * The choice used to be a one-time gate: once `coachLanguage` was on the
+ * profile the picker never rendered again, so a language picked once was
+ * permanent. This is the way back to it.
+ */
+export const LANGUAGE_CHANGE =
+  'mt-14 inline-flex items-center gap-7 rounded-full border border-line bg-tint-1 px-13 py-7 text-[11.5px] text-fg-dim transition-[color,border-color] duration-150 hover:border-accent hover:text-fg'
+export const LANGUAGE_CHANGE_NAME = 'font-medium text-fg'

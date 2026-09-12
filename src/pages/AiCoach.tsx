@@ -17,6 +17,8 @@ import {
   COACH_PAGE,
   COACH_WARNING,
   COMPOSER,
+  LANGUAGE_CHANGE,
+  LANGUAGE_CHANGE_NAME,
   LANGUAGE_CHIP,
   LANGUAGE_GATE,
   LANGUAGE_GRID,
@@ -44,19 +46,36 @@ function greeting(): string {
   return 'Good evening'
 }
 
+/**
+ * The stored code shown the way a speaker of it would read it — `Filipino`
+ * displays as `Tagalog`. Falls back to the code itself, so a language saved
+ * before it was in the list still renders as something rather than blank.
+ */
+function nativeName(code: string): string {
+  return LANGUAGES.find((language) => language.code === code)?.native ?? code
+}
+
 const SUGGESTIONS = [
   'How am I actually doing?',
   'Where is my money going?',
   'What should I stop doing?',
 ]
 
-/** Shown once, before the first message, until a language has been chosen. */
+/**
+ * Shown before the first message, and again whenever the trader reopens it.
+ *
+ * `current` is the language already in force, or null on the first visit — it
+ * changes the wording and marks the active chip, so reopening the picker reads
+ * as changing a setting rather than being asked the same question twice.
+ */
 function LanguagePicker({
   onChoose,
   saving,
+  current,
 }: {
   onChoose: (language: string) => void
   saving: string | null
+  current: string | null
 }) {
   return (
     <div className={`${TURN} ${LANGUAGE_GATE}`}>
@@ -66,8 +85,9 @@ function LanguagePicker({
 
       <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
         <p>
-          Before we start — which language would you like me to use? I&apos;ll stick
-          with it from here.
+          {current === null
+            ? "Before we start — which language would you like me to use? I'll stick with it from here."
+            : "Which language would you like me to use? I'll switch from my next reply onwards."}
         </p>
 
         <div className={LANGUAGE_GRID}>
@@ -75,8 +95,13 @@ function LanguagePicker({
             <button
               key={language.code}
               type="button"
-              className={`${LANGUAGE_CHIP} ${saving === language.code ? LANGUAGE_SAVING : ''}`}
+              className={`${LANGUAGE_CHIP} ${
+                saving === language.code || (saving === null && current === language.code)
+                  ? LANGUAGE_SAVING
+                  : ''
+              }`}
               disabled={saving !== null}
+              aria-current={current === language.code ? 'true' : undefined}
               onClick={() => onChoose(language.code)}
             >
               <span className={LANGUAGE_NATIVE}>{language.native}</span>
@@ -101,6 +126,13 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
   const [saveWarning, setSaveWarning] = useState('')
   const [draft, setDraft] = useState('')
 
+  // Reopens the picker on a profile that already has a language. Without it
+  // the first choice was permanent: the picker rendered only while the
+  // language was null, so there was no way back to it, and asking the coach in
+  // conversation could not work either — the language is pinned per request,
+  // so any switch it agreed to was undone on the next turn.
+  const [changing, setChanging] = useState(false)
+
   const language = chosenLanguage ?? profile?.coachLanguage ?? null
   const { turns, thinking, error, send } = useCoach(language ?? 'English')
   const threadEnd = useRef<HTMLDivElement>(null)
@@ -114,6 +146,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
     // Advance immediately; persistence is a nice-to-have, not a gate.
     setChosenLanguage(choice)
     setPendingLanguage(choice)
+    setChanging(false)
     setSaveWarning('')
 
     if (user) {
@@ -153,11 +186,27 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                 tradeCount === 1 ? 'trade' : 'trades'
               }. Ask me anything about how you're doing.`}
         </p>
+
+        {language !== null && !changing && (
+          <button
+            type="button"
+            className={LANGUAGE_CHANGE}
+            onClick={() => setChanging(true)}
+          >
+            Replying in{' '}
+            <span className={LANGUAGE_CHANGE_NAME}>{nativeName(language)}</span> —
+            change
+          </button>
+        )}
       </div>
 
       <div className={THREAD}>
         {language === null ? (
-          <LanguagePicker onChoose={chooseLanguage} saving={pendingLanguage} />
+          <LanguagePicker
+            onChoose={chooseLanguage}
+            saving={pendingLanguage}
+            current={null}
+          />
         ) : (
           <>
             {!started && (
@@ -230,6 +279,16 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
               <p className={COACH_ERROR} role="alert">
                 {error}
               </p>
+            )}
+
+            {/* Appended rather than replacing the thread, so changing the
+                language does not make the conversation vanish. */}
+            {changing && (
+              <LanguagePicker
+                onChoose={chooseLanguage}
+                saving={pendingLanguage}
+                current={language}
+              />
             )}
           </>
         )}
