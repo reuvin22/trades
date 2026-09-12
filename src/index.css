@@ -432,6 +432,28 @@
     height: 100%;
   }
 
+  /*
+   * The app never scrolls sideways.
+   *
+   * One element wider than the screen — a table, a chart, a long unbroken
+   * string — turns the whole page into a horizontal scroller, and on mobile it
+   * takes the fixed chat launcher with it: Chrome on Android widens the layout
+   * viewport to the scroll width, and anything anchored to `right` goes off the
+   * edge with it. That is the bug this prevents, not just the sideways drag.
+   *
+   * `clip`, not `hidden`. Both stop the scroll, but `hidden` makes the element
+   * a scroll container, which silently breaks `position: sticky` inside it —
+   * and the sidebar is sticky.
+   *
+   * Wide things that genuinely need to scroll still can: they carry their own
+   * `overflow-x: auto` (see TABLE_WRAP and CAL_GRID), and this rule does not
+   * reach inside them.
+   */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     background: var(--color-bg-deep);
     color: var(--color-fg);

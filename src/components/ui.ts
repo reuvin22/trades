@@ -13,7 +13,11 @@
 export const CARD =
   'rounded-lg border border-line bg-panel shadow-[var(--shadow-card)] backdrop-blur-[14px]'
 
-export const CARD_HEAD = 'flex items-start justify-between gap-20'
+/* Wraps rather than overflows: a title beside a segmented control has no room
+   for both on a 320px phone, and without wrapping the control pushed the page
+   23px wider than the screen. The row gap only applies once it has wrapped. */
+export const CARD_HEAD =
+  'flex flex-wrap items-start justify-between gap-x-20 gap-y-12'
 export const CARD_TITLE = 'text-[22px] font-semibold tracking-[-0.01em] text-fg-strong'
 export const CARD_SUB = 'mt-4 text-[13px] text-fg-muted'
 
@@ -172,7 +176,13 @@ export const PLOT_MARKER =
   'pointer-events-none absolute -mt-[4.5px] -ml-[4.5px] size-9 animate-pop rounded-full bg-chart-line shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-accent)_40%,transparent)] transition-[left,top] duration-[80ms] ease-linear [animation-delay:1.1s]'
 
 export const TOOLTIP =
-  'pointer-events-none absolute z-[2] flex animate-rise translate-x-[-50%] translate-y-[calc(-100%-18px)] flex-col gap-3 rounded-md border border-line-strong bg-panel-solid px-16 py-10 whitespace-nowrap shadow-[var(--shadow-pop)] transition-[left,top] duration-[80ms] ease-linear [animation-delay:1.15s]'
+  'pointer-events-none absolute z-[2] flex animate-rise translate-x-[-50%] translate-y-[calc(-100%-18px)] flex-col gap-3 rounded-md border border-line-strong bg-panel-solid px-16 py-10 whitespace-nowrap shadow-[var(--shadow-pop)] transition-[left,top] duration-[80ms] ease-linear [animation-delay:1.15s] ' +
+  /* The card is centred on the hovered point, so half of it sits outside the
+     plot whenever that point is the first or last one — which on the dashboard
+     is the default, and pushed the whole page 21px wider than the phone.
+     EquityChart clamps `left` against this half-width; the cap and the clip
+     keep that number honest if a formatted balance ever runs long. */
+  'max-w-176 overflow-hidden [--tooltip-half:88px]'
 
 export const TOOLTIP_DATE = 'text-[11.5px] text-fg-muted'
 export const TOOLTIP_VALUE =
@@ -774,19 +784,34 @@ export const NOTIFY_EMPTY =
  * button own the other corner, so this one needs no offset and can sit at the
  * screen edge at every width.
  */
+/*
+ * Offsets go through `max()` against the safe-area insets, so the button clears
+ * a rounded corner, a notch, and the gesture bar at the bottom of a phone.
+ * Without it the tap target sits partly under the system UI on exactly the
+ * devices where it is hardest to hit.
+ */
 export const DOCK_LAUNCHER =
-  'fixed right-24 bottom-24 z-40 grid size-52 place-items-center rounded-full bg-accent text-accent-ink shadow-[var(--shadow-pop)] transition-[transform,background-color] duration-200 ease-out hover:scale-105 hover:bg-accent-strong active:scale-[0.97] max-shell:right-20 max-shell:bottom-20'
+  'fixed z-40 grid size-52 place-items-center rounded-full bg-accent text-accent-ink shadow-[var(--shadow-pop)] transition-[transform,background-color] duration-200 ease-out hover:scale-105 hover:bg-accent-strong active:scale-[0.97] ' +
+  'right-[max(24px,env(safe-area-inset-right))] bottom-[max(24px,env(safe-area-inset-bottom))] ' +
+  'max-shell:right-[max(16px,env(safe-area-inset-right))] max-shell:bottom-[max(16px,env(safe-area-inset-bottom))]'
 
 export const DOCK_LAUNCHER_BADGE =
   'absolute -top-2 -right-2 grid size-20 place-items-center rounded-full bg-red text-[10px] font-semibold text-white shadow-[0_0_0_2px_var(--color-bg-deep)]'
 
 export const DOCK_PANEL =
-  'fixed right-24 bottom-88 z-40 flex h-[min(520px,calc(100vh-140px))] w-[min(680px,calc(100vw-40px))] origin-bottom-right animate-dock overflow-hidden rounded-lg border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] ' +
+  'fixed z-40 flex origin-bottom-right animate-dock overflow-hidden rounded-lg border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] ' +
+  /* `dvh`, not `vh`. On a phone `100vh` is the tallest the viewport ever gets —
+     the height with the browser's address bar hidden — so a panel sized against
+     it runs off under the chrome that is actually on screen. `dvh` tracks what
+     is visible now. */
+  'h-[min(520px,calc(100dvh-140px))] w-[min(680px,calc(100vw-40px))] ' +
   /* Only the offsets change below the shell breakpoint. The width must not:
      `min(680px, 100vw-40px)` already narrows on a phone, and overriding it with
      a bare `100vw-40px` threw the 680px cap away, so on a 960px screen the
      panel stretched to 920px instead of staying a dock. */
-  'max-shell:right-20 max-shell:bottom-84'
+  'right-[max(24px,env(safe-area-inset-right))] bottom-88 ' +
+  'max-shell:right-[max(16px,env(safe-area-inset-right))] ' +
+  'max-shell:bottom-[calc(76px+max(16px,env(safe-area-inset-bottom)))]'
 
 /** Contacts left, conversation right. One column once there is no room. */
 export const DOCK_BODY = 'grid min-h-0 w-full grid-cols-[224px_1fr] max-[620px]:grid-cols-1'

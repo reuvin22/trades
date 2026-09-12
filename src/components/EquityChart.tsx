@@ -219,7 +219,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         <div
           className={TOOLTIP}
           style={{
-            left: `${(activeGeometry.x / W) * 100}%`,
+            left: `clamp(var(--tooltip-half), ${(activeGeometry.x / W) * 100}%, calc(100% - var(--tooltip-half)))`,
             top: `${(activeGeometry.y / H) * 100}%`,
           }}
         >

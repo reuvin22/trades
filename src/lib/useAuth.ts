@@ -19,6 +19,14 @@ export type AuthUser = {
   photoURL: string
   /** Provider ids, e.g. google.com. */
   providers: string[]
+  /**
+   * Whether this account confirmed its address with us.
+   *
+   * Not the same as , which Google sets itself for accounts
+   * that signed in through it — true before anyone has clicked anything. This
+   * is the flag the app gates on, so a Google sign-up waits like everyone else.
+   */
+  confirmed: boolean
 }
 
 type SessionWire = {
@@ -29,6 +37,7 @@ type SessionWire = {
     display_name: string
     photo_url: string
     providers: string[]
+    confirmed: boolean
   } | null
 }
 
@@ -41,13 +50,14 @@ function toUser(wire: SessionWire): AuthUser | null {
     displayName: wire.user.display_name,
     photoURL: wire.user.photo_url,
     providers: wire.user.providers,
+    confirmed: wire.user.confirmed,
   }
 }
 
 export type AuthState = {
   user: AuthUser | null
   /** Mirrored out of the user so the gate screen can read it on its own. */
-  emailVerified: boolean
+  confirmed: boolean
   /** True until the API has reported whether there is a session. */
   pending: boolean
 }
@@ -61,7 +71,7 @@ async function readSession(): Promise<AuthUser | null> {
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
-    emailVerified: false,
+    confirmed: false,
     pending: true,
   })
 
@@ -73,14 +83,14 @@ export function useAuth() {
         if (!live) return
         setState({
           user,
-          emailVerified: user?.emailVerified ?? false,
+          confirmed: user?.confirmed ?? false,
           pending: false,
         })
       })
       .catch(() => {
         // An unreachable API is indistinguishable from no session as far as
         // what the app can show; the login screen reports the failure itself.
-        if (live) setState({ user: null, emailVerified: false, pending: false })
+        if (live) setState({ user: null, confirmed: false, pending: false })
       })
 
     return () => {
@@ -97,8 +107,8 @@ export function useAuth() {
   const refresh = useCallback(async () => {
     try {
       const user = await readSession()
-      setState({ user, emailVerified: user?.emailVerified ?? false, pending: false })
-      return user?.emailVerified ?? false
+      setState({ user, confirmed: user?.confirmed ?? false, pending: false })
+      return user?.confirmed ?? false
     } catch {
       return false
     }
@@ -106,7 +116,7 @@ export function useAuth() {
 
   /** Adopt a session the sign-in calls below have just established. */
   const adopt = useCallback((user: AuthUser | null) => {
-    setState({ user, emailVerified: user?.emailVerified ?? false, pending: false })
+    setState({ user, confirmed: user?.confirmed ?? false, pending: false })
   }, [])
 
   return { ...state, refresh, adopt }

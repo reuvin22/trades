@@ -76,7 +76,7 @@ function TraderView({
 function App() {
   const route = useHashRoute()
   const { theme, toggle } = useTheme()
-  const { user, emailVerified, pending, refresh } = useAuth()
+  const { user, confirmed, pending, refresh } = useAuth()
   const { profile, isNewAccount } = useProfile(user)
   const [logging, setLogging] = useState(false)
   const nav = useNavDrawer(route)
@@ -86,8 +86,10 @@ function App() {
   const [preview, setPreview] = useState(false)
 
   const uid = user?.uid ?? null
-  const { trades, loading, error, reload } = useTrades(emailVerified ? uid : null)
-  const signedIn = (Boolean(user) && emailVerified) || preview
+  const { trades, loading, error, reload } = useTrades(confirmed ? uid : null)
+  // Confirmed, not merely signed in. A Google account arrives with Firebase
+  // already calling it verified, so that flag cannot be the gate — this one is.
+  const signedIn = (Boolean(user) && confirmed) || preview
 
   /*
    * The tour runs once for a new account. Derived rather than held in an
@@ -141,13 +143,12 @@ function App() {
   }
 
   // A signed-in but unconfirmed address gets the gate, never the app.
-  if (user && !emailVerified && !preview) {
+  if (user && !confirmed && !preview) {
     return (
       <VerifyEmail
         user={user}
         onRecheck={refresh}
         viaGoogle={user.providers.includes('google.com')}
-        isNewAccount={isNewAccount}
       />
     )
   }
