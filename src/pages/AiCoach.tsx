@@ -82,11 +82,40 @@ function nativeName(code: string): string {
  * this — and bulleted when it is a set of things that stand on their own. The
  * coach decides which; this only renders what it chose.
  */
-function Reply({ text }: { text: string }) {
+function Reply({
+  text,
+  onChoose,
+}: {
+  text: string
+  /** Absent on older turns: a fork the coach put two messages ago has already
+   *  been answered, and leaving it live invites the trader to re-answer it. */
+  onChoose?: (option: string) => void
+}) {
   return (
     <>
       {toBlocks(text).map((block, index) => {
         if (block.kind === 'paragraph') return <p key={index}>{block.text}</p>
+
+        if (block.kind === 'choice') {
+          return (
+            <div className={SUGGESTION_ROW} key={index}>
+              {block.options.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={SUGGESTION}
+                  disabled={!onChoose}
+                  // Sent as if they had typed it. The whole conversation and
+                  // persistence path then works unchanged, and the answer
+                  // reads back in the thread as something they said.
+                  onClick={() => onChoose?.(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )
+        }
 
         const List = block.kind === 'steps' ? 'ol' : 'ul'
         return (
@@ -362,7 +391,14 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                     <RobotIcon />
                   </span>
                   <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
-                    <Reply text={turn.text} />
+                    <Reply
+                      text={turn.text}
+                      onChoose={
+                        turn.id === turns[turns.length - 1]?.id && !thinking
+                          ? (option) => void send(option)
+                          : undefined
+                      }
+                    />
                   </div>
                 </div>
               ),

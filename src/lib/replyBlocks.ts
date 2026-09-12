@@ -19,6 +19,7 @@ export type ReplyBlock =
   | { kind: 'paragraph'; text: string }
   | { kind: 'steps'; items: string[] }
   | { kind: 'points'; items: string[] }
+  | { kind: 'choice'; options: string[] }
 
 /** "1. text", "2) text" — a sequence, where the order is part of the meaning. */
 const ORDERED = /^\s*\d{1,2}[.)]\s+(.+)$/
@@ -26,11 +27,43 @@ const ORDERED = /^\s*\d{1,2}[.)]\s+(.+)$/
 /** "- text", "* text", "• text" — a set, where the order is not. */
 const UNORDERED = /^\s*[-*•]\s+(.+)$/
 
+/**
+ * "CHOICE: Yes, change it | No, fix what I have" — a fork the coach is putting
+ * to the trader, rendered as buttons.
+ *
+ * Deliberately the plainest marker that could work. Every previous attempt in
+ * this app to have a small model emit exact syntax has ended with the syntax
+ * on screen, so this tolerates the wrapping it will actually get: brackets or
+ * none, any case, a stray full stop. And if the model never writes one, nothing
+ * breaks — the reply is just prose.
+ */
+const CHOICE = /^\s*\[?\s*choice\s*:\s*(.+?)\s*\]?\s*\.?\s*$/i
+
+/** Two to four. One is not a choice; five is a menu, and the coach is supposed
+ *  to be narrowing things down rather than opening them up. */
+const MIN_OPTIONS = 2
+const MAX_OPTIONS = 4
+
 export function toBlocks(reply: string): ReplyBlock[] {
   const blocks: ReplyBlock[] = []
 
   for (const line of reply.split('\n')) {
     if (line.trim() === '') continue
+
+    const choice = CHOICE.exec(line)
+    if (choice) {
+      const options = choice[1]
+        .split('|')
+        .map((option) => option.trim())
+        .filter(Boolean)
+
+      if (options.length >= MIN_OPTIONS && options.length <= MAX_OPTIONS) {
+        blocks.push({ kind: 'choice', options })
+        continue
+      }
+      // Malformed: fall through and render it as the paragraph it is, rather
+      // than swallowing a line the coach meant the trader to read.
+    }
 
     const ordered = ORDERED.exec(line)
     const unordered = ordered ? null : UNORDERED.exec(line)
