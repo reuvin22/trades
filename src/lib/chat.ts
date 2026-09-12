@@ -99,6 +99,47 @@ function toPerson(uid: string, raw: unknown): Person {
   }
 }
 
+/* --------------------------------------------------------------- presence */
+
+/**
+ * How often an online tab refreshes its stamp, and how long a stamp stays
+ * believable.
+ *
+ * `onDisconnect` covers the ordinary cases — a closed tab, a dropped network —
+ * but it cannot cover every one. A write that never lands, a session signed out
+ * before the offline write could be authorised, a server that misses the socket
+ * close: any of those leave a record saying `online: true` forever, and the
+ * only thing that can heal it is the record going stale on its own.
+ *
+ * So presence is a heartbeat as well as a flag. Someone counts as online when
+ * they claim to be *and* said so recently.
+ */
+const HEARTBEAT_MS = 25_000
+const PRESENCE_STALE_MS = 70_000
+
+function isOnline(raw: unknown): boolean {
+  const status = (raw ?? {}) as { online?: unknown; at?: unknown }
+  if (status.online !== true) return false
+
+  const at = typeof status.at === 'number' ? status.at : 0
+  return Date.now() - at < PRESENCE_STALE_MS
+}
+
+/**
+ * Mark the signed-in trader offline, now.
+ *
+ * Exported because signing out has to do this *before* dropping the Firebase
+ * session: once that is gone the write is unauthorised, and the record is left
+ * claiming they are still here.
+ */
+export async function goOffline(uid: string): Promise<void> {
+  if (!rtdb) return
+  await set(ref(rtdb, `status/${uid}`), {
+    online: false,
+    at: serverTimestamp(),
+  }).catch(() => {})
+}
+
 /* ------------------------------------------------------------- connection */
 
 /**
@@ -146,6 +187,10 @@ export function useChatConnection(user: AuthUser | null): Connection {
 
     let live = true
     let stopPresence = () => {}
+    let heartbeat = 0
+
+    const announce = () =>
+      set(mine, { online: true, at: serverTimestamp() }).catch(() => {})
 
     connect(user)
       .then(() => {
@@ -155,11 +200,18 @@ export function useChatConnection(user: AuthUser | null): Connection {
         stopPresence = onValue(ref(database, '.info/connected'), (snapshot) => {
           if (snapshot.val() !== true) return
 
+          // Registered before going online, so the offline write lands even
+          // when the tab dies without warning. Re-registered on every
+          // reconnect, because the server drops the handler once it fires.
           onDisconnect(mine)
             .set({ online: false, at: serverTimestamp() })
-            .then(() => set(mine, { online: true, at: serverTimestamp() }))
+            .then(announce)
             .catch(() => {})
         })
+
+        // Refresh the stamp while the tab lives, so a record that somehow
+        // survives as 'online' goes stale instead of lying forever.
+        heartbeat = window.setInterval(announce, HEARTBEAT_MS)
       })
       .catch((cause: unknown) => {
         if (live) setState({ ready: false, error: readableApiError(cause) })
@@ -168,6 +220,7 @@ export function useChatConnection(user: AuthUser | null): Connection {
     return () => {
       live = false
       stopPresence()
+      window.clearInterval(heartbeat)
       // Leaving the app is going offline, the same as closing the tab.
       set(mine, { online: false, at: serverTimestamp() }).catch(() => {})
     }
@@ -290,7 +343,19 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
   const [uids, setUids] = useState<string[]>([])
   const [threads, setThreads] = useState<Record<string, ThreadState>>({})
   const [people, setPeople] = useState<Record<string, Person>>({})
-  const [online, setOnline] = useState<Record<string, boolean>>({})
+  const [status, setStatus] = useState<Record<string, unknown>>({})
+
+  /*
+   * A presence record can go stale without anything changing in the database,
+   * so nothing would re-render to notice. This ticks well inside the staleness
+   * window, which is what turns "claimed online an hour ago" into "offline"
+   * without waiting for the other tab to say anything.
+   */
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const timer = window.setInterval(() => tick((n) => n + 1), HEARTBEAT_MS)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     if (!rtdb || !me || !ready) return
@@ -354,8 +419,9 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
           setPeople((current) => ({ ...current, [them]: toPerson(them, snapshot.val()) }))
         }),
 
-        onValue(ref(database, `status/${them}/online`), (snapshot) => {
-          setOnline((current) => ({ ...current, [them]: snapshot.val() === true }))
+        // The whole node, not just the flag: staleness needs the timestamp.
+        onValue(ref(database, `status/${them}`), (snapshot) => {
+          setStatus((current) => ({ ...current, [them]: snapshot.val() }))
         }),
       ]
     })
@@ -381,7 +447,7 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
         lastText: last?.deletedAt ? 'Message deleted' : (last?.text ?? ''),
         lastAt: last?.sentAt ?? null,
         seenAt: toDate(thread.reads[uid]),
-        online: online[uid] ?? false,
+        online: isOnline(status[uid]),
       }
     })
 
@@ -389,7 +455,7 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
       const gap = (right.lastAt?.getTime() ?? 0) - (left.lastAt?.getTime() ?? 0)
       return gap !== 0 ? gap : left.person.name.localeCompare(right.person.name)
     })
-  }, [me, uids, threads, people, online])
+  }, [me, uids, threads, people, status])
 }
 
 /* ---------------------------------------------------------------- display */

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { ApiError, apiFetch } from './api'
 import { auth } from './firebase'
+import { goOffline } from './chat'
 
 /**
  * The signed-in trader.
@@ -205,10 +206,18 @@ export function sendPasswordReset(email: string) {
 }
 
 export async function signOutOfApp() {
+  // Order matters. Going offline is a write to the chat database, and it needs
+  // the Firebase session that the next line ends — do it the other way round
+  // and the write is refused, leaving the account showing as online to every
+  // contact until the record goes stale.
+  const uid = auth?.currentUser?.uid
+  if (uid) await goOffline(uid)
+
   // Both sessions. The cookie is what authorises the API; the Firebase one
-  // holds the chat websocket open, and leaving it behind would keep a signed-out
-  // browser subscribed to conversations.
+  // holds the chat websocket open, and leaving it behind would keep a
+  // signed-out browser subscribed to conversations.
   if (auth) await signOut(auth).catch(() => {})
+
   return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }
 
