@@ -46,8 +46,13 @@ export type ChatMessage = {
   id: string
   /** The sender's uid. Compared against your own to pick a side. */
   sender: string
+  /** Empty once deleted — the text is cleared, not merely hidden. */
   text: string
   sentAt: Date
+  /** Set when the sender changed the text. Drives the 'edited' label. */
+  editedAt: Date | null
+  /** Set when the sender removed it. The message stays, as a tombstone. */
+  deletedAt: Date | null
 }
 
 export type Person = {
@@ -204,6 +209,52 @@ export async function sendMessage(me: string, them: string, text: string): Promi
 }
 
 /**
+ * Change what a message says.
+ *
+ * Only the sender can, and only the text moves: the rules pin `from` and `at`
+ * to their original values, so an edit cannot rewrite who spoke or when.
+ * `editedAt` is stamped by the server, which is what makes the label on the
+ * bubble something the reader can trust.
+ */
+export async function editMessage(
+  me: string,
+  them: string,
+  messageId: string,
+  text: string,
+): Promise<void> {
+  if (!rtdb) throw new Error('Live chat is not configured.')
+
+  const trimmed = text.trim()
+  if (trimmed === '') return
+
+  await update(ref(rtdb, `threads/${threadIdFor(me, them)}/messages/${messageId}`), {
+    text: trimmed,
+    editedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Delete a message, leaving a tombstone where it stood.
+ *
+ * A soft delete on purpose. Removing the node would close the gap and quietly
+ * rewrite the conversation for the other person; leaving a marker is honest
+ * about what happened. The text itself is cleared rather than hidden, so it is
+ * genuinely gone rather than one rule change away from being readable again.
+ */
+export async function deleteMessage(
+  me: string,
+  them: string,
+  messageId: string,
+): Promise<void> {
+  if (!rtdb) throw new Error('Live chat is not configured.')
+
+  await update(ref(rtdb, `threads/${threadIdFor(me, them)}/messages/${messageId}`), {
+    text: '',
+    deletedAt: serverTimestamp(),
+  })
+}
+
+/**
  * Stamps the thread as seen, now.
  *
  * One timestamp per participant is the whole read-receipt mechanism: a message
@@ -279,6 +330,8 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
                 // timestamp yet. Treat it as just-now so it sorts last — this
                 // is what makes your own message appear the instant you send.
                 sentAt: toDate(value.at) ?? new Date(),
+                editedAt: toDate(value.editedAt),
+                deletedAt: toDate(value.deletedAt),
               })
             })
 
@@ -325,7 +378,7 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
         unread: thread.messages.filter(
           (message) => message.sender !== me && message.sentAt.getTime() > seenByMe,
         ).length,
-        lastText: last?.text ?? '',
+        lastText: last?.deletedAt ? 'Message deleted' : (last?.text ?? ''),
         lastAt: last?.sentAt ?? null,
         seenAt: toDate(thread.reads[uid]),
         online: online[uid] ?? false,

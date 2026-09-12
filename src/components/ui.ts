@@ -994,3 +994,38 @@ export const TOUR_EXIT =
 export const TOUR_TRACK = 'h-3 overflow-hidden rounded-full bg-tint-2'
 export const TOUR_FILL =
   'block h-full rounded-full bg-accent transition-[width] duration-300 ease-out'
+
+/* ------------------------------------------------- editing a sent message */
+
+/**
+ * The menu raised by holding a message.
+ *
+ * Positioned by the caller against the bubble, because where it belongs
+ * depends on which side of the thread the message sits on.
+ */
+export const DOCK_MSG_MENU =
+  'absolute z-30 flex min-w-120 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.12s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  '[&>button]:flex [&>button]:items-center [&>button]:gap-9 [&>button]:rounded-sm [&>button]:px-10 [&>button]:py-7 [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-150 [&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong'
+
+export const DOCK_MSG_DELETE =
+  'hover:!text-red hover:!bg-[color-mix(in_srgb,var(--color-red)_12%,transparent)]'
+
+/** Held messages dim slightly, so it is obvious which one the menu belongs to. */
+export const DOCK_BUBBLE_HELD = 'opacity-70'
+
+/**
+ * A deleted message. It keeps its place in the thread rather than closing the
+ * gap — quietly rewriting the conversation for the other person would be worse
+ * than admitting something was removed.
+ */
+export const DOCK_BUBBLE_GONE =
+  'max-w-[78%] shrink-0 rounded-[14px] border border-dashed border-line px-14 py-9 text-[12px] italic text-fg-muted'
+
+/** The "edited" marker, above the text it applies to. */
+export const DOCK_EDITED = 'mb-3 block text-[10px] tracking-[0.04em] opacity-70'
+
+/** The banner shown over the composer while a message is being rewritten. */
+export const DOCK_EDITING =
+  'flex shrink-0 items-center gap-8 border-t border-line bg-tint-1 px-14 py-7 text-[11px] text-fg-muted'
+export const DOCK_EDITING_CANCEL =
+  'ml-auto font-medium text-accent-strong hover:underline'

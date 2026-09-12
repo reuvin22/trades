@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   addContact,
+  deleteMessage,
+  editMessage,
   formatSeenTime,
   formatTime,
   markSeen,
@@ -20,8 +22,10 @@ import {
   CloseIcon,
   SearchIcon,
   SeenIcon,
+  PencilIcon,
   SendIcon,
   SpinnerIcon,
+  TrashIcon,
   UserPlusIcon,
 } from './Icons'
 import {
@@ -35,6 +39,8 @@ import {
   DOCK_BODY,
   DOCK_BUBBLE,
   DOCK_BUBBLE_ME,
+  DOCK_BUBBLE_GONE,
+  DOCK_BUBBLE_HELD,
   DOCK_BUBBLE_THEM,
   DOCK_COMPOSER,
   DOCK_CONTACT,
@@ -48,7 +54,12 @@ import {
   DOCK_LAUNCHER,
   DOCK_LAUNCHER_BADGE,
   DOCK_MAIN,
+  DOCK_EDITED,
+  DOCK_EDITING,
+  DOCK_EDITING_CANCEL,
   DOCK_MAIN_HEAD,
+  DOCK_MSG_DELETE,
+  DOCK_MSG_MENU,
   DOCK_ONLINE,
   DOCK_PANEL,
   DOCK_RESULT,
@@ -229,6 +240,113 @@ function AddContact({ known, onAdd, onClose }: AddContactProps) {
   )
 }
 
+/** How long a press has to last before it counts as a hold. */
+const HOLD_MS = 450
+
+type BubbleProps = {
+  message: ChatMessage
+  mine: boolean
+  /** Null unless this message is the one whose menu is open. */
+  menuOpen: boolean
+  onHold: () => void
+  onCloseMenu: () => void
+  onEdit: () => void
+  onDelete: () => void
+}
+
+/**
+ * One message, and the menu raised by holding it.
+ *
+ * Hold rather than hover, because the dock is used on phones as much as on a
+ * desktop and a hover target does not exist there. Pointer events cover both:
+ * holding a mouse button reads the same as holding a finger. Right-click opens
+ * it too, since that is what a desktop user will try first.
+ *
+ * Only your own messages offer the menu. Editing someone else's words is not a
+ * feature, and the database rules refuse it regardless — this just avoids
+ * showing a door that is locked.
+ */
+function Bubble({
+  message,
+  mine,
+  menuOpen,
+  onHold,
+  onCloseMenu,
+  onEdit,
+  onDelete,
+}: BubbleProps) {
+  const timer = useRef(0)
+
+  function start() {
+    if (!mine || message.deletedAt !== null) return
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(onHold, HOLD_MS)
+  }
+
+  function cancel() {
+    window.clearTimeout(timer.current)
+  }
+
+  // A press that ends up scrolling the thread is not a hold.
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  if (message.deletedAt !== null) {
+    return (
+      <p className={`${DOCK_BUBBLE_GONE} ${mine ? 'self-end' : 'self-start'}`}>
+        {mine ? 'You deleted this message' : 'This message was deleted'}
+      </p>
+    )
+  }
+
+  return (
+    <div className={`relative ${mine ? 'self-end' : 'self-start'} max-w-[78%]`}>
+      <div
+        className={`${DOCK_BUBBLE} max-w-full ${
+          mine ? DOCK_BUBBLE_ME : DOCK_BUBBLE_THEM
+        } ${menuOpen ? DOCK_BUBBLE_HELD : ''}`}
+        onPointerDown={start}
+        onPointerUp={cancel}
+        onPointerLeave={cancel}
+        onPointerCancel={cancel}
+        onContextMenu={(event) => {
+          if (!mine || message.deletedAt !== null) return
+          event.preventDefault()
+          onHold()
+        }}
+      >
+        {message.editedAt !== null && <span className={DOCK_EDITED}>edited</span>}
+        {message.text}
+        <span className={DOCK_TIME}>{formatTime(message.sentAt)}</span>
+      </div>
+
+      {menuOpen && (
+        <div
+          className={`${DOCK_MSG_MENU} ${mine ? 'right-0' : 'left-0'} bottom-[calc(100%+4px)]`}
+          role="menu"
+        >
+          <button type="button" role="menuitem" onClick={onEdit}>
+            <PencilIcon size={14} />
+            Edit
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={DOCK_MSG_DELETE}
+            onClick={onDelete}
+          >
+            <TrashIcon size={14} />
+            Delete
+          </button>
+          <button type="button" role="menuitem" onClick={onCloseMenu}>
+            <CloseIcon size={14} />
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /**
  * The chat dock: contacts on the left, the selected conversation on the right.
  *
@@ -294,10 +412,64 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     markSeen(me, active.person.uid).catch(() => {})
   }, [open, me, active])
 
-  function select(uid: string) {
+  /** The message whose hold-menu is open, and the one being rewritten. */
+  const [held, setHeld] = useState<string | null>(null)
+  const [editing, setEditing] = useState<ChatMessage | null>(null)
+
+  // Anywhere else is a dismissal — the usual contract for a context menu.
+  useEffect(() => {
+    if (held === null) return
+
+    const dismiss = () => setHeld(null)
+    window.addEventListener('pointerdown', dismiss)
+    return () => window.removeEventListener('pointerdown', dismiss)
+  }, [held])
+
+  function beginEdit(message: ChatMessage) {
+    setHeld(null)
+    setEditing(message)
+    setDraft(message.text)
+  }
+
+  function cancelEdit() {
+    setEditing(null)
+    setDraft('')
+  }
+
+  async function remove(messageId: string) {
+    setHeld(null)
+    if (me === null || activeId === null) return
+
+    // Editing the message that just went is not a thing.
+    if (editing?.id === messageId) cancelEdit()
+
+    try {
+      await deleteMessage(me, activeId, messageId)
+    } catch (cause) {
+      setFailure(readableApiError(cause))
+    }
+  }
+
+  /**
+   * Open a conversation, or close the one that is open.
+   *
+   * A hold-menu and a half-finished edit both belong to one message in one
+   * conversation, so leaving takes them with it — done here rather than in an
+   * effect on , because this is the only thing that changes it.
+   */
+  /**
+   * Open a conversation, or close the one that is open.
+   *
+   * A hold-menu and a half-finished edit each belong to one message in one
+   * conversation, so leaving takes them with it. Done here rather than in an
+   * effect watching `activeId`, because this is the only thing that changes it.
+   */
+  function select(uid: string | null) {
     setActiveId(uid)
     setDraft('')
     setFailure(null)
+    setHeld(null)
+    setEditing(null)
   }
 
   async function add(entry: DirectoryEntry) {
@@ -321,15 +493,22 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
 
     // Cleared first: the message is on its way, and a composer that stays full
     // invites a second send of the same thing. Nothing else is needed here —
-    // the SDK echoes the message into the listener before the server has even
+    // the SDK echoes the write into the listener before the server has even
     // acknowledged it, so it is on screen by the time this returns.
+    const rewriting = editing
     setDraft('')
+    setEditing(null)
     setFailure(null)
 
     try {
-      await sendMessage(me, activeId, text)
+      if (rewriting !== null) {
+        await editMessage(me, activeId, rewriting.id, text)
+      } else {
+        await sendMessage(me, activeId, text)
+      }
     } catch (cause) {
       setDraft(text)
+      setEditing(rewriting)
       setFailure(readableApiError(cause))
     }
   }
@@ -474,7 +653,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     <button
                       type="button"
                       className={`${DOCK_BACK} ml-auto`}
-                      onClick={() => setActiveId(null)}
+                      onClick={() => select(null)}
                     >
                       Contacts
                     </button>
@@ -490,14 +669,15 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     ) : (
                       active.messages.map((message: ChatMessage) => (
                         <div key={message.id} className="contents">
-                          <div
-                            className={`${DOCK_BUBBLE} ${
-                              message.sender === me ? DOCK_BUBBLE_ME : DOCK_BUBBLE_THEM
-                            }`}
-                          >
-                            {message.text}
-                            <span className={DOCK_TIME}>{formatTime(message.sentAt)}</span>
-                          </div>
+                          <Bubble
+                            message={message}
+                            mine={message.sender === me}
+                            menuOpen={held === message.id}
+                            onHold={() => setHeld(message.id)}
+                            onCloseMenu={() => setHeld(null)}
+                            onEdit={() => beginEdit(message)}
+                            onDelete={() => void remove(message.id)}
+                          />
 
                           {receipt !== null && receipt.messageId === message.id && (
                             <p className={`${DOCK_SEEN} ${DOCK_SEEN_ROW}`}>
@@ -512,12 +692,32 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
 
                   {failure !== null && <p className={DOCK_ERROR}>{failure}</p>}
 
+                  {editing !== null && (
+                    <p className={DOCK_EDITING}>
+                      <PencilIcon size={12} />
+                      Editing a message
+                      <button
+                        type="button"
+                        className={DOCK_EDITING_CANCEL}
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </p>
+                  )}
+
                   <form className={DOCK_COMPOSER} onSubmit={send}>
                     <input
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
-                      placeholder={`Message ${person.name.split(' ')[0]}…`}
-                      aria-label={`Message ${person.name}`}
+                      placeholder={
+                        editing !== null
+                          ? 'Rewrite your message…'
+                          : `Message ${person.name.split(' ')[0]}…`
+                      }
+                      aria-label={
+                        editing !== null ? 'Edit your message' : `Message ${person.name}`
+                      }
                     />
                     <button
                       type="submit"

@@ -56,17 +56,31 @@
 
         "messages": {
           "$messageId": {
-            // !data.exists() makes a message write-once: no edits, no deletes.
-            ".write": "auth != null && ($threadId.beginsWith(auth.uid + '_') || $threadId.endsWith('_' + auth.uid)) && !data.exists()",
+            // Writable by a member to create, and after that only by the person
+            // who sent it — so editing and deleting are theirs alone. A deleted
+            // message is final: nothing may write over a tombstone.
+            ".write": "auth != null && ($threadId.beginsWith(auth.uid + '_') || $threadId.endsWith('_' + auth.uid)) && (!data.exists() || (data.child('from').val() == auth.uid && !data.child('deletedAt').exists()))",
             ".validate": "newData.hasChildren(['from', 'text', 'at'])",
 
-            "from": { ".validate": "newData.val() == auth.uid" },
-            "text": {
-              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+            // Immutable once written. An edit may change what was said, never
+            // who said it or when.
+            "from": {
+              ".validate": "newData.val() == auth.uid && (!data.exists() || data.val() == newData.val())"
             },
-            // ServerValue.TIMESTAMP resolves to `now`, so a client cannot
-            // backdate a message to slip in under someone's read marker.
-            "at": { ".validate": "newData.val() == now" },
+            "at": {
+              ".validate": "newData.val() == now || (data.exists() && newData.val() == data.val())"
+            },
+
+            // Empty only for a deleted message, whose text is cleared rather
+            // than kept around where a rule change could expose it again.
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 2000 && (newData.val().length > 0 || newData.parent().child('deletedAt').exists())"
+            },
+
+            // Both stamped with the server clock, so 'edited' and 'deleted'
+            // cannot be faked or backdated.
+            "editedAt": { ".validate": "newData.val() == now" },
+            "deletedAt": { ".validate": "newData.val() == now" },
 
             "$other": { ".validate": false }
           }
