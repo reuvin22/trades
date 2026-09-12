@@ -14,6 +14,7 @@ import {
   SEGMENT,
   SEGMENTED,
   SEGMENT_ACTIVE,
+  SEGMENT_IDLE,
   TOOLTIP,
   TOOLTIP_DATE,
   TOOLTIP_VALUE,
@@ -75,7 +76,7 @@ export function RevenueGrowth() {
             <button
               key={option}
               type="button"
-              className={`${SEGMENT} ${range === option ? SEGMENT_ACTIVE : ''}`}
+              className={`${SEGMENT} ${range === option ? SEGMENT_ACTIVE : SEGMENT_IDLE}`}
               aria-pressed={range === option}
               onClick={() => setRange(option)}
             >

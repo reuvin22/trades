@@ -91,8 +91,18 @@ export const STATUS_OPEN =
 
 export const SEGMENTED =
   'flex gap-4 rounded-[10px] border border-line bg-tint-1 p-4'
+/*
+ * The colour deliberately lives in the two state classes below, never here.
+ * Tailwind resolves a conflict like text-fg-muted vs text-accent-ink by their
+ * order in the stylesheet, not by the order they appear in a class attribute —
+ * and text-fg-muted happens to come later, so a base colour here silently won
+ * over the active one and painted the selected label muted grey on the accent
+ * fill. Applying exactly one of them removes the conflict instead of
+ * out-specifying it.
+ */
 export const SEGMENT =
-  'rounded-[7px] px-14 py-5 text-[12px] font-medium tracking-[0.04em] text-fg-muted transition-[color,background-color] duration-150 hover:text-fg active:scale-[0.97]'
+  'rounded-[7px] px-14 py-5 text-[12px] font-medium tracking-[0.04em] transition-[color,background-color] duration-150 active:scale-[0.97]'
+export const SEGMENT_IDLE = 'text-fg-muted hover:text-fg'
 export const SEGMENT_ACTIVE = 'bg-accent text-accent-ink'
 
 /* ------------------------------------------------------------ empty state */

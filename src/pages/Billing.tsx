@@ -38,6 +38,7 @@ import {
   SEGMENT,
   SEGMENTED,
   SEGMENT_ACTIVE,
+  SEGMENT_IDLE,
   TABLE,
   TD,
 } from '../components/ui'
@@ -147,7 +148,7 @@ export function Billing({ user, profile }: BillingProps) {
             <button
               key={option}
               type="button"
-              className={`${SEGMENT} ${cycle === option ? SEGMENT_ACTIVE : ''}`}
+              className={`${SEGMENT} ${cycle === option ? SEGMENT_ACTIVE : SEGMENT_IDLE}`}
               aria-pressed={cycle === option}
               onClick={() => setCycle(option)}
             >
