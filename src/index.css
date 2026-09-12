@@ -91,6 +91,65 @@
   --animate-donut: donut-sweep 0.85s 0.15s var(--ease-out) backwards;
   --animate-meter: meter-fill 0.9s 0.25s var(--ease-out) backwards;
 
+  /* ------------------------------------------------------- splash screen */
+
+  /*
+   * The equity curve on the loading screen, drawing and erasing on a loop.
+   *
+   * One animation rather than two: the line reaches full length at 55%, holds
+   * while the dot finishes its run, then retreats from the tail. Pausing at
+   * the top is what stops it reading as a busy spinner and lets it read as a
+   * chart being plotted.
+   */
+  --animate-splash-draw: splash-draw 3.2s var(--ease-out) infinite;
+  --animate-splash-travel: splash-travel 3.2s var(--ease-out) infinite;
+  --animate-splash-fill: splash-fill 3.2s var(--ease-out) infinite;
+
+  @keyframes splash-draw {
+    0% {
+      stroke-dashoffset: 1;
+    }
+    55%,
+    72% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -1;
+    }
+  }
+
+  /* The marker rides the same path, so it sits exactly on the drawing tip. */
+  @keyframes splash-travel {
+    0% {
+      offset-distance: 0%;
+      opacity: 0;
+    }
+    6% {
+      opacity: 1;
+    }
+    55%,
+    72% {
+      offset-distance: 100%;
+      opacity: 1;
+    }
+    100% {
+      offset-distance: 100%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes splash-fill {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    55%,
+    72% {
+      opacity: 1;
+    }
+  }
+
+
   @keyframes rise {
     from {
       opacity: 0;

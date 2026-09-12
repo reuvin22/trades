@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChatDock } from './components/ChatDock'
+import { SplashScreen } from './components/SplashScreen'
 import { Tour } from './components/Tour'
 import { accountIsNew, markTourSeen, tourSeen } from './lib/tourState'
 import { QuickAddTrade } from './components/QuickAddTrade'
@@ -131,16 +132,7 @@ function App() {
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])
 
-  if (pending) {
-    return (
-      <div className="grid min-h-screen content-center justify-items-center gap-16 bg-[linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]">
-        <h1 className="animate-pulse-brand text-[30px] font-semibold tracking-[-0.02em] text-fg-strong">
-          RagDex
-        </h1>
-        <p className="text-[12.5px] tracking-[0.01em] text-fg-muted">Restoring your session…</p>
-      </div>
-    )
-  }
+  if (pending) return <SplashScreen />
 
   // A signed-in but unconfirmed address gets the gate, never the app.
   if (user && !confirmed && !preview) {

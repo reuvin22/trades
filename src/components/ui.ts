@@ -1083,3 +1083,44 @@ export const DOCK_EDITING =
   'flex shrink-0 items-center gap-8 border-t border-line bg-tint-1 px-14 py-7 text-[11px] text-fg-muted'
 export const DOCK_EDITING_CANCEL =
   'ml-auto font-medium text-accent-strong hover:underline'
+
+/* --------------------------------------------------------- splash screen */
+
+/**
+ * The first thing anyone sees, so it carries the product rather than a spinner:
+ * an equity curve plotting itself, with the name and the promise under it.
+ *
+ * The same background wash as the app shell, so the splash does not flash a
+ * different colour and then hand over to something else.
+ */
+export const SPLASH =
+  'grid min-h-dvh content-center justify-items-center gap-24 px-24 ' +
+  'bg-[radial-gradient(1100px_700px_at_78%_-12%,var(--color-glow-a),transparent_62%),' +
+  'radial-gradient(900px_620px_at_108%_42%,var(--color-glow-b),transparent_60%),' +
+  'linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]'
+
+/** Caps the chart on a phone without letting it grow silly on a monitor. */
+export const SPLASH_CHART = 'w-[min(340px,72vw)] animate-fade'
+
+/** Drawn with a round cap so the leading edge meets the marker cleanly. */
+export const SPLASH_LINE =
+  'animate-splash-draw fill-none stroke-[2.5] [stroke-dasharray:1] ' +
+  '[stroke-linecap:round] [stroke-linejoin:round] [vector-effect:non-scaling-stroke]'
+
+export const SPLASH_AREA = 'animate-splash-fill'
+
+/** Rides the same path as the line, so it sits exactly on the drawing tip. */
+export const SPLASH_MARKER = 'animate-splash-travel [offset-rotate:0deg]'
+
+export const SPLASH_BRAND =
+  'animate-rise text-[34px] leading-none font-bold tracking-[-0.04em] text-fg-strong ' +
+  '[animation-delay:120ms]'
+
+export const SPLASH_TAGLINE =
+  'animate-rise text-center text-[13.5px] leading-[1.5] font-medium tracking-[-0.01em] ' +
+  'text-fg-dim [animation-delay:220ms]'
+
+/** Sits apart from the tagline: one is the product, the other is a status. */
+export const SPLASH_STATUS =
+  'animate-fade text-[11.5px] tracking-[0.04em] text-fg-muted uppercase ' +
+  '[animation-delay:360ms]'
