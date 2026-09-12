@@ -3,7 +3,15 @@ import type { AuthUser } from '../lib/useAuth'
 import { LANGUAGES, useCoach } from '../lib/coach'
 import { saveCoachLanguage, type Profile } from '../lib/profile'
 import { coachCopy, type CoachCopy } from '../data/coachCopy'
-import { RobotIcon, SendIcon, UserGlyphIcon } from '../components/Icons'
+import { toBlocks } from '../lib/replyBlocks'
+import { ACCEPTED, imageFromPaste, prepareChart } from '../lib/chartImage'
+import {
+  CloseIcon,
+  ImageIcon,
+  RobotIcon,
+  SendIcon,
+  UserGlyphIcon,
+} from '../components/Icons'
 import {
   BUBBLE,
   BUBBLE_COACH,
@@ -11,6 +19,12 @@ import {
   CHAT_AVATAR,
   CHAT_AVATAR_COACH,
   CHAT_AVATAR_TRADER,
+  CHART_DROP,
+  CHART_SENT,
+  CHART_THUMB,
+  CHART_TRAY,
+  CHART_TRAY_NAME,
+  CHART_TRAY_NOTE,
   COACH_ERROR,
   COACH_GREETING,
   COACH_INTRO,
@@ -26,6 +40,9 @@ import {
   LANGUAGE_LABEL,
   LANGUAGE_NATIVE,
   LANGUAGE_SAVING,
+  REPLY_ITEM,
+  REPLY_POINTS,
+  REPLY_STEPS,
   SUGGESTION,
   SUGGESTION_ROW,
   THREAD,
@@ -56,6 +73,37 @@ function greeting(copy: CoachCopy): string {
  */
 function nativeName(code: string): string {
   return LANGUAGES.find((language) => language.code === code)?.native ?? code
+}
+
+/**
+ * One coach reply: paragraphs, and the step lists inside them.
+ *
+ * Steps are numbered when the order is part of the instruction — do this, then
+ * this — and bulleted when it is a set of things that stand on their own. The
+ * coach decides which; this only renders what it chose.
+ */
+function Reply({ text }: { text: string }) {
+  return (
+    <>
+      {toBlocks(text).map((block, index) => {
+        if (block.kind === 'paragraph') return <p key={index}>{block.text}</p>
+
+        const List = block.kind === 'steps' ? 'ol' : 'ul'
+        return (
+          <List
+            key={index}
+            className={block.kind === 'steps' ? REPLY_STEPS : REPLY_POINTS}
+          >
+            {block.items.map((item, position) => (
+              <li key={position} className={REPLY_ITEM}>
+                {item}
+              </li>
+            ))}
+          </List>
+        )
+      })}
+    </>
+  )
 }
 
 /**
@@ -120,6 +168,10 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
   const [pendingLanguage, setPendingLanguage] = useState<string | null>(null)
   const [saveWarning, setSaveWarning] = useState('')
   const [draft, setDraft] = useState('')
+
+  // The chart waiting to go with the next message, already downscaled.
+  const [chart, setChart] = useState<string | null>(null)
+  const [chartError, setChartError] = useState('')
 
   // Reopens the picker on a profile that already has a language. Without it
   // the first choice was permanent: the picker rendered only while the
@@ -191,12 +243,35 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
     setPendingLanguage(null)
   }
 
+  /**
+   * Take one image from a paste or a file picker.
+   *
+   * Shrunk before it is held, not at send time: the trader sees the thumbnail
+   * only once it is something the API will actually accept, so a photograph
+   * too big to send fails here rather than after they have written a question
+   * to go with it.
+   */
+  async function attach(file: File | null) {
+    if (!file) return
+    setChartError('')
+
+    try {
+      setChart(await prepareChart(file))
+    } catch (cause) {
+      setChartError(cause instanceof Error ? cause.message : copy.chartFailed)
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const message = draft.trim()
-    if (message === '' || thinking) return
+    if ((message === '' && !chart) || thinking) return
+
+    const attached = chart
     setDraft('')
-    await send(message)
+    setChart(null)
+    setChartError('')
+    await send(message, attached ?? undefined)
   }
 
   const name = user?.displayName?.split(' ')[0] ?? 'there'
@@ -265,7 +340,12 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
             {turns.map((turn) =>
               turn.role === 'user' ? (
                 <div className={`${TURN} ${TURN_TRADER}`} key={turn.id}>
-                  <div className={`${BUBBLE} ${BUBBLE_TRADER}`}>{turn.text}</div>
+                  <div className={`${BUBBLE} ${BUBBLE_TRADER}`}>
+                    {turn.text}
+                    {turn.image && (
+                      <img className={CHART_SENT} src={turn.image} alt="Chart you sent" />
+                    )}
+                  </div>
                   <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_TRADER}`} aria-hidden="true">
                     <UserGlyphIcon size={17} />
                   </span>
@@ -282,9 +362,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                     <RobotIcon />
                   </span>
                   <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
-                    {turn.text.split('\n').map((line, index) =>
-                      line.trim() === '' ? null : <p key={index}>{line}</p>,
-                    )}
+                    <Reply text={turn.text} />
                   </div>
                 </div>
               ),
@@ -333,22 +411,80 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         <div ref={threadEnd} className={THREAD_ANCHOR} />
       </div>
 
-      <form data-tour="coach" className={COMPOSER} onSubmit={handleSubmit}>
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={language === null ? copy.placeholderLocked : copy.placeholder}
-          aria-label={copy.composerLabel}
-          disabled={language === null || thinking}
-        />
-        <button
-          type="submit"
-          aria-label={copy.sendLabel}
-          disabled={language === null || thinking || draft.trim() === ''}
+      <div className="sticky bottom-16 flex flex-col gap-8">
+        {chart && (
+          <div className={CHART_TRAY}>
+            <img className={CHART_THUMB} src={chart} alt="" />
+            <span className={CHART_TRAY_NAME}>
+              {copy.chartReady}
+              <span className={CHART_TRAY_NOTE}>{copy.chartHint}</span>
+            </span>
+            <button
+              type="button"
+              className={CHART_DROP}
+              onClick={() => setChart(null)}
+              aria-label={copy.chartRemove}
+            >
+              <CloseIcon size={15} />
+            </button>
+          </div>
+        )}
+
+        {chartError && (
+          <p className={COACH_WARNING} role="status">
+            {chartError}
+          </p>
+        )}
+
+        <form
+          data-tour="coach"
+          className={COMPOSER}
+          onSubmit={handleSubmit}
+          // On the form, not the input: a paste lands wherever the caret is,
+          // and a trader who has just taken a screenshot has usually not
+          // clicked into the text field first.
+          onPaste={(event) => void attach(imageFromPaste(event.clipboardData.items))}
         >
-          <SendIcon />
-        </button>
-      </form>
+          <label className={CHART_DROP} title={copy.chartAdd}>
+            <ImageIcon />
+            <span className="sr-only">{copy.chartAdd}</span>
+            <input
+              type="file"
+              accept={ACCEPTED}
+              className="hidden"
+              disabled={language === null || thinking}
+              onChange={(event) => {
+                void attach(event.target.files?.[0] ?? null)
+                // Cleared so picking the same file twice still fires change.
+                event.target.value = ''
+              }}
+            />
+          </label>
+
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={
+              language === null
+                ? copy.placeholderLocked
+                : chart
+                  ? copy.placeholderChart
+                  : copy.placeholder
+            }
+            aria-label={copy.composerLabel}
+            disabled={language === null || thinking}
+          />
+          <button
+            type="submit"
+            aria-label={copy.sendLabel}
+            disabled={
+              language === null || thinking || (draft.trim() === '' && !chart)
+            }
+          >
+            <SendIcon />
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

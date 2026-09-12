@@ -491,6 +491,18 @@ export function CameraIcon({ size = 16, className }: IconProps) {
   )
 }
 
+/** Attaching a chart. A picture, not a paperclip — what it takes is a
+ *  screenshot, and a paperclip suggests documents it will not read. */
+export function ImageIcon({ size = 17, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <rect x="3" y="4.5" width="18" height="15" rx="2" />
+      <circle cx="8.5" cy="10" r="1.6" />
+      <path d="m3.5 17 4.6-4.4a1.6 1.6 0 0 1 2.2 0l3.4 3.3m0 0 2-1.9a1.6 1.6 0 0 1 2.2 0l2.6 2.5m-6.8-.6 1.3 1.2" />
+    </svg>
+  )
+}
+
 export function CheckIcon({ size = 15, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} strokeWidth={2.2}>

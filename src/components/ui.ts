@@ -437,9 +437,18 @@ export const LOGIN_SHELL =
   'relative grid min-h-screen grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] overflow-hidden max-[900px]:grid-cols-1 ' +
   'bg-[radial-gradient(1100px_700px_at_12%_-10%,var(--color-glow-a),transparent_62%),radial-gradient(900px_620px_at_96%_108%,var(--color-glow-b),transparent_60%),linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]'
 
+/**
+ * The pitch beside the form: the name, the tagline, the three claims.
+ *
+ * Hidden entirely at one column. Stacked above the card it pushed the actual
+ * sign-in below the fold, so arriving on a phone meant scrolling past a sales
+ * pitch to reach a password field — worst of all for the returning trader, who
+ * has read it already and only wants to get in. The same breakpoint the grid
+ * collapses at: two columns shows both, one column shows the form.
+ */
 export const LOGIN_ASIDE =
   'relative z-[1] flex animate-fade flex-col justify-center border-r border-line px-52 py-46 backdrop-blur-[22px] bg-[color-mix(in_srgb,var(--color-sidebar-mid)_72%,transparent)] ' +
-  'max-[900px]:border-r-0 max-[900px]:border-b max-[900px]:px-28 max-[900px]:pt-38 max-[900px]:pb-32'
+  'max-[900px]:hidden'
 
 export const LOGIN_BRAND =
   'mt-0 mb-14 animate-rise text-[64px] leading-none font-bold tracking-[-0.045em] text-fg-strong max-[900px]:mb-10 max-[900px]:text-[42px]'
@@ -458,8 +467,11 @@ export const POINT_BODY = 'mt-2 text-[12.5px] leading-[1.5] text-fg-muted'
 export const LOGIN_FOOT =
   'absolute bottom-40 left-52 text-[11.5px] tracking-[0.03em] text-fg-muted max-[900px]:hidden'
 
+/** min-h-screen at one column, because it is then the only thing on the page
+ *  and the card should sit centred rather than pinned to the top. */
 export const LOGIN_MAIN =
-  'relative z-[1] grid place-items-center px-32 py-46 max-[900px]:px-20 max-[900px]:pt-32 max-[900px]:pb-44'
+  'relative z-[1] grid place-items-center px-32 py-46 ' +
+  'max-[900px]:min-h-screen max-[900px]:px-20 max-[900px]:py-32'
 
 export const LOGIN_CARD =
   'flex w-[min(400px,100%)] animate-card-in flex-col gap-15 px-30 pt-32 pb-30 ' +
@@ -1173,3 +1185,37 @@ export const INSIGHT_ACTION =
 /** min-w-0 so a long recommendation wraps inside the flex row rather than
  *  forcing the box wider than the rail. */
 export const INSIGHT_ACTION_TEXT = 'min-w-0 break-words'
+
+/**
+ * Step lists inside a coach reply.
+ *
+ * Hanging indent via padding plus a negative text-indent on the marker, so a
+ * step that wraps onto a second line stays aligned under the first word rather
+ * than sliding back under its own number. `tabular-nums` keeps 9. and 10. the
+ * same width, which is what stops a long list looking ragged down the left.
+ */
+export const REPLY_STEPS =
+  'mt-10 flex list-decimal flex-col gap-8 pl-22 marker:font-medium marker:tabular-nums marker:text-fg-muted'
+export const REPLY_POINTS =
+  'mt-10 flex list-disc flex-col gap-8 pl-22 marker:text-fg-muted'
+export const REPLY_ITEM = 'pl-2 leading-[1.55]'
+
+/**
+ * Attaching a chart to a coach message.
+ *
+ * The preview sits above the composer rather than inside it: a thumbnail in a
+ * pill-shaped input either squashes the text field or stretches the pill, and
+ * both look like a mistake.
+ */
+export const CHART_TRAY =
+  'flex items-center gap-10 rounded-sm border border-line bg-panel px-10 py-9 shadow-[var(--shadow-card)]'
+export const CHART_THUMB =
+  'size-44 flex-none rounded-xs border border-line object-cover'
+export const CHART_TRAY_NAME = 'min-w-0 flex-1 text-[12px] text-fg-dim'
+export const CHART_TRAY_NOTE = 'block truncate text-[10.5px] text-fg-muted'
+export const CHART_DROP =
+  'grid size-34 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'
+
+/** The chart as it appears in the trader's own bubble, once sent. */
+export const CHART_SENT =
+  'mt-8 max-h-320 w-full rounded-sm border border-[color-mix(in_srgb,#fff_28%,transparent)] object-contain'

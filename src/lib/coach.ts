@@ -5,6 +5,13 @@ export type CoachTurn = {
   id: string
   role: 'user' | 'coach'
   text: string
+  /** A chart the trader attached, as a data URL.
+   *
+   *  This session only. The server deliberately does not store the bytes —
+   *  forty turns of inline screenshots would pass a Firestore document's size
+   *  ceiling — so a reloaded conversation shows that a chart was sent without
+   *  showing the chart. */
+  image?: string
 }
 
 /** Offered on first visit and whenever the trader reopens the picker; the
@@ -33,7 +40,7 @@ export type CoachState = {
   turns: CoachTurn[]
   thinking: boolean
   error: string | null
-  send: (message: string) => Promise<void>
+  send: (message: string, image?: string) => Promise<void>
   /** True until the stored conversation has been fetched. */
   loading: boolean
   reset: () => Promise<void>
@@ -80,11 +87,13 @@ export function useCoach(language: string): CoachState {
   }, [])
 
   const send = useCallback(
-    async (message: string) => {
+    async (message: string, image?: string) => {
       const trimmed = message.trim()
-      if (trimmed === '') return
+      // A chart can carry the question on its own, so an empty message is only
+      // empty when nothing came with it.
+      if (trimmed === '' && !image) return
 
-      const mine: CoachTurn = { id: nextId(), role: 'user', text: trimmed }
+      const mine: CoachTurn = { id: nextId(), role: 'user', text: trimmed, image }
       setTurns((current) => [...current, mine])
 
       setThinking(true)
@@ -95,7 +104,7 @@ export function useCoach(language: string): CoachState {
         // its own copy, which is what lets it survive a refresh.
         const reply = await apiFetch<{ reply: string }>('/api/v1/coach/chat', {
           method: 'POST',
-          body: { message: trimmed, language },
+          body: { message: trimmed, language, ...(image ? { image } : {}) },
         })
 
         setTurns((current) => [

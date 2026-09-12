@@ -37,6 +37,14 @@ export type CoachCopy = {
   /** The picker, reopened to change a language already in force. */
   pickAgain: string
   saveWarning: string
+  /** Attaching a chart to a message. */
+  chartAdd: string
+  chartReady: string
+  chartHint: string
+  chartRemove: string
+  chartFailed: string
+  /** Composer placeholder while a chart is waiting to go. */
+  placeholderChart: string
   composerLabel: string
   sendLabel: string
   thinkingLabel: string
@@ -66,6 +74,12 @@ const ENGLISH: CoachCopy = {
   pickAgain:
     "Which language would you like me to use? I'll switch from my next reply onwards.",
   saveWarning: "I couldn't save that preference, so I'll ask again next time.",
+  chartAdd: "Add a chart",
+  chartReady: "Chart ready to send",
+  chartHint: "Ask about it, or just send it",
+  chartRemove: "Remove chart",
+  chartFailed: "That image could not be used.",
+  placeholderChart: "Ask about this chart…",
   composerLabel: 'Message the AI coach',
   sendLabel: 'Send message',
   thinkingLabel: 'Coach is thinking',
@@ -96,6 +110,12 @@ const FILIPINO: CoachCopy = {
     'Anong wika ang gusto mong gamitin ko? Papalitan ko simula sa susunod kong sagot.',
   saveWarning:
     'Hindi ko na-save ang setting na iyon, kaya itatanong ko ulit sa susunod.',
+  chartAdd: "Maglagay ng chart",
+  chartReady: "Handa nang ipadala ang chart",
+  chartHint: "Magtanong tungkol dito, o ipadala na lang",
+  chartRemove: "Alisin ang chart",
+  chartFailed: "Hindi magamit ang larawang iyon.",
+  placeholderChart: "Magtanong tungkol sa chart na ito…",
   composerLabel: 'Mag-message sa AI Coach',
   sendLabel: 'Ipadala',
   thinkingLabel: 'Nag-iisip ang coach',
@@ -128,6 +148,12 @@ const SPANISH: CoachCopy = {
     '¿En qué idioma quieres que hable? Cambiaré a partir de mi próxima respuesta.',
   saveWarning:
     'No pude guardar esa preferencia, así que te lo preguntaré otra vez la próxima vez.',
+  chartAdd: "Añadir un gráfico",
+  chartReady: "Gráfico listo para enviar",
+  chartHint: "Pregunta algo o envíalo sin más",
+  chartRemove: "Quitar gráfico",
+  chartFailed: "No se pudo usar esa imagen.",
+  placeholderChart: "Pregunta sobre este gráfico…",
   composerLabel: 'Escribir al AI Coach',
   sendLabel: 'Enviar mensaje',
   thinkingLabel: 'El coach está pensando',
@@ -158,6 +184,12 @@ const INDONESIAN: CoachCopy = {
     'Bahasa apa yang kamu ingin saya pakai? Saya akan beralih mulai dari jawaban berikutnya.',
   saveWarning:
     'Saya tidak bisa menyimpan preferensi itu, jadi saya akan bertanya lagi lain kali.',
+  chartAdd: "Tambahkan grafik",
+  chartReady: "Grafik siap dikirim",
+  chartHint: "Tanyakan sesuatu, atau kirim saja",
+  chartRemove: "Hapus grafik",
+  chartFailed: "Gambar itu tidak bisa digunakan.",
+  placeholderChart: "Tanya tentang grafik ini…",
   composerLabel: 'Kirim pesan ke AI Coach',
   sendLabel: 'Kirim pesan',
   thinkingLabel: 'Coach sedang berpikir',
@@ -179,6 +211,12 @@ const CHINESE: CoachCopy = {
   pickFirst: '开始之前——你希望我用哪种语言？之后我就一直用它。',
   pickAgain: '你希望我用哪种语言？从下一条回复开始切换。',
   saveWarning: '这个偏好没能保存，下次我会再问一遍。',
+  chartAdd: "添加图表",
+  chartReady: "图表已就绪",
+  chartHint: "可以提问，也可以直接发送",
+  chartRemove: "移除图表",
+  chartFailed: "这张图片无法使用。",
+  placeholderChart: "问问这张图表…",
   composerLabel: '给 AI 教练发消息',
   sendLabel: '发送',
   thinkingLabel: '教练正在思考',
@@ -205,6 +243,12 @@ const JAPANESE: CoachCopy = {
   pickFirst: '始める前に——どの言語で話しましょうか。これからはその言語を使い続けます。',
   pickAgain: 'どの言語で話しましょうか。次の返答から切り替えます。',
   saveWarning: 'その設定を保存できなかったので、次回もう一度お聞きします。',
+  chartAdd: "チャートを添付",
+  chartReady: "チャートの準備ができました",
+  chartHint: "質問を書くか、そのまま送信してください",
+  chartRemove: "チャートを削除",
+  chartFailed: "その画像は使用できませんでした。",
+  placeholderChart: "このチャートについて聞いてください…",
   composerLabel: 'AIコーチにメッセージを送る',
   sendLabel: '送信',
   thinkingLabel: 'コーチが考えています',
@@ -231,6 +275,12 @@ const KOREAN: CoachCopy = {
   pickFirst: '시작하기 전에 — 어떤 언어로 말할까요? 앞으로 계속 그 언어를 쓰겠습니다.',
   pickAgain: '어떤 언어로 말할까요? 다음 답변부터 바꾸겠습니다.',
   saveWarning: '설정을 저장하지 못했습니다. 다음에 다시 여쭤보겠습니다.',
+  chartAdd: "차트 첨부",
+  chartReady: "차트를 보낼 준비가 되었습니다",
+  chartHint: "질문을 적거나 그대로 보내세요",
+  chartRemove: "차트 제거",
+  chartFailed: "그 이미지는 사용할 수 없습니다.",
+  placeholderChart: "이 차트에 대해 물어보세요…",
   composerLabel: 'AI 코치에게 메시지 보내기',
   sendLabel: '보내기',
   thinkingLabel: '코치가 생각 중입니다',
@@ -259,6 +309,12 @@ const HINDI: CoachCopy = {
     'शुरू करने से पहले — आप चाहते हैं मैं किस भाषा में बात करूँ? आगे मैं वही इस्तेमाल करता रहूँगा।',
   pickAgain: 'आप चाहते हैं मैं किस भाषा में बात करूँ? अगले जवाब से बदल दूँगा।',
   saveWarning: 'मैं यह पसंद सहेज नहीं सका, इसलिए अगली बार फिर पूछूँगा।',
+  chartAdd: "चार्ट जोड़ें",
+  chartReady: "चार्ट भेजने के लिए तैयार है",
+  chartHint: "कुछ पूछिए, या बस भेज दीजिए",
+  chartRemove: "चार्ट हटाएँ",
+  chartFailed: "वह छवि इस्तेमाल नहीं की जा सकी।",
+  placeholderChart: "इस चार्ट के बारे में पूछिए…",
   composerLabel: 'AI कोच को संदेश भेजें',
   sendLabel: 'भेजें',
   thinkingLabel: 'कोच सोच रहा है',
@@ -291,6 +347,12 @@ const PORTUGUESE: CoachCopy = {
     'Em que idioma você quer que eu fale? Vou mudar a partir da próxima resposta.',
   saveWarning:
     'Não consegui salvar essa preferência, então vou perguntar de novo na próxima vez.',
+  chartAdd: "Adicionar um gráfico",
+  chartReady: "Gráfico pronto para enviar",
+  chartHint: "Pergunte algo, ou apenas envie",
+  chartRemove: "Remover gráfico",
+  chartFailed: "Não foi possível usar essa imagem.",
+  placeholderChart: "Pergunte sobre este gráfico…",
   composerLabel: 'Enviar mensagem ao AI Coach',
   sendLabel: 'Enviar mensagem',
   thinkingLabel: 'O coach está pensando',
@@ -323,6 +385,12 @@ const FRENCH: CoachCopy = {
     'Dans quelle langue voulez-vous que je parle ? Je changerai dès ma prochaine réponse.',
   saveWarning:
     "Je n'ai pas pu enregistrer cette préférence, je vous le redemanderai la prochaine fois.",
+  chartAdd: "Ajouter un graphique",
+  chartReady: "Graphique prêt à envoyer",
+  chartHint: "Posez une question, ou envoyez-le tel quel",
+  chartRemove: "Retirer le graphique",
+  chartFailed: "Cette image n'a pas pu être utilisée.",
+  placeholderChart: "Posez une question sur ce graphique…",
   composerLabel: 'Écrire au coach IA',
   sendLabel: 'Envoyer',
   thinkingLabel: 'Le coach réfléchit',
@@ -351,6 +419,12 @@ const GERMAN: CoachCopy = {
     'In welcher Sprache soll ich sprechen? Ich wechsle ab meiner nächsten Antwort.',
   saveWarning:
     'Ich konnte die Einstellung nicht speichern, also frage ich beim nächsten Mal noch einmal.',
+  chartAdd: "Chart hinzufügen",
+  chartReady: "Chart bereit zum Senden",
+  chartHint: "Stell eine Frage oder schick ihn einfach",
+  chartRemove: "Chart entfernen",
+  chartFailed: "Dieses Bild konnte nicht verwendet werden.",
+  placeholderChart: "Frag etwas zu diesem Chart…",
   composerLabel: 'Dem KI-Coach schreiben',
   sendLabel: 'Senden',
   thinkingLabel: 'Der Coach denkt nach',
