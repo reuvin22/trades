@@ -12,7 +12,7 @@
     "prebuild": "node scripts/check-env.mjs",
     "postbuild": "node scripts/check-env.mjs --dist",
     "vercel:env": "node scripts/vercel-env.mjs",
-    "deploy:rules": "firebase deploy --only firestore:rules,database"
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,database"
   },
   "dependencies": {
     "firebase": "^12.19.0",

@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "//": [
+        "journal is a flat collection, so every read filters on uid and orders",
+        "by createdAt. Firestore's automatic single-field indexes do not serve a",
+        "filter on one field ordered by another, so this one is required — the",
+        "journal list returns FAILED_PRECONDITION without it.",
+        "Deploy with: npm run deploy:rules"
+      ],
+      "collectionGroup": "journal",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
