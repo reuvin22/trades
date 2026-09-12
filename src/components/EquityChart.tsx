@@ -11,6 +11,7 @@ import {
   GRIDLINES,
   PLOT,
   PLOT_MARKER,
+  PLOT_AREA,
   PLOT_SVG,
   SEGMENT,
   SEGMENTED,
@@ -166,66 +167,68 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
           ))}
         </div>
 
-        <svg
-          className={PLOT_SVG}
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          role="img"
-          aria-label={`Cumulative equity over the last ${RANGE_DAYS[range]} days`}
-        >
-          <defs>
-            <linearGradient id="equity-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-chart-fill-top)" />
-              <stop offset="45%" stopColor="var(--color-chart-fill-mid)" />
-              <stop offset="100%" stopColor="var(--color-chart-fill-bottom)" />
-            </linearGradient>
-          </defs>
+        <div className={PLOT_AREA}>
+          <svg
+            className={PLOT_SVG}
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+            role="img"
+            aria-label={`Cumulative equity over the last ${RANGE_DAYS[range]} days`}
+          >
+            <defs>
+              <linearGradient id="equity-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-chart-fill-top)" />
+                <stop offset="45%" stopColor="var(--color-chart-fill-mid)" />
+                <stop offset="100%" stopColor="var(--color-chart-fill-bottom)" />
+              </linearGradient>
+            </defs>
 
-          <g className={GRIDLINES}>
-            {scale.ticks.map((tick) => (
-              <line key={tick} x1="0" x2={W} y1={scaleY(tick)} y2={scaleY(tick)} />
-            ))}
-          </g>
+            <g className={GRIDLINES}>
+              {scale.ticks.map((tick) => (
+                <line key={tick} x1="0" x2={W} y1={scaleY(tick)} y2={scaleY(tick)} />
+              ))}
+            </g>
 
-          <path d={geometry.area} fill="url(#equity-fill)" className={CHART_AREA} />
-          <path
-            d={geometry.line}
-            className={EQUITY_LINE}
-            pathLength={1}
-            fill="none"
-            vectorEffect="non-scaling-stroke"
-          />
-
-          {hovered !== null && (
-            <line
-              className={CROSSHAIR}
-              x1={activeGeometry.x}
-              x2={activeGeometry.x}
-              y1={activeGeometry.y}
-              y2={H}
+            <path d={geometry.area} fill="url(#equity-fill)" className={CHART_AREA} />
+            <path
+              d={geometry.line}
+              className={EQUITY_LINE}
+              pathLength={1}
+              fill="none"
               vectorEffect="non-scaling-stroke"
             />
-          )}
-        </svg>
 
-        <div
-          className={PLOT_MARKER}
-          style={{
-            left: `${(activeGeometry.x / W) * 100}%`,
-            top: `${(activeGeometry.y / H) * 100}%`,
-          }}
-          aria-hidden="true"
-        />
+            {hovered !== null && (
+              <line
+                className={CROSSHAIR}
+                x1={activeGeometry.x}
+                x2={activeGeometry.x}
+                y1={activeGeometry.y}
+                y2={H}
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+          </svg>
 
-        <div
-          className={TOOLTIP}
-          style={{
-            left: `clamp(var(--tooltip-half), ${(activeGeometry.x / W) * 100}%, calc(100% - var(--tooltip-half)))`,
-            top: `${(activeGeometry.y / H) * 100}%`,
-          }}
-        >
-          <span className={TOOLTIP_DATE}>{shortDate.format(activePoint.date)}</span>
-          <strong className={TOOLTIP_VALUE}>{currency.format(activePoint.value)}</strong>
+          <div
+            className={PLOT_MARKER}
+            style={{
+              left: `${(activeGeometry.x / W) * 100}%`,
+              top: `${(activeGeometry.y / H) * 100}%`,
+            }}
+            aria-hidden="true"
+          />
+
+          <div
+            className={TOOLTIP}
+            style={{
+              left: `clamp(var(--tooltip-half), ${(activeGeometry.x / W) * 100}%, calc(100% - var(--tooltip-half)))`,
+              top: `${(activeGeometry.y / H) * 100}%`,
+            }}
+          >
+            <span className={TOOLTIP_DATE}>{shortDate.format(activePoint.date)}</span>
+            <strong className={TOOLTIP_VALUE}>{currency.format(activePoint.value)}</strong>
+          </div>
         </div>
       </div>
 

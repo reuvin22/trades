@@ -179,7 +179,21 @@ export const AXIS_LEGEND =
   'mt-10 text-right text-[9.5px] leading-[1.5] tracking-[0.05em] text-fg-muted'
 
 /** The plot body. touch-action keeps vertical scrolling alive over the chart. */
-export const PLOT = 'relative mt-4 h-400 touch-pan-y pl-46 max-shell:h-300'
+/*
+ * pl-46 reserves the Y axis; pr-10 keeps the last point off the card edge,
+ * where the marker used to half-overhang and the curve looked sheared off.
+ */
+export const PLOT = 'relative mt-4 h-400 touch-pan-y pl-46 pr-10 max-shell:h-300'
+
+/*
+ * The drawing area, and the containing block for everything positioned against
+ * the curve. It has to be its own element: a percentage `left` resolves against
+ * the containing block's PADDING box, so anchoring the marker to PLOT put every
+ * point 46px too far left — the full gutter at the first point, tapering to
+ * nothing at the last. Nesting an unpadded box inside the padded one makes 0%
+ * and 100% mean the ends of the curve, which is what the geometry assumes.
+ */
+export const PLOT_AREA = 'relative h-full'
 export const PLOT_SVG = 'block h-full w-full overflow-visible'
 
 export const GRIDLINES =
@@ -213,7 +227,7 @@ export const Y_AXIS =
   'absolute inset-y-0 left-0 w-46 [&>span]:absolute [&>span]:right-12 [&>span]:-translate-y-1/2 [&>span]:text-[11px] [&>span]:whitespace-nowrap [&>span]:text-fg-muted'
 
 export const X_AXIS =
-  'relative mt-6 ml-46 h-22 [&>span]:absolute [&>span]:-translate-x-1/2 [&>span]:text-[11px] [&>span]:whitespace-nowrap [&>span]:text-fg-muted'
+  'relative mt-6 ml-46 mr-10 h-22 [&>span]:absolute [&>span]:-translate-x-1/2 [&>span]:text-[11px] [&>span]:whitespace-nowrap [&>span]:text-fg-muted'
 
 export const CHART_EMPTY = 'px-10 py-46 text-center text-[13px] text-fg-muted'
 
