@@ -1,4 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
 import {
   addContact,
   deleteMessage,
@@ -249,9 +257,6 @@ type BubbleProps = {
   onCloseMenu: () => void
   onEdit: () => void
   onDelete: () => void
-  /** Open downward. The thread scrolls, so a menu above the first bubble is
-   *  clipped by that scroll container rather than overflowing it. */
-  flip: boolean
 }
 
 /**
@@ -270,9 +275,39 @@ function Bubble({
   onCloseMenu,
   onEdit,
   onDelete,
-  flip,
 }: BubbleProps) {
   const interactive = mine && message.deletedAt === null
+
+  const anchor = useRef<HTMLDivElement>(null)
+  const card = useRef<HTMLDivElement>(null)
+  const [dropDown, setDropDown] = useState(false)
+
+  /*
+   * The menu sits above the bubble by default, which is where it belongs for
+   * all but the messages nearest the top of the thread. The thread scrolls,
+   * so "above" can fall outside it and be clipped away entirely — raising
+   * z-index cannot escape a scroll container, only moving the menu can.
+   *
+   * The card is measured rather than assumed a height, and this runs before
+   * paint, so the menu never appears in the wrong place first.
+   */
+  useLayoutEffect(() => {
+    if (!menuOpen) return
+
+    const bubble = anchor.current
+    const menu = card.current
+    const thread = bubble?.closest('[data-thread]')
+    if (!bubble || !menu || !thread) return
+
+    const b = bubble.getBoundingClientRect()
+    const t = thread.getBoundingClientRect()
+    const above = b.top - t.top
+    const below = t.bottom - b.bottom
+
+    // Only give up the preferred side when it cannot hold the menu and the
+    // other side genuinely has more room.
+    setDropDown(above < menu.offsetHeight + 8 && below > above)
+  }, [menuOpen])
 
   function toggle() {
     if (!interactive) return
@@ -289,7 +324,7 @@ function Bubble({
   }
 
   return (
-    <div className={`relative ${mine ? 'self-end' : 'self-start'} max-w-[78%]`}>
+    <div ref={anchor} className={`relative ${mine ? 'self-end' : 'self-start'} max-w-[78%]`}>
       <div
         className={`${DOCK_BUBBLE} max-w-full ${
           mine ? DOCK_BUBBLE_ME : DOCK_BUBBLE_THEM
@@ -324,8 +359,9 @@ function Bubble({
 
       {menuOpen && (
         <div
+          ref={card}
           className={`${DOCK_MSG_MENU} ${mine ? 'right-0' : 'left-0'} ${
-            flip ? 'top-[calc(100%+4px)]' : 'bottom-[calc(100%+4px)]'
+            dropDown ? 'top-[calc(100%+4px)]' : 'bottom-[calc(100%+4px)]'
           }`}
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
@@ -665,7 +701,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     </button>
                   </header>
 
-                  <div className={DOCK_THREAD} ref={threadBox}>
+                  <div className={DOCK_THREAD} ref={threadBox} data-thread>
                     {active === null ? (
                       <p className={DOCK_EMPTY}>Loading…</p>
                     ) : active.messages.length === 0 ? (
@@ -673,7 +709,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                         No messages yet. Say something to {person.name.split(' ')[0]}.
                       </p>
                     ) : (
-                      active.messages.map((message: ChatMessage, index: number) => (
+                      active.messages.map((message: ChatMessage) => (
                         <div key={message.id} className="contents">
                           <Bubble
                             message={message}
@@ -683,7 +719,6 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                             onCloseMenu={() => setHeld(null)}
                             onEdit={() => beginEdit(message)}
                             onDelete={() => void remove(message.id)}
-                            flip={index === 0}
                           />
 
                           {receipt !== null && receipt.messageId === message.id && (
