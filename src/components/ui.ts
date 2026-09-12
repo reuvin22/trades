@@ -792,8 +792,11 @@ export const NOTIFY_EMPTY =
  */
 export const DOCK_LAUNCHER =
   'fixed z-40 grid size-52 place-items-center rounded-full bg-accent text-accent-ink shadow-[var(--shadow-pop)] transition-[transform,background-color] duration-200 ease-out hover:scale-105 hover:bg-accent-strong active:scale-[0.97] ' +
-  'right-[max(24px,env(safe-area-inset-right))] bottom-[max(24px,env(safe-area-inset-bottom))] ' +
-  'max-shell:right-[max(16px,env(safe-area-inset-right))] max-shell:bottom-[max(16px,env(safe-area-inset-bottom))]'
+  /* calc, not max: with max() a 48px nav bar swallows the gap entirely and the
+     button sits flush against it. Adding the inset keeps the same visual
+     clearance above whatever the device reserves. */
+  'right-[calc(24px+env(safe-area-inset-right))] bottom-[calc(24px+env(safe-area-inset-bottom))] ' +
+  'max-shell:right-[calc(16px+env(safe-area-inset-right))] max-shell:bottom-[calc(16px+env(safe-area-inset-bottom))]'
 
 export const DOCK_LAUNCHER_BADGE =
   'absolute -top-2 -right-2 grid size-20 place-items-center rounded-full bg-red text-[10px] font-semibold text-white shadow-[0_0_0_2px_var(--color-bg-deep)]'

@@ -3,10 +3,9 @@ import type { AuthUser } from '../lib/useAuth'
 import { readableAuthError, signOutOfApp } from '../lib/useAuth'
 import { sendVerificationEmail } from '../lib/verification'
 import { LoginBackdrop } from '../components/LoginBackdrop'
-import { MailIcon, SpinnerIcon } from '../components/Icons'
+import { MailIcon } from '../components/Icons'
 import {
   CARD,
-  GOOGLE_BUTTON,
   LINK_BUTTON,
   LOGIN_CARD,
   LOGIN_ERROR,
@@ -33,7 +32,6 @@ const RESEND_COOLDOWN = 45
 export function VerifyEmail({ user, onRecheck, viaGoogle }: VerifyEmailProps) {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
-  const [checking, setChecking] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const polling = useRef(false)
   const sent = useRef(false)
@@ -58,8 +56,8 @@ export function VerifyEmail({ user, onRecheck, viaGoogle }: VerifyEmailProps) {
         setCooldown(RESEND_COOLDOWN)
       })
       .catch(() => {
-        // Silent: the button below is the recovery, and an error before anyone
-        // has asked for anything reads as the page being broken.
+        // Silent: resending is the recovery, and an error before anyone has
+        // asked for anything reads as the page being broken.
       })
   }, [user.email, onRecheck])
 
@@ -97,19 +95,6 @@ export function VerifyEmail({ user, onRecheck, viaGoogle }: VerifyEmailProps) {
       setCooldown(RESEND_COOLDOWN)
     } catch (cause) {
       setError(readableAuthError(cause))
-    }
-  }
-
-  async function handleCheck() {
-    setChecking(true)
-    setError('')
-    try {
-      const verified = await onRecheck()
-      if (!verified) {
-        setStatus('Not confirmed yet. Open the link in the email, then try again.')
-      }
-    } finally {
-      setChecking(false)
     }
   }
 
@@ -154,16 +139,6 @@ export function VerifyEmail({ user, onRecheck, viaGoogle }: VerifyEmailProps) {
           <button
             type="button"
             className={LOGIN_SUBMIT}
-            onClick={handleCheck}
-            disabled={checking}
-          >
-            {checking && <SpinnerIcon className="animate-spin" />}
-            {checking ? 'Checking…' : "I've confirmed it"}
-          </button>
-
-          <button
-            type="button"
-            className={GOOGLE_BUTTON}
             onClick={handleResend}
             disabled={cooldown > 0}
           >
@@ -185,7 +160,8 @@ export function VerifyEmail({ user, onRecheck, viaGoogle }: VerifyEmailProps) {
           </p>
 
           <p className={VERIFY_HINT}>
-            This page checks automatically every few seconds — you can leave it open.
+            Open the link and this page lets you straight in — it checks every few
+            seconds, so there is nothing to press.
           </p>
         </div>
       </section>

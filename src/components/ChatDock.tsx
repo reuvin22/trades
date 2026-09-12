@@ -249,6 +249,9 @@ type BubbleProps = {
   onCloseMenu: () => void
   onEdit: () => void
   onDelete: () => void
+  /** Open downward. The thread scrolls, so a menu above the first bubble is
+   *  clipped by that scroll container rather than overflowing it. */
+  flip: boolean
 }
 
 /**
@@ -267,6 +270,7 @@ function Bubble({
   onCloseMenu,
   onEdit,
   onDelete,
+  flip,
 }: BubbleProps) {
   const interactive = mine && message.deletedAt === null
 
@@ -320,7 +324,9 @@ function Bubble({
 
       {menuOpen && (
         <div
-          className={`${DOCK_MSG_MENU} ${mine ? 'right-0' : 'left-0'} bottom-[calc(100%+4px)]`}
+          className={`${DOCK_MSG_MENU} ${mine ? 'right-0' : 'left-0'} ${
+            flip ? 'top-[calc(100%+4px)]' : 'bottom-[calc(100%+4px)]'
+          }`}
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
         >
@@ -667,7 +673,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                         No messages yet. Say something to {person.name.split(' ')[0]}.
                       </p>
                     ) : (
-                      active.messages.map((message: ChatMessage) => (
+                      active.messages.map((message: ChatMessage, index: number) => (
                         <div key={message.id} className="contents">
                           <Bubble
                             message={message}
@@ -677,6 +683,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                             onCloseMenu={() => setHeld(null)}
                             onEdit={() => beginEdit(message)}
                             onDelete={() => void remove(message.id)}
+                            flip={index === 0}
                           />
 
                           {receipt !== null && receipt.messageId === message.id && (
