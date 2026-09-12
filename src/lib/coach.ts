@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiFetch, readableApiError } from './api'
 
 export type CoachTurn = {
@@ -34,21 +34,50 @@ export type CoachState = {
   thinking: boolean
   error: string | null
   send: (message: string) => Promise<void>
-  reset: () => void
+  /** True until the stored conversation has been fetched. */
+  loading: boolean
+  reset: () => Promise<void>
 }
 
 /**
  * The AI coach, through the API.
  *
- * Only the shape of the conversation is sent. Every *fact* the coach uses —
- * the trades, the numbers, the patterns — is read from the journal on the
- * server, so a forged history cannot invent trades that were never logged.
+ * Only the new message is sent. Every *fact* the coach uses — the trades, the
+ * numbers, the patterns — is read from the journal on the server, and so now
+ * is the conversation itself, so nothing this bundle holds can invent a trade
+ * that was never logged or a reply the coach never gave.
  * The model key lives on the server and has never been in this bundle.
  */
 export function useCoach(language: string): CoachState {
   const [turns, setTurns] = useState<CoachTurn[]>([])
   const [thinking, setThinking] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // What was said last time. The conversation used to live only in this state,
+  // so a refresh erased it and the coach began again knowing nothing — the
+  // trader had to re-explain themselves to get back to where they were.
+  useEffect(() => {
+    let live = true
+
+    apiFetch<{ turns: { role: CoachTurn['role']; text: string }[] }>(
+      '/api/v1/coach/conversation',
+    )
+      .then((body) => {
+        if (!live) return
+        setTurns(body.turns.map((turn) => ({ ...turn, id: nextId() })))
+      })
+      // Silent on purpose: an empty thread is a working page. Shouting about a
+      // history that could not be loaded would be the first thing they see.
+      .catch(() => undefined)
+      .finally(() => {
+        if (live) setLoading(false)
+      })
+
+    return () => {
+      live = false
+    }
+  }, [])
 
   const send = useCallback(
     async (message: string) => {
@@ -56,25 +85,17 @@ export function useCoach(language: string): CoachState {
       if (trimmed === '') return
 
       const mine: CoachTurn = { id: nextId(), role: 'user', text: trimmed }
-
-      // Capture the history before this turn so a failed send can be retried.
-      let history: CoachTurn[] = []
-      setTurns((current) => {
-        history = current
-        return [...current, mine]
-      })
+      setTurns((current) => [...current, mine])
 
       setThinking(true)
       setError(null)
 
       try {
+        // No history in the body. The server keeps the conversation and reads
+        // its own copy, which is what lets it survive a refresh.
         const reply = await apiFetch<{ reply: string }>('/api/v1/coach/chat', {
           method: 'POST',
-          body: {
-            message: trimmed,
-            language,
-            history: history.map((turn) => ({ role: turn.role, text: turn.text })),
-          },
+          body: { message: trimmed, language },
         })
 
         setTurns((current) => [
@@ -90,10 +111,18 @@ export function useCoach(language: string): CoachState {
     [language],
   )
 
-  const reset = useCallback(() => {
+  /** Forget the conversation, on the server as well — otherwise it would be
+   *  back on the next refresh. */
+  const reset = useCallback(async () => {
     setTurns([])
     setError(null)
+
+    try {
+      await apiFetch('/api/v1/coach/conversation', { method: 'DELETE' })
+    } catch (cause) {
+      setError(readableApiError(cause))
+    }
   }, [])
 
-  return { turns, thinking, error, send, reset }
+  return { turns, thinking, error, loading, send, reset }
 }

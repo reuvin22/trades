@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AuthUser } from '../lib/useAuth'
 import { LANGUAGES, useCoach } from '../lib/coach'
 import { saveCoachLanguage, type Profile } from '../lib/profile'
+import { coachCopy, type CoachCopy } from '../data/coachCopy'
 import { RobotIcon, SendIcon, UserGlyphIcon } from '../components/Icons'
 import {
   BUBBLE,
@@ -39,11 +40,11 @@ type AiCoachProps = {
   tradeCount: number
 }
 
-function greeting(): string {
+function greeting(copy: CoachCopy): string {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (hour < 12) return copy.morning
+  if (hour < 18) return copy.afternoon
+  return copy.evening
 }
 
 /**
@@ -54,12 +55,6 @@ function greeting(): string {
 function nativeName(code: string): string {
   return LANGUAGES.find((language) => language.code === code)?.native ?? code
 }
-
-const SUGGESTIONS = [
-  'How am I actually doing?',
-  'Where is my money going?',
-  'What should I stop doing?',
-]
 
 /**
  * Shown before the first message, and again whenever the trader reopens it.
@@ -72,10 +67,12 @@ function LanguagePicker({
   onChoose,
   saving,
   current,
+  copy,
 }: {
   onChoose: (language: string) => void
   saving: string | null
   current: string | null
+  copy: CoachCopy
 }) {
   return (
     <div className={`${TURN} ${LANGUAGE_GATE}`}>
@@ -84,11 +81,7 @@ function LanguagePicker({
       </span>
 
       <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
-        <p>
-          {current === null
-            ? "Before we start — which language would you like me to use? I'll stick with it from here."
-            : "Which language would you like me to use? I'll switch from my next reply onwards."}
-        </p>
+        <p>{current === null ? copy.pickFirst : copy.pickAgain}</p>
 
         <div className={LANGUAGE_GRID}>
           {LANGUAGES.map((language) => (
@@ -134,7 +127,13 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
   const [changing, setChanging] = useState(false)
 
   const language = chosenLanguage ?? profile?.coachLanguage ?? null
-  const { turns, thinking, error, send } = useCoach(language ?? 'English')
+
+  // Every fixed string on this page, in the chosen language. The coach's
+  // replies were always translated; the page around them was not, so a Korean
+  // coach used to sit inside an English page offering English questions.
+  const copy = coachCopy(language)
+
+  const { turns, thinking, error, loading, send } = useCoach(language ?? 'English')
   const threadEnd = useRef<HTMLDivElement>(null)
 
   // Keep the newest turn in view as the conversation grows.
@@ -153,9 +152,8 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
       try {
         await saveCoachLanguage(choice)
       } catch {
-        setSaveWarning(
-          "I couldn't save that preference, so I'll ask again next time.",
-        )
+        // In the language they just picked, not the one they are leaving.
+        setSaveWarning(coachCopy(choice).saveWarning)
       }
     }
 
@@ -171,20 +169,18 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
   }
 
   const name = user?.displayName?.split(' ')[0] ?? 'there'
-  const started = turns.length > 0
+  // Also while the stored conversation is still arriving, so the opening
+  // bubble does not flash up and get replaced by history a moment later.
+  const started = turns.length > 0 || loading
 
   return (
     <div className={COACH_PAGE}>
       <div className={COACH_INTRO}>
         <h2 className={COACH_GREETING}>
-          {greeting()}, {name}.
+          {greeting(copy)}, {name}.
         </h2>
         <p className={COACH_LEDE}>
-          {tradeCount === 0
-            ? 'Log a few trades and I can start telling you what your numbers actually say.'
-            : `I've read your ${tradeCount} logged ${
-                tradeCount === 1 ? 'trade' : 'trades'
-              }. Ask me anything about how you're doing.`}
+          {tradeCount === 0 ? copy.ledeEmpty : copy.lede(tradeCount)}
         </p>
 
         {language !== null && !changing && (
@@ -193,9 +189,9 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
             className={LANGUAGE_CHANGE}
             onClick={() => setChanging(true)}
           >
-            Replying in{' '}
-            <span className={LANGUAGE_CHANGE_NAME}>{nativeName(language)}</span> —
-            change
+            {copy.replyingIn}{' '}
+            <span className={LANGUAGE_CHANGE_NAME}>{nativeName(language)}</span> —{' '}
+            {copy.change}
           </button>
         )}
       </div>
@@ -206,6 +202,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
             onChoose={chooseLanguage}
             saving={pendingLanguage}
             current={null}
+            copy={copy}
           />
         ) : (
           <>
@@ -215,14 +212,10 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                   <RobotIcon />
                 </span>
                 <div className={`${BUBBLE} ${BUBBLE_COACH}`}>
-                  <p>
-                    I only talk about your trading here — your results, your habits, and
-                    what the journal shows. Ask me why a week went badly, or where your
-                    money is actually going.
-                  </p>
+                  <p>{copy.intro}</p>
 
                   <div className={SUGGESTION_ROW}>
-                    {SUGGESTIONS.map((suggestion) => (
+                    {copy.suggestions.map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
@@ -265,7 +258,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                 <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_COACH}`} aria-hidden="true">
                   <RobotIcon />
                 </span>
-                <div className={`${BUBBLE} ${BUBBLE_COACH} px-16 py-14`} aria-label="Coach is thinking">
+                <div className={`${BUBBLE} ${BUBBLE_COACH} px-16 py-14`} aria-label={copy.thinkingLabel}>
                   <span className={TYPING}>
                     <i />
                     <i />
@@ -288,6 +281,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                 onChoose={chooseLanguage}
                 saving={pendingLanguage}
                 current={language}
+                copy={copy}
               />
             )}
           </>
@@ -306,17 +300,13 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder={
-            language === null
-              ? 'Pick a language to begin…'
-              : 'Ask about a session, a habit, or a losing streak…'
-          }
-          aria-label="Message the AI coach"
+          placeholder={language === null ? copy.placeholderLocked : copy.placeholder}
+          aria-label={copy.composerLabel}
           disabled={language === null || thinking}
         />
         <button
           type="submit"
-          aria-label="Send message"
+          aria-label={copy.sendLabel}
           disabled={language === null || thinking || draft.trim() === ''}
         >
           <SendIcon />
