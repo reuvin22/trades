@@ -13,6 +13,7 @@ import {
 } from 'firebase/database'
 import { apiFetch, readableApiError } from './api'
 import { auth, rtdb } from './firebase'
+import { decryptMessage, encryptMessage } from './messagecrypto'
 import type { AuthUser } from './useAuth'
 
 /**
@@ -254,9 +255,10 @@ export async function sendMessage(me: string, them: string, text: string): Promi
   const trimmed = text.trim()
   if (trimmed === '') return
 
+  // Encrypted here, before the write. The database never sees the words.
   await push(ref(rtdb, `threads/${threadIdFor(me, them)}/messages`), {
     from: me,
-    text: trimmed,
+    text: await encryptMessage(them, trimmed),
     at: serverTimestamp(),
   })
 }
@@ -281,7 +283,7 @@ export async function editMessage(
   if (trimmed === '') return
 
   await update(ref(rtdb, `threads/${threadIdFor(me, them)}/messages/${messageId}`), {
-    text: trimmed,
+    text: await encryptMessage(them, trimmed),
     editedAt: serverTimestamp(),
   })
 }
@@ -400,10 +402,26 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
               })
             })
 
-            setThreads((current) => ({
-              ...current,
-              [them]: { ...(current[them] ?? EMPTY), messages },
-            }))
+            /*
+             * Decryption is async — WebCrypto has no synchronous form — so the
+             * batch is resolved before it reaches state rather than rendering
+             * ciphertext for a frame and replacing it.
+             *
+             * Fast in practice: the thread key is fetched once and cached, and
+             * AES-GCM over a chat message is microseconds. Only the very first
+             * message in a conversation waits on a round trip.
+             */
+            void Promise.all(
+              messages.map(async (message) => ({
+                ...message,
+                text: await decryptMessage(them, message.text),
+              })),
+            ).then((readable) =>
+              setThreads((current) => ({
+                ...current,
+                [them]: { ...(current[them] ?? EMPTY), messages: readable },
+              })),
+            )
           },
         ),
 

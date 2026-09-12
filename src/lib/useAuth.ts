@@ -3,6 +3,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { ApiError, apiFetch } from './api'
 import { auth } from './firebase'
 import { goOffline } from './chat'
+import { forgetKeys } from './messagecrypto'
 
 /**
  * The signed-in trader.
@@ -227,6 +228,10 @@ export async function signOutOfApp() {
   // holds the chat websocket open, and leaving it behind would keep a
   // signed-out browser subscribed to conversations.
   if (auth) await signOut(auth).catch(() => {})
+
+  // Thread keys are per-session. Leaving them behind would let the next person
+  // at this browser read what the last one was sent.
+  forgetKeys()
 
   return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }
