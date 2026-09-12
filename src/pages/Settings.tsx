@@ -17,6 +17,7 @@ import {
   CARD,
   FIELD,
   FIELD_GRID,
+  FORM_SECTION,
   FIELD_HINT,
   FIELD_LABEL,
   PAGE_HEAD,
@@ -160,7 +161,7 @@ export function Settings({ profile }: SettingsProps) {
         </div>
       </div>
 
-      <section className={CARD}>
+      <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>What you trade</h3>
 
         <div className={FIELD_GRID}>
@@ -220,7 +221,7 @@ export function Settings({ profile }: SettingsProps) {
         </div>
       </section>
 
-      <section className={CARD}>
+      <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>Risk management</h3>
 
         <div className={FIELD_GRID}>
@@ -302,7 +303,7 @@ export function Settings({ profile }: SettingsProps) {
         </div>
       </section>
 
-      <section className={CARD}>
+      <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>Strategies and rules</h3>
 
         <div className={FIELD_GRID}>

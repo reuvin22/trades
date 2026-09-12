@@ -5,6 +5,7 @@ import {
   PAGE_HEAD,
   PAGE_TITLE,
   PILL,
+  PILL_IDLE,
   PILL_ACCENT,
 } from '../../components/ui'
 import { AdminStats } from '../../components/admin/AdminStats'
@@ -25,7 +26,7 @@ export function AdminDashboard() {
         </div>
 
         <div className={PAGE_ACTIONS}>
-          <button type="button" className={PILL}>
+          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
             <DownloadIcon />
             Export Data
           </button>

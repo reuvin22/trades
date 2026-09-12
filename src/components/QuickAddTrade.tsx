@@ -42,6 +42,7 @@ import {
   MODAL_TITLE,
   MODAL_WIDE,
   PILL,
+  PILL_IDLE,
   PILL_ACCENT,
   TAG_CLOUD,
   TAG_TOGGLE,
@@ -475,7 +476,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
           </p>
 
           <div className={MODAL_BUTTONS}>
-            <button type="button" className={PILL} onClick={onClose} disabled={saving}>
+            <button type="button" className={`${PILL} ${PILL_IDLE}`} onClick={onClose} disabled={saving}>
               Cancel
             </button>
             <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={saving}>

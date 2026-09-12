@@ -253,15 +253,19 @@ export const PAGER_ACTIVE = 'bg-accent text-accent-ink'
  * select and textarea in the app identical without each one carrying twenty
  * utilities of its own.
  */
+/* Controls are transparent: they sit on a card that already has a surface, and
+   a second fill on top of it muddies both. The border carries the affordance,
+   and accent-on-focus carries the state — outline-none means that border is the
+   only focus indicator, so it must not be dropped. */
 const CONTROL =
-  '[&_input]:w-full [&_input]:rounded-sm [&_input]:border [&_input]:border-line [&_input]:bg-tint-1 [&_input]:px-13 [&_input]:py-10 [&_input]:text-fg [&_input]:outline-none [&_input]:transition-[border-color,background-color] [&_input]:duration-150 ' +
-  '[&_textarea]:w-full [&_textarea]:min-h-68 [&_textarea]:resize-y [&_textarea]:rounded-sm [&_textarea]:border [&_textarea]:border-line [&_textarea]:bg-tint-1 [&_textarea]:px-13 [&_textarea]:py-10 [&_textarea]:font-[inherit] [&_textarea]:text-fg [&_textarea]:outline-none ' +
-  '[&_select]:w-full [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:rounded-sm [&_select]:border [&_select]:border-line [&_select]:bg-tint-1 [&_select]:py-10 [&_select]:pr-30 [&_select]:pl-13 [&_select]:text-fg [&_select]:outline-none ' +
+  '[&_input]:w-full [&_input]:rounded-sm [&_input]:border [&_input]:border-line [&_input]:bg-transparent [&_input]:px-13 [&_input]:py-10 [&_input]:text-fg [&_input]:outline-none [&_input]:transition-[border-color,background-color] [&_input]:duration-150 ' +
+  '[&_textarea]:w-full [&_textarea]:min-h-68 [&_textarea]:resize-y [&_textarea]:rounded-sm [&_textarea]:border [&_textarea]:border-line [&_textarea]:bg-transparent [&_textarea]:px-13 [&_textarea]:py-10 [&_textarea]:font-[inherit] [&_textarea]:text-fg [&_textarea]:outline-none ' +
+  '[&_select]:w-full [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:rounded-sm [&_select]:border [&_select]:border-line [&_select]:bg-transparent [&_select]:py-10 [&_select]:pr-30 [&_select]:pl-13 [&_select]:text-fg [&_select]:outline-none ' +
   // No chevron here: <Select> renders a real one so it can animate. The
   // right padding reserves its space.
   '[&_option]:bg-panel-solid [&_option]:text-fg ' +
   '[&_input::placeholder]:text-fg-muted [&_textarea::placeholder]:text-fg-muted ' +
-  '[&_input:focus-visible]:border-accent [&_input:focus-visible]:bg-[color-mix(in_srgb,var(--color-accent)_9%,transparent)] ' +
+  '[&_input:focus-visible]:border-accent ' +
   '[&_select:focus-visible]:border-accent [&_textarea:focus-visible]:border-accent'
 
 export const FIELD = `flex min-w-0 flex-col gap-7 ${CONTROL}`
@@ -400,6 +404,11 @@ export const ACCOUNT_DANGER =
 
 export const ACCOUNT_GRID = 'flex flex-col gap-16'
 export const ACCOUNT_CARD = 'px-24 pt-22 pb-24'
+/* CARD is surface only — border, background, shadow — and every page that uses
+   it supplies its own padding (see CHART_CARD, SUMMARY_CARD). A form section
+   needs the same, or its labels and inputs sit flush against the card edge. */
+export const FORM_SECTION = 'px-24 pt-22 pb-24'
+
 export const SECTION_TITLE =
   'mb-18 flex items-center gap-8 text-[11px] font-semibold tracking-[0.14em] text-fg-muted uppercase'
 export const IDENTITY = 'mb-20 flex items-center gap-18'

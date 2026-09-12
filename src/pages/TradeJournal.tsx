@@ -24,6 +24,7 @@ import {
   PAGE_SUB,
   PAGE_TITLE,
   PILL,
+  PILL_IDLE,
   PILL_ACCENT,
   POS,
   ROW_STAGGER,
@@ -92,7 +93,7 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
         </div>
 
         <div className={PAGE_ACTIONS}>
-          <button type="button" className={PILL}>
+          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
             <DateRangeIcon />
             Last 30 Days
           </button>
@@ -119,8 +120,6 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
           {error}
         </p>
       )}
-
-      <JournalTable trades={trades} loading={loading} live={live} />
 
       <div className={`${SUMMARY_ROW} ${ROW_STAGGER}`}>
         <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
@@ -151,6 +150,8 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
           <SmileIcon className={SUMMARY_WATERMARK} size={72} />
         </article>
       </div>
+
+      <JournalTable trades={trades} loading={loading} live={live} />
     </>
   )
 }

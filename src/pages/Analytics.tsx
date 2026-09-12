@@ -9,6 +9,7 @@ import {
   PAGE_SUB,
   PAGE_TITLE,
   PILL,
+  PILL_IDLE,
 } from '../components/ui'
 import { deriveStats } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
@@ -32,11 +33,11 @@ export function Analytics({ trades }: AnalyticsProps) {
         </div>
 
         <div className={PAGE_ACTIONS}>
-          <button type="button" className={PILL}>
+          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
             <DateRangeIcon />
             Last 90 Days
           </button>
-          <button type="button" className={PILL}>
+          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
             <FilterIcon />
             Filter
           </button>
