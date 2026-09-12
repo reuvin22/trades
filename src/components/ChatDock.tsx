@@ -240,55 +240,41 @@ function AddContact({ known, onAdd, onClose }: AddContactProps) {
   )
 }
 
-/** How long a press has to last before it counts as a hold. */
-const HOLD_MS = 450
-
 type BubbleProps = {
   message: ChatMessage
   mine: boolean
-  /** Null unless this message is the one whose menu is open. */
+  /** True when this is the message whose menu is open. */
   menuOpen: boolean
-  onHold: () => void
+  onOpenMenu: () => void
   onCloseMenu: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
 /**
- * One message, and the menu raised by holding it.
+ * One message, and the menu its own sender can open by clicking it.
  *
- * Hold rather than hover, because the dock is used on phones as much as on a
- * desktop and a hover target does not exist there. Pointer events cover both:
- * holding a mouse button reads the same as holding a finger. Right-click opens
- * it too, since that is what a desktop user will try first.
- *
- * Only your own messages offer the menu. Editing someone else's words is not a
+ * Only your own messages are clickable. Editing someone else's words is not a
  * feature, and the database rules refuse it regardless — this just avoids
- * showing a door that is locked.
+ * showing a door that is locked. Right-click opens the same menu, since that
+ * is what a desktop user reaches for first.
  */
 function Bubble({
   message,
   mine,
   menuOpen,
-  onHold,
+  onOpenMenu,
   onCloseMenu,
   onEdit,
   onDelete,
 }: BubbleProps) {
-  const timer = useRef(0)
+  const interactive = mine && message.deletedAt === null
 
-  function start() {
-    if (!mine || message.deletedAt !== null) return
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(onHold, HOLD_MS)
+  function toggle() {
+    if (!interactive) return
+    if (menuOpen) onCloseMenu()
+    else onOpenMenu()
   }
-
-  function cancel() {
-    window.clearTimeout(timer.current)
-  }
-
-  // A press that ends up scrolling the thread is not a hold.
-  useEffect(() => () => window.clearTimeout(timer.current), [])
 
   if (message.deletedAt !== null) {
     return (
@@ -303,15 +289,28 @@ function Bubble({
       <div
         className={`${DOCK_BUBBLE} max-w-full ${
           mine ? DOCK_BUBBLE_ME : DOCK_BUBBLE_THEM
-        } ${menuOpen ? DOCK_BUBBLE_HELD : ''}`}
-        onPointerDown={start}
-        onPointerUp={cancel}
-        onPointerLeave={cancel}
-        onPointerCancel={cancel}
+        } ${menuOpen ? DOCK_BUBBLE_HELD : ''} ${interactive ? 'cursor-pointer' : ''}`}
+        // The dismiss listener below watches pointerdown on the window. Without
+        // this, the very press that opens the menu would also close it.
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={toggle}
         onContextMenu={(event) => {
-          if (!mine || message.deletedAt !== null) return
+          if (!interactive) return
           event.preventDefault()
-          onHold()
+          onOpenMenu()
+        }}
+        // Clickable, so reachable and announced. Not a <button>: a message can
+        // hold selectable text, and nesting that in a button fights selection.
+        role={interactive ? 'button' : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        aria-haspopup={interactive ? 'menu' : undefined}
+        aria-expanded={interactive ? menuOpen : undefined}
+        onKeyDown={(event) => {
+          if (!interactive) return
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            toggle()
+          }
         }}
       >
         {message.editedAt !== null && <span className={DOCK_EDITED}>edited</span>}
@@ -323,6 +322,7 @@ function Bubble({
         <div
           className={`${DOCK_MSG_MENU} ${mine ? 'right-0' : 'left-0'} bottom-[calc(100%+4px)]`}
           role="menu"
+          onPointerDown={(event) => event.stopPropagation()}
         >
           <button type="button" role="menuitem" onClick={onEdit}>
             <PencilIcon size={14} />
@@ -673,7 +673,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                             message={message}
                             mine={message.sender === me}
                             menuOpen={held === message.id}
-                            onHold={() => setHeld(message.id)}
+                            onOpenMenu={() => setHeld(message.id)}
                             onCloseMenu={() => setHeld(null)}
                             onEdit={() => beginEdit(message)}
                             onDelete={() => void remove(message.id)}
