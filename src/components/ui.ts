@@ -101,7 +101,7 @@ export const STATUS_OPEN =
 /* ------------------------------------------------------------- segmented */
 
 export const SEGMENTED =
-  'flex gap-4 rounded-[10px] border border-line bg-tint-1 p-4'
+  'relative flex gap-4 rounded-[10px] border border-line bg-tint-1 p-4'
 /*
  * The colour deliberately lives in the two state classes below, never here.
  * Tailwind resolves a conflict like text-fg-muted vs text-accent-ink by their
@@ -1276,3 +1276,48 @@ export const DOCK_TRAY_THUMB =
 export const DOCK_TRAY_NAME = 'min-w-0 flex-1 truncate'
 export const DOCK_ATTACH =
   'grid size-32 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'
+
+/* ------------------------------------------------------- date range picker */
+
+/*
+ * The popover sits under the segmented control it belongs to. Anchored right,
+ * because the control sits at the right end of the card header and a
+ * left-anchored panel would hang off the card on a narrow screen.
+ */
+export const RANGE_POP =
+  'absolute top-[calc(100%+8px)] right-0 z-40 w-[min(320px,calc(100vw-32px))] rounded-md border border-line-strong bg-panel-solid p-14 shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  'max-[520px]:fixed max-[520px]:top-auto max-[520px]:bottom-16 max-[520px]:right-16 max-[520px]:left-16 max-[520px]:w-auto'
+
+export const RANGE_HEAD = 'mb-12 flex items-center justify-between gap-8'
+export const RANGE_MONTH = 'text-[13px] font-semibold text-fg-strong tabular-nums'
+export const RANGE_NAV =
+  'grid size-28 place-items-center rounded-sm text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent'
+
+export const RANGE_WEEKDAYS =
+  'grid grid-cols-7 [&>span]:py-4 [&>span]:text-center [&>span]:text-[10px] [&>span]:font-semibold [&>span]:tracking-[0.08em] [&>span]:text-fg-muted [&>span]:uppercase'
+
+/** No gap: the selected band has to run unbroken from one day to the next. */
+export const RANGE_GRID = 'grid grid-cols-7'
+
+/*
+ * Each day is a band cell wrapping a circular button. The band paints the
+ * range and the button paints the two ends, which is what lets a continuous
+ * highlight still have round caps.
+ */
+export const RANGE_CELL = 'relative flex h-34 items-center justify-center'
+export const RANGE_BAND = 'bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)]'
+export const RANGE_BAND_START = 'rounded-l-full'
+export const RANGE_BAND_END = 'rounded-r-full'
+
+export const RANGE_DAY =
+  'relative z-[1] grid size-30 place-items-center rounded-full text-[12px] tabular-nums text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-fg-strong disabled:cursor-not-allowed disabled:text-fg-muted disabled:opacity-35 disabled:hover:bg-transparent'
+export const RANGE_DAY_OUTSIDE = 'text-fg-muted opacity-45'
+/** A ring rather than a fill, so today never competes with a selected end. */
+export const RANGE_DAY_TODAY = 'shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+export const RANGE_DAY_EDGE =
+  'bg-accent font-semibold text-accent-ink hover:bg-accent-strong hover:text-accent-ink'
+
+export const RANGE_FOOT =
+  'mt-12 flex items-center justify-between gap-10 border-t border-line pt-12 text-[11.5px] text-fg-muted'
+export const RANGE_CLEAR =
+  'font-medium text-accent-strong transition-opacity duration-150 hover:underline disabled:opacity-40 disabled:no-underline'

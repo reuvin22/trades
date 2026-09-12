@@ -27,11 +27,20 @@ import { useMemo, useState, type PointerEvent } from 'react'
 import { compactCurrency, currency, shortDate } from '../data/dashboard'
 import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
+import { DateRangePicker, type DateRange } from './DateRangePicker'
+import { CalendarIcon } from './Icons'
 
 const RANGES = ['90D', '30D', '7D'] as const
-type Range = (typeof RANGES)[number]
+type Preset = (typeof RANGES)[number]
 
-const RANGE_DAYS: Record<Range, number> = { '90D': 90, '30D': 30, '7D': 7 }
+const RANGE_DAYS: Record<Preset, number> = { '90D': 90, '30D': 30, '7D': 7 }
+
+/** Inclusive, which is what a person means by "Jun 1 to Jun 7". */
+function daysBetween(from: Date, to: Date): number {
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1
+}
+
+const spanLabel = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
 
 const W = 1000
 const H = 400
@@ -55,13 +64,21 @@ function buildScale(values: number[]) {
 }
 
 export function EquityChart({ equity }: { equity: EquityPoint[] }) {
-  const [range, setRange] = useState<Range>('90D')
+  const [range, setRange] = useState<Preset>('90D')
+  const [custom, setCustom] = useState<DateRange | null>(null)
+  const [picking, setPicking] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
   const series = useMemo(() => {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - RANGE_DAYS[range])
-    const within = equity.filter((point) => point.date >= cutoff)
+    // An explicit span wins when one is set; otherwise the preset window.
+    const cutoff = custom ? new Date(custom.from) : new Date()
+    if (!custom) cutoff.setDate(cutoff.getDate() - RANGE_DAYS[range])
+
+    // The end day is inclusive, so reach to the last moment of it.
+    const until = custom ? new Date(custom.to.getTime() + 86_399_999) : null
+    const within = equity.filter(
+      (point) => point.date >= cutoff && (until === null || point.date <= until),
+    )
 
     // Always open on the starting balance so a single trade still draws a line.
     const opening: EquityPoint = {
@@ -73,7 +90,7 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
     return within.length === 0
       ? [opening, { ...opening, date: new Date(), index: 0 }]
       : [{ ...opening, value: OPENING_BALANCE }, ...within]
-  }, [equity, range])
+  }, [equity, range, custom])
 
   const scale = useMemo(() => buildScale(series.map((point) => point.value)), [series])
 
@@ -127,7 +144,9 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
         <div>
           <h2 className={CARD_TITLE}>Cumulative Equity</h2>
           <p className={CARD_SUB}>
-            Realized returns over the last {RANGE_DAYS[range]} days
+            {custom
+              ? `Realized returns over ${daysBetween(custom.from, custom.to)} days, ${spanLabel.format(custom.from)} to ${spanLabel.format(custom.to)}`
+              : `Realized returns over the last ${RANGE_DAYS[range]} days`}
           </p>
         </div>
 
@@ -140,12 +159,47 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
               aria-pressed={range === option}
               onClick={() => {
                 setRange(option)
+                setCustom(null)
+                setPicking(false)
                 setHovered(null)
               }}
             >
               {option}
             </button>
           ))}
+
+          {/* The fourth option is a span rather than a window, so it opens a
+              calendar instead of switching directly. */}
+          <button
+            type="button"
+            className={`${SEGMENT} inline-flex items-center gap-6 ${custom ? SEGMENT_ACTIVE : SEGMENT_IDLE}`}
+            aria-pressed={custom !== null}
+            aria-haspopup="dialog"
+            aria-expanded={picking}
+            onClick={() => setPicking((open) => !open)}
+          >
+            <CalendarIcon size={13} />
+            {custom
+              ? `${spanLabel.format(custom.from)} – ${spanLabel.format(custom.to)}`
+              : 'Custom'}
+          </button>
+
+          {picking && (
+            <DateRangePicker
+              value={custom}
+              onApply={(next) => {
+                setCustom(next)
+                setPicking(false)
+                setHovered(null)
+              }}
+              onClear={() => {
+                setCustom(null)
+                setPicking(false)
+                setHovered(null)
+              }}
+              onClose={() => setPicking(false)}
+            />
+          )}
         </div>
       </div>
 
