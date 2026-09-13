@@ -1,17 +1,17 @@
-import { MetricCards } from '../components/MetricCards'
-import { RollingEquityCurve } from '../components/RollingEquityCurve'
-import { StrategyEdge } from '../components/StrategyEdge'
-import { TradeLog } from '../components/TradeLog'
-import { DateRangeIcon, FilterIcon } from '../components/Icons'
+import { useMemo, useState } from 'react'
 import {
-  PAGE_ACTIONS,
-  PAGE_HEAD,
-  PAGE_SUB,
-  PAGE_TITLE,
-  PILL,
-  PILL_IDLE,
-} from '../components/ui'
+  BehaviourSection,
+  ExecutionSection,
+  MarketsSection,
+  OverviewSection,
+  RiskSection,
+  SetupsSection,
+  TimeSection,
+} from '../components/AnalyticsSections'
+import { TradeLog } from '../components/TradeLog'
+import { PAGE_HEAD, PAGE_SUB, PAGE_TITLE, ROW_STAGGER, TAB, TAB_ON, TABS } from '../components/ui'
 import { deriveStats, startingCapital } from '../lib/stats'
+import { moneyIn } from '../lib/journalStats'
 import type { StoredTrade } from '../lib/trades'
 import type { Profile as ProfileRecord } from '../lib/profile'
 
@@ -21,38 +21,69 @@ type AnalyticsProps = {
   profile: ProfileRecord | null
 }
 
+/**
+ * The seven questions this page answers, one at a time.
+ *
+ * Tabs rather than one long page, and that is the main design decision here.
+ * Seven sections of tables stacked vertically is a page whose bottom half
+ * nobody reads; as tabs, each section is a question the trader chose to ask,
+ * and each can be as deep as it needs to be without crowding the others.
+ *
+ * The dashboard and this page deliberately do not overlap. The dashboard says
+ * where you stand. This says why.
+ */
+const SECTIONS = [
+  { key: 'overview', label: 'Overview', view: OverviewSection },
+  { key: 'setups', label: 'Setups', view: SetupsSection },
+  { key: 'markets', label: 'Markets', view: MarketsSection },
+  { key: 'risk', label: 'Risk', view: RiskSection },
+  { key: 'time', label: 'Time', view: TimeSection },
+  { key: 'behaviour', label: 'Behaviour', view: BehaviourSection },
+  { key: 'execution', label: 'Execution', view: ExecutionSection },
+] as const
+
+type SectionKey = (typeof SECTIONS)[number]['key']
+
 export function Analytics({ trades, profile }: AnalyticsProps) {
-  const opening = startingCapital(profile)
-  const stats = deriveStats(trades, opening)
+  const [open, setOpen] = useState<SectionKey>('overview')
+
+  const capital = startingCapital(profile)
+  const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
+  const stats = useMemo(() => deriveStats(trades, capital), [trades, capital])
+
+  const Section = SECTIONS.find((entry) => entry.key === open)?.view ?? OverviewSection
 
   return (
     <>
       <div className={PAGE_HEAD}>
         <div>
-          <h2 className={PAGE_TITLE}>Analytics Engine</h2>
+          <h2 className={PAGE_TITLE}>Analytics</h2>
           <p className={PAGE_SUB}>
-            Performance breakdown across {stats.tradeCount}{' '}
+            Where your results come from, across {stats.tradeCount}{' '}
             {stats.tradeCount === 1 ? 'logged trade' : 'logged trades'}.
           </p>
         </div>
-
-        <div className={PAGE_ACTIONS}>
-          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
-            <DateRangeIcon />
-            Last 90 Days
-          </button>
-          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
-            <FilterIcon />
-            Filter
-          </button>
-        </div>
       </div>
 
-      <MetricCards stats={stats} />
+      <div className={TABS} role="tablist" aria-label="Analysis">
+        {SECTIONS.map((entry) => (
+          <button
+            key={entry.key}
+            type="button"
+            role="tab"
+            aria-selected={open === entry.key}
+            className={`${TAB} ${open === entry.key ? TAB_ON : ''}`}
+            onClick={() => setOpen(entry.key)}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
 
-      <div className="grid items-stretch gap-16 grid-cols-[minmax(0,1fr)_300px] max-[1180px]:grid-cols-[minmax(0,1fr)]">
-        <RollingEquityCurve equity={stats.equity} opening={opening} />
-        <StrategyEdge stats={stats} />
+      {/* Keyed on the section, so switching replays the entrance rather than
+          swapping content under a stationary card. */}
+      <div key={open} className={`flex flex-col gap-18 ${ROW_STAGGER}`}>
+        <Section trades={trades} stats={stats} capital={capital} money={money} />
       </div>
 
       <TradeLog trades={trades} />

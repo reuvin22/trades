@@ -1786,3 +1786,53 @@ export const INSIGHT_CLAMP = 'line-clamp-6'
 
 export const INSIGHT_MORE =
   'mt-8 text-[12px] font-medium text-accent-strong transition-opacity duration-150 hover:opacity-80'
+
+/* ------------------------------------------------------------- analytics */
+
+/**
+ * The tab strip that replaces one very long page.
+ *
+ * Seven sections stacked vertically is a page nobody scrolls to the bottom of.
+ * As tabs, each one is a question the trader chose to ask.
+ */
+export const TABS =
+  'flex flex-wrap gap-6 rounded-full border border-line bg-tint-1 p-5 max-[720px]:rounded-sm'
+export const TAB =
+  'rounded-full px-14 py-8 text-[12.5px] font-medium text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+export const TAB_ON = 'bg-accent text-accent-ink hover:bg-accent hover:text-accent-ink'
+
+/** A question the section answers, above the numbers that answer it. */
+export const SECTION_ASK = 'mb-14 text-[13px] leading-[1.55] text-fg-dim'
+
+/** Two panels side by side, stacking on a narrow screen. */
+export const SPLIT =
+  'grid items-start gap-18 grid-cols-2 max-[900px]:grid-cols-[minmax(0,1fr)]'
+
+/* ---- the shared slice table ---- */
+
+export const SLICE_WRAP = 'overflow-x-auto'
+export const SLICE_TABLE = 'w-full border-collapse text-[13px]'
+export const SLICE_HEAD =
+  '[&>tr>th]:pb-9 [&>tr>th]:text-left [&>tr>th]:text-[10.5px] [&>tr>th]:font-medium [&>tr>th]:tracking-[0.1em] [&>tr>th]:text-fg-muted [&>tr>th]:uppercase [&>tr>th:not(:first-child)]:text-right [&>tr>th]:whitespace-nowrap'
+export const SLICE_BODY =
+  '[&>tr]:border-t [&>tr]:border-line [&>tr>td]:py-10 [&>tr>td]:tabular-nums [&>tr>td:not(:first-child)]:text-right [&>tr>td]:whitespace-nowrap'
+export const SLICE_LABEL = 'max-w-200 truncate font-medium text-fg not-tabular-nums'
+/** Sortable heading. A button, so it is reachable without a mouse. */
+export const SLICE_SORT =
+  'inline-flex items-center gap-4 text-inherit transition-opacity duration-150 hover:opacity-75'
+
+/* ---- a horizontal bar, for distributions ---- */
+
+export const BAR_LIST = 'flex flex-col gap-10'
+export const BAR_LINE = 'flex items-center gap-10 text-[12.5px]'
+export const BAR_NAME = 'w-112 flex-none truncate text-fg-dim'
+export const BAR_TRACK = 'relative h-16 flex-1 overflow-hidden rounded-xs bg-tint-1'
+/** Positive grows right of centre, negative left. See the zero rule below. */
+export const BAR_FILL = 'absolute inset-y-0 rounded-xs transition-[width] duration-500'
+export const BAR_ZERO = 'absolute inset-y-0 w-px bg-line-strong'
+export const BAR_VALUE = 'w-84 flex-none text-right tabular-nums'
+
+/* ---- the "not enough data" note that every section can need ---- */
+
+export const SECTION_EMPTY =
+  'rounded-sm border border-dashed border-line px-16 py-20 text-center text-[13px] leading-[1.6] text-fg-muted'
