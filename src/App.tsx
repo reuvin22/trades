@@ -78,7 +78,7 @@ function TraderView({
         />
       )
     case 'analytics':
-      return <Analytics trades={trades} />
+      return <Analytics trades={trades} profile={profile} />
     case 'calendar':
       return <Calendar trades={trades} />
     case 'coach':

@@ -11,15 +11,19 @@ import {
   PILL,
   PILL_IDLE,
 } from '../components/ui'
-import { deriveStats } from '../lib/stats'
+import { deriveStats, startingCapital } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
+import type { Profile as ProfileRecord } from '../lib/profile'
 
 type AnalyticsProps = {
   trades: StoredTrade[]
+  /** For the account size every percentage here is measured against. */
+  profile: ProfileRecord | null
 }
 
-export function Analytics({ trades }: AnalyticsProps) {
-  const stats = deriveStats(trades)
+export function Analytics({ trades, profile }: AnalyticsProps) {
+  const opening = startingCapital(profile)
+  const stats = deriveStats(trades, opening)
 
   return (
     <>
@@ -47,7 +51,7 @@ export function Analytics({ trades }: AnalyticsProps) {
       <MetricCards stats={stats} />
 
       <div className="grid items-stretch gap-16 grid-cols-[minmax(0,1fr)_300px] max-[1180px]:grid-cols-[minmax(0,1fr)]">
-        <RollingEquityCurve equity={stats.equity} />
+        <RollingEquityCurve equity={stats.equity} opening={opening} />
         <StrategyEdge stats={stats} />
       </div>
 

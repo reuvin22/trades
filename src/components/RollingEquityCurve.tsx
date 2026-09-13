@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { compactCurrency, shortDate } from '../data/dashboard'
-import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
+import type { EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
 import {
   CARD,
@@ -20,9 +20,9 @@ const W = 1000
 const H = 360
 const PLOT_BOTTOM = 320
 
-function buildScale(values: number[]) {
-  const low = Math.min(OPENING_BALANCE, ...values)
-  const high = Math.max(OPENING_BALANCE, ...values)
+function buildScale(values: number[], opening: number) {
+  const low = Math.min(opening, ...values)
+  const high = Math.max(opening, ...values)
   const pad = Math.max((high - low) * 0.15, 500)
 
   const min = Math.floor((low - pad) / 1000) * 1000
@@ -35,18 +35,28 @@ function buildScale(values: number[]) {
   return { min, max, ticks }
 }
 
-export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
+export function RollingEquityCurve({
+  equity,
+  opening,
+}: {
+  equity: EquityPoint[]
+  /** The account the curve starts from. See startingCapital(). */
+  opening: number
+}) {
   const series = useMemo(() => {
     if (equity.length === 0) return []
-    const opening: EquityPoint = {
+    const first: EquityPoint = {
       date: equity[0].date,
-      value: OPENING_BALANCE,
+      value: opening,
       index: -1,
     }
-    return [opening, ...equity]
-  }, [equity])
+    return [first, ...equity]
+  }, [equity, opening])
 
-  const scale = useMemo(() => buildScale(series.map((point) => point.value)), [series])
+  const scale = useMemo(
+    () => buildScale(series.map((point) => point.value), opening),
+    [series, opening],
+  )
 
   const scaleY = useMemo(
     () => (value: number) => {
@@ -66,8 +76,8 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
 
     // A flat reference line: where the account would sit at zero edge.
     const benchmark = smoothPath([
-      { x: 0, y: scaleY(OPENING_BALANCE) },
-      { x: W, y: scaleY(OPENING_BALANCE) },
+      { x: 0, y: scaleY(opening) },
+      { x: W, y: scaleY(opening) },
     ])
 
     const realized = smoothPath(points)
@@ -76,7 +86,7 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
       benchmark,
       area: `${realized} L ${W} ${PLOT_BOTTOM} L 0 ${PLOT_BOTTOM} Z`,
     }
-  }, [series, scaleY])
+  }, [series, scaleY, opening])
 
   const xLabels = useMemo(() => {
     if (series.length < 2) return []

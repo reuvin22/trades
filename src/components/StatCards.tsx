@@ -39,7 +39,8 @@ function StatCard({ label, value, tone = 'default', children }: StatCardProps) {
 }
 
 export function StatCards({ stats }: { stats: DerivedStats }) {
-  const winRate = Math.round(stats.winRate)
+  // The meter only needs a width; the figure beside it keeps its decimal.
+  const winRate = stats.winRate
   const down = 'text-red [&>svg]:-scale-y-100'
 
   return (
@@ -72,9 +73,13 @@ export function StatCards({ stats }: { stats: DerivedStats }) {
 
       <StatCard
         label="Win Rate"
-        value={<AnimatedNumber value={stats.winRate} format={(n) => `${Math.round(n)}%`} />}
+        value={<AnimatedNumber value={stats.winRate} format={(n) => `${n.toFixed(1)}%`} />}
       >
-        <div className={METER} role="img" aria-label={`${winRate} percent win rate`}>
+        <div
+          className={METER}
+          role="img"
+          aria-label={`${winRate.toFixed(1)} percent win rate`}
+        >
           <span
             className={`${METER_FILL} animate-meter origin-left`}
             style={{ width: `${winRate}%` }}

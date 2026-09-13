@@ -1,7 +1,28 @@
 import type { StoredTrade } from './trades'
+import type { Profile } from './profile'
 
-/** Where an account curve starts before any trade is applied. */
+/**
+ * Where an account curve starts when the trader has not said.
+ *
+ * A last resort, not a default anyone should be seeing. Every figure
+ * expressed as a share of the account — the month-on-month move, the
+ * drawdown, the whole equity axis — is measured from here, so a stand-in
+ * number produces confidently wrong percentages. Ask the profile first.
+ */
 export const OPENING_BALANCE = 10000
+
+/**
+ * The account the curve starts from, as the trader set it.
+ *
+ * Settings wins over My Profile: "Total capital" under Risk management is
+ * the figure a trader keeps current, because the risk-per-trade line right
+ * beneath it is worked out from it. The opening balance on the profile is
+ * the older field, and stands in when capital has not been filled in.
+ */
+export function startingCapital(profile: Profile | null): number {
+  const stated = profile?.accountSize ?? profile?.openingBalance ?? null
+  return stated !== null && stated > 0 ? stated : OPENING_BALANCE
+}
 
 export type EquityPoint = {
   date: Date
@@ -18,6 +39,8 @@ export type SetupSlice = {
 }
 
 export type DerivedStats = {
+  /** What the curve was measured from, so charts scale to the same figure. */
+  opening: number
   tradeCount: number
   closedCount: number
   netPl: number
@@ -66,7 +89,10 @@ function mean(values: number[]): number {
   return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
-export function deriveStats(trades: StoredTrade[]): DerivedStats {
+export function deriveStats(
+  trades: StoredTrade[],
+  opening: number = OPENING_BALANCE,
+): DerivedStats {
   // The API hands these back newest-first; every calculation below wants the
   // opposite, so sort once here rather than reversing at each use.
   const ordered = [...trades].sort((a, b) => {
@@ -103,8 +129,8 @@ export function deriveStats(trades: StoredTrade[]): DerivedStats {
 
   // Equity curve, plus the deepest peak-to-trough dip along the way.
   const equity: EquityPoint[] = []
-  let running = OPENING_BALANCE
-  let peak = OPENING_BALANCE
+  let running = opening
+  let peak = opening
   let maxDrawdownPct = 0
   let maxDrawdownAt: Date | null = null
 
@@ -128,8 +154,8 @@ export function deriveStats(trades: StoredTrade[]): DerivedStats {
 
   const beforeMonth = equity.filter((point) => point.date < monthStart)
   const openingThisMonth =
-    beforeMonth.length > 0 ? beforeMonth[beforeMonth.length - 1].value : OPENING_BALANCE
-  const closingNow = equity.length > 0 ? equity[equity.length - 1].value : OPENING_BALANCE
+    beforeMonth.length > 0 ? beforeMonth[beforeMonth.length - 1].value : opening
+  const closingNow = equity.length > 0 ? equity[equity.length - 1].value : opening
   const monthPct =
     openingThisMonth === 0 ? 0 : ((closingNow - openingThisMonth) / openingThisMonth) * 100
 
@@ -164,6 +190,7 @@ export function deriveStats(trades: StoredTrade[]): DerivedStats {
   })
 
   return {
+    opening,
     tradeCount: ordered.length,
     closedCount: closed.length,
     netPl,

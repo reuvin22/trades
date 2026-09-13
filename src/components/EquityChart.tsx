@@ -24,7 +24,7 @@ import {
 } from './ui'
 import { useMemo, useState, type PointerEvent } from 'react'
 import { compactCurrency, currency, shortDate } from '../data/dashboard'
-import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
+import type { EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
 import { DateRangePicker, type DateRange } from './DateRangePicker'
 import { CalendarIcon } from './Icons'
@@ -47,9 +47,9 @@ const H = 400
 const PLOT_BOTTOM = 340
 
 /** Rounds the axis out to whole thousands around the data. */
-function buildScale(values: number[]) {
-  const low = Math.min(OPENING_BALANCE, ...values)
-  const high = Math.max(OPENING_BALANCE, ...values)
+function buildScale(values: number[], opening: number) {
+  const low = Math.min(opening, ...values)
+  const high = Math.max(opening, ...values)
   const pad = Math.max((high - low) * 0.15, 500)
 
   const min = Math.floor((low - pad) / 1000) * 1000
@@ -62,7 +62,14 @@ function buildScale(values: number[]) {
   return { min, max, ticks }
 }
 
-export function EquityChart({ equity }: { equity: EquityPoint[] }) {
+export function EquityChart({
+  equity,
+  opening,
+}: {
+  equity: EquityPoint[]
+  /** The account the curve starts from. See startingCapital(). */
+  opening: number
+}) {
   const [range, setRange] = useState<Preset>('90D')
   const [custom, setCustom] = useState<DateRange | null>(null)
   const [picking, setPicking] = useState(false)
@@ -80,18 +87,21 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
     )
 
     // Always open on the starting balance so a single trade still draws a line.
-    const opening: EquityPoint = {
+    const first: EquityPoint = {
       date: cutoff,
-      value: within.length > 0 ? within[0].value - 0 : OPENING_BALANCE,
+      value: within.length > 0 ? within[0].value - 0 : opening,
       index: -1,
     }
 
     return within.length === 0
-      ? [opening, { ...opening, date: new Date(), index: 0 }]
-      : [{ ...opening, value: OPENING_BALANCE }, ...within]
-  }, [equity, range, custom])
+      ? [first, { ...first, date: new Date(), index: 0 }]
+      : [{ ...first, value: opening }, ...within]
+  }, [equity, range, custom, opening])
 
-  const scale = useMemo(() => buildScale(series.map((point) => point.value)), [series])
+  const scale = useMemo(
+    () => buildScale(series.map((point) => point.value), opening),
+    [series, opening],
+  )
 
   const scaleY = useMemo(
     () => (value: number) => {
