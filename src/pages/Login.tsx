@@ -71,8 +71,8 @@ const HIGHLIGHTS = [
   },
   {
     icon: BoltIcon,
-    title: 'Behavioral leak detection',
-    body: 'The coach flags revenge trades and session fatigue before they compound.',
+    title: 'Find what costs you most',
+    body: 'The coach prices your worst habit — chasing losses, sizing up, trading tired.',
   },
   {
     icon: ShieldIcon,

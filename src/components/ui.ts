@@ -199,9 +199,16 @@ export const PLOT_SVG = 'block h-full w-full overflow-visible'
 export const GRIDLINES =
   'animate-fade [&_line]:stroke-grid [&_line]:[stroke-width:1] [&_line]:[stroke-dasharray:2_7] [&_line]:[vector-effect:non-scaling-stroke]'
 
-/** pathLength="1" on the path makes one dash unit span the whole line. */
+/**
+ * The curve itself, drawn in by the `draw` keyframe.
+ *
+ * No `stroke-dasharray` here on purpose — it belongs to the animation and is
+ * declared inside the keyframe. Left on the element it survived the animation
+ * and truncated the line: see the note above @keyframes draw in index.css.
+ * The path still needs `pathLength="1"` for the keyframe's dash to span it.
+ */
 export const EQUITY_LINE =
-  'animate-draw [stroke-dasharray:1] stroke-chart-line [stroke-width:2] [stroke-linecap:round] [filter:drop-shadow(0_0_10px_var(--color-chart-glow))]'
+  'animate-draw stroke-chart-line [stroke-width:2] [stroke-linecap:round] [filter:drop-shadow(0_0_10px_var(--color-chart-glow))]'
 
 export const CHART_AREA = '[animation:fade_0.9s_0.35s_ease_backwards]'
 export const CROSSHAIR =

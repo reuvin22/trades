@@ -334,7 +334,7 @@ export function Settings({ profile }: SettingsProps) {
           </div>
 
           <label className={`${FIELD} col-span-2`}>
-            <span className={FIELD_LABEL}>Analyse my behavioural leak</span>
+            <span className={FIELD_LABEL}>Check what&apos;s costing me</span>
             <Select
               value={draft.leakCadence}
               onChange={(event) =>

@@ -184,9 +184,30 @@
     }
   }
 
+  /*
+   * The dash lives in the keyframe, not on the element.
+   *
+   * Drawing a line by animating a dash needs `stroke-dasharray: 1` against
+   * `pathLength="1"`, so one dash spans the whole path. Leaving that dash on
+   * the element afterwards is what cut the equity curve short: the chart is
+   * stretched by `preserveAspectRatio="none"` and the stroke is
+   * `non-scaling-stroke`, so the dash is measured in screen pixels while
+   * pathLength normalises in user units. Under a viewBox stretched much wider
+   * than it is tall the two disagree, the single dash runs out before the path
+   * does, and the last stretch of the line simply is not painted.
+   *
+   * Declaring it here means the element has no dasharray once the animation
+   * ends, so the finished line is plain solid stroke with nothing that can
+   * truncate it.
+   */
   @keyframes draw {
     from {
+      stroke-dasharray: 1;
       stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
     }
   }
 

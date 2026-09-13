@@ -38,29 +38,29 @@ function whenRead(at: Date): string {
   return weeks === 1 ? 'last week' : `${weeks} weeks ago`
 }
 
-export function SystemSignalCard({ stats }: { stats: DerivedStats }) {
+export function BestSetupCard({ stats }: { stats: DerivedStats }) {
   const best = stats.bestSetup
 
   return (
     <article className={`${CARD} ${CARD_HOVER} ${INSIGHT_CARD}`}>
       <p className={INSIGHT_KICKER}>
         <BoltIcon className="text-amber" />
-        System Signal
+        What&apos;s working
       </p>
       <h3 className={INSIGHT_TITLE}>
-        {best ? 'High Confidence Edge' : 'Not enough samples'}
+        {best ? 'Your best setup' : 'Not enough trades yet'}
       </h3>
       <p className={INSIGHT_BODY}>
         {best ? (
           <>
-            Your <strong>{best.label}</strong> setup currently holds an{' '}
-            <strong className={POS}>
-              {Math.round((best.wins / best.count) * 100)}% win rate
+            You win <strong className={POS}>
+              {Math.round((best.wins / best.count) * 100)}% of the time
             </strong>{' '}
-            over {best.count} {best.count === 1 ? 'sample' : 'samples'}.
+            on <strong>{best.label}</strong>, over {best.count}{' '}
+            {best.count === 1 ? 'trade' : 'trades'}.
           </>
         ) : (
-          'Log a few trades with a setup name and the coach will start ranking your edges.'
+          'Log a few trades with a setup name and this will show which one works best for you.'
         )}
       </p>
     </article>
@@ -68,28 +68,28 @@ export function SystemSignalCard({ stats }: { stats: DerivedStats }) {
 }
 
 /** Falls back to a local heuristic whenever the model has nothing to say. */
-function HeuristicLeak({ stats }: { stats: DerivedStats }) {
+function HeuristicHabit({ stats }: { stats: DerivedStats }) {
   const leaking = stats.fatigueAfterHour !== null && stats.fatigueExpectancy < 0
 
   return (
     <p className={INSIGHT_BODY}>
       {leaking ? (
         <>
-          Trading performance drops significantly after 2:00 PM. Expected value per
-          trade:{' '}
+          You lose money after 2:00 PM. About{' '}
           <strong className={NEG}>
             -{currency.format(Math.abs(stats.fatigueExpectancy))}
           </strong>
-          .
+          {' '}
+          a trade.
         </>
       ) : (
-        'Afternoon expectancy is holding up. Keep logging entry times to keep this honest.'
+        'Your afternoons are holding up. Keep logging entry times to keep this honest.'
       )}
     </p>
   )
 }
 
-export function BehavioralLeakCard({
+export function CostliestHabitCard({
   stats,
   leak,
 }: {
@@ -109,7 +109,7 @@ export function BehavioralLeakCard({
       <div className="flex items-center justify-between gap-12">
         <p className={INSIGHT_KICKER}>
           <AlertIcon className="text-red" />
-          Behavioral Leak
+          What&apos;s costing you
         </p>
 
         {leak.result && (
@@ -140,8 +140,8 @@ export function BehavioralLeakCard({
           <h3 className={INSIGHT_TITLE}>Not enough history</h3>
           <p className={INSIGHT_BODY}>
             Log {leak.needed - leak.have} more{' '}
-            {leak.needed - leak.have === 1 ? 'trade' : 'trades'} and the coach will
-            analyse your execution patterns.
+            {leak.needed - leak.have === 1 ? 'trade' : 'trades'} and the coach can
+            tell you which habit is costing you the most.
           </p>
         </>
       )}
@@ -191,10 +191,10 @@ export function BehavioralLeakCard({
         <>
           <h3 className={INSIGHT_TITLE}>
             {stats.fatigueAfterHour !== null && stats.fatigueExpectancy < 0
-              ? 'Session Fatigue'
-              : 'No leak detected'}
+              ? 'You fade in the afternoon'
+              : 'Nothing obvious yet'}
           </h3>
-          <HeuristicLeak stats={stats} />
+          <HeuristicHabit stats={stats} />
         </>
       )}
     </article>
