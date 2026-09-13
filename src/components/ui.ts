@@ -1567,3 +1567,79 @@ export const SHOT_TILE_IMAGE = 'size-full object-cover'
 /** A tile whose image has not resolved yet, or is a link we cannot render. */
 export const SHOT_TILE_EMPTY =
   'grid size-full place-items-center text-fg-muted [&_svg]:opacity-60'
+
+/* ---------------------------------------------------------- landing page */
+
+export const LANDING_SHELL =
+  'relative min-h-screen overflow-x-clip ' +
+  'bg-[radial-gradient(1100px_700px_at_12%_-10%,var(--color-glow-a),transparent_62%),radial-gradient(900px_620px_at_96%_108%,var(--color-glow-b),transparent_60%),linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]'
+
+/** Everything above the backdrop, and never wider than a readable measure. */
+export const LANDING_MAIN = 'relative z-10 mx-auto w-full max-w-1120 px-28 max-shell:px-20'
+
+export const LANDING_NAV =
+  'flex items-center gap-16 py-24 [&>*]:animate-fade'
+export const LANDING_BRAND =
+  'text-[22px] font-semibold tracking-[-0.02em] text-fg-strong'
+export const LANDING_NAV_ACTIONS = 'ml-auto flex items-center gap-10'
+
+export const LANDING_HERO = 'flex flex-col items-center pt-70 pb-90 text-center max-shell:pt-48'
+
+/** The eyebrow. Small, bordered, and the first thing to arrive. */
+export const LANDING_EYEBROW =
+  'inline-flex animate-rise items-center gap-8 rounded-full border border-line-strong bg-tint-1 px-14 py-6 text-[11.5px] font-medium tracking-[0.08em] text-fg-dim uppercase'
+
+export const LANDING_TITLE =
+  'mt-22 max-w-[16ch] animate-rise text-[64px] leading-[1.04] font-semibold tracking-[-0.035em] text-fg-strong [animation-delay:80ms] ' +
+  'max-shell:text-[44px] max-[520px]:text-[36px]'
+/** The half of the headline that carries the colour. */
+export const LANDING_TITLE_ACCENT =
+  'bg-[linear-gradient(100deg,var(--color-accent-strong),var(--color-cyan))] bg-clip-text text-transparent'
+
+export const LANDING_LEAD =
+  'mt-20 max-w-[56ch] animate-rise text-[16.5px] leading-[1.6] text-fg-dim [animation-delay:160ms] max-shell:text-[15px]'
+
+export const LANDING_CTAS =
+  'mt-30 flex animate-rise flex-wrap items-center justify-center gap-12 [animation-delay:240ms]'
+export const LANDING_CTA_LARGE = 'px-22 py-12 text-[14px]'
+
+export const LANDING_TRUST =
+  'mt-24 animate-fade text-[12px] tracking-[0.02em] text-fg-muted [animation-delay:340ms]'
+
+/* The sections below the fold arrive as they are scrolled to, rather than all
+   at once on load — a card that animated while off screen has already finished
+   by the time it is read, which is the same as not animating at all. */
+export const SCROLL_REVEAL = 'translate-y-14 opacity-0 transition-[opacity,transform] duration-[600ms] ease-out'
+export const SCROLL_REVEAL_SHOWN = 'translate-y-0 opacity-100'
+
+export const LANDING_SECTION = 'py-70 max-shell:py-52'
+export const LANDING_KICKER =
+  'text-[11px] font-semibold tracking-[0.16em] text-accent-strong uppercase'
+export const LANDING_HEADING =
+  'mt-10 max-w-[22ch] text-[34px] leading-[1.14] font-semibold tracking-[-0.025em] text-fg-strong max-shell:text-[27px]'
+export const LANDING_SUB = 'mt-12 max-w-[62ch] text-[14.5px] leading-[1.6] text-fg-muted'
+
+export const LANDING_GRID =
+  'mt-38 grid grid-cols-[repeat(auto-fit,minmax(248px,1fr))] gap-18'
+
+export const LANDING_CARD =
+  'group relative flex flex-col overflow-hidden rounded-lg border border-line bg-panel p-24 backdrop-blur-[14px] ' +
+  'transition-[border-color,transform,box-shadow] duration-300 ease-out hover:-translate-y-3 hover:border-line-strong hover:shadow-[var(--shadow-pop)]'
+export const LANDING_CARD_GLYPH =
+  'grid size-40 place-items-center rounded-[12px] bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)] text-accent-strong ' +
+  'transition-transform duration-300 ease-spring group-hover:scale-110'
+export const LANDING_CARD_TITLE = 'mt-18 text-[16px] font-semibold text-fg-strong'
+export const LANDING_CARD_BODY = 'mt-8 text-[13.5px] leading-[1.6] text-fg-muted'
+
+export const LANDING_STATS =
+  'grid grid-cols-3 gap-18 rounded-lg border border-line bg-panel p-30 backdrop-blur-[14px] max-[620px]:grid-cols-1'
+export const LANDING_STAT_VALUE =
+  'text-[38px] leading-none font-semibold tracking-[-0.03em] text-fg-strong tabular-nums max-shell:text-[30px]'
+export const LANDING_STAT_LABEL = 'mt-10 text-[12.5px] text-fg-muted'
+
+export const LANDING_CLOSER =
+  'relative overflow-hidden rounded-lg border border-line-strong p-46 text-center max-shell:p-30 ' +
+  'bg-[linear-gradient(140deg,color-mix(in_srgb,var(--color-accent)_22%,transparent),color-mix(in_srgb,var(--color-cyan)_10%,transparent))]'
+
+export const LANDING_FOOT =
+  'flex flex-wrap items-center gap-12 border-t border-line py-26 text-[12px] text-fg-muted'

@@ -9,7 +9,7 @@ import { TopBar } from './components/TopBar'
 import { appShell, CONTENT, WORKSPACE } from './components/layout'
 import { useNavDrawer } from './lib/useNavDrawer'
 import { useCollapsedNav } from './lib/useCollapsedNav'
-import { navigate, useHashRoute } from './lib/useHashRoute'
+import { navigate, useHashRoute, PUBLIC_ROUTES } from './lib/useHashRoute'
 import { useAuth } from './lib/useAuth'
 import {
   accountTypeLabel,
@@ -25,6 +25,7 @@ import { Analytics } from './pages/Analytics'
 import { Calendar } from './pages/Calendar'
 import { Billing } from './pages/Billing'
 import { Dashboard } from './pages/Dashboard'
+import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { Placeholder } from './pages/Placeholder'
 import { Profile } from './pages/Profile'
@@ -149,14 +150,14 @@ function App() {
       // refresh on #/journal stays on the journal.
       settled.current = true
       wasSignedIn.current = signedIn
-      if (signedIn && route === 'login') navigate(HOME_ROUTE)
-      if (!signedIn && route !== 'login') navigate('login')
+      if (signedIn && PUBLIC_ROUTES.has(route)) navigate(HOME_ROUTE)
+      if (!signedIn && !PUBLIC_ROUTES.has(route)) navigate('landing')
       return
     }
 
     if (signedIn && !wasSignedIn.current) navigate(HOME_ROUTE)
-    if (!signedIn && wasSignedIn.current) navigate('login')
-    if (!signedIn && route !== 'login') navigate('login')
+    if (!signedIn && wasSignedIn.current) navigate('landing')
+    if (!signedIn && !PUBLIC_ROUTES.has(route)) navigate('landing')
 
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])
@@ -180,6 +181,10 @@ function App() {
     )
   }
 
+  if (!signedIn && route !== 'login') {
+    return <Landing theme={theme} onToggleTheme={toggle} />
+  }
+
   if (!signedIn) {
     return (
       <Login
@@ -191,7 +196,7 @@ function App() {
     )
   }
 
-  if (route === 'login') return null
+  if (PUBLIC_ROUTES.has(route)) return null
 
   if (route === 'admin' || route.startsWith('admin/')) {
     return <AdminShell route={route} theme={theme} onToggleTheme={toggle} />

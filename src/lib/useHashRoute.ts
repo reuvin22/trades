@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 
-/** Empty hash lands on the login screen; App redirects once a session exists. */
-export const DEFAULT_ROUTE = 'login'
+/**
+ * An empty hash lands on the landing page — the front door for someone who
+ * has not signed in. App sends a session straight past it to the dashboard,
+ * so a returning trader never sees the pitch.
+ */
+export const DEFAULT_ROUTE = 'landing'
+
+/** The routes a signed-out visitor may hold. Everything else redirects. */
+export const PUBLIC_ROUTES = new Set(['landing', 'login'])
 
 function read(): string {
   const path = window.location.hash.replace(/^#\/?/, '').trim()
