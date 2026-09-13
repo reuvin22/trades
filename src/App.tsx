@@ -46,6 +46,9 @@ type TraderViewProps = {
   loading: boolean
   error: string | null
   reload: () => void
+  /** Re-fetch the account record. Settings writes to it, and the journal and
+   *  the trade form both read their setup list back out of it. */
+  reloadProfile: () => void
 }
 
 function TraderView({
@@ -57,6 +60,7 @@ function TraderView({
   loading,
   error,
   reload,
+  reloadProfile,
 }: TraderViewProps) {
   switch (route) {
     case 'dashboard':
@@ -83,7 +87,7 @@ function TraderView({
     case 'billing':
       return <Billing user={user} profile={profile} />
     case 'settings':
-      return <Settings profile={profile} />
+      return <Settings profile={profile} onSaved={reloadProfile} />
     default:
       return <Placeholder title={labelForRoute(route)} />
   }
@@ -93,7 +97,7 @@ function App() {
   const route = useHashRoute()
   const { theme, toggle } = useTheme()
   const { user, confirmed, pending, refresh } = useAuth()
-  const { profile, isNewAccount } = useProfile(user)
+  const { profile, isNewAccount, reload: reloadProfile } = useProfile(user)
   const [logging, setLogging] = useState(false)
   const nav = useNavDrawer(route)
   const rail = useCollapsedNav()
@@ -207,6 +211,7 @@ function App() {
             loading={loading}
             error={error}
             reload={reload}
+            reloadProfile={reloadProfile}
           />
         </main>
       </div>

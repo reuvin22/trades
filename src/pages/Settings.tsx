@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import {
@@ -41,6 +41,15 @@ import {
 
 type SettingsProps = {
   profile: ProfileRecord | null
+  /**
+   * Re-read the account record after a save.
+   *
+   * Without it the server has the new setups and the rest of the app does not:
+   * the journal filter and the trade form both read their list out of the
+   * profile held in App, which nothing was refreshing. Saving appeared to do
+   * nothing until a full page reload.
+   */
+  onSaved: () => void
 }
 
 /**
@@ -118,8 +127,29 @@ function toSetup(draft: Draft): TradingSetup {
   }
 }
 
-export function Settings({ profile }: SettingsProps) {
+export function Settings({ profile, onSaved }: SettingsProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(profile))
+
+  /*
+   * Seed the form once the account record actually arrives.
+   *
+   * The initialiser above runs on the first render only, and on that render
+   * the profile is usually still being fetched — so the form filled itself
+   * with defaults and stayed that way. Everything typed into it then saved
+   * correctly, but every field left alone saved as a blank over whatever was
+   * already there, which is why this page looked like it accepted nothing.
+   *
+   * Keyed on the uid rather than the object: useProfile hands back a new
+   * object on every reload, and re-seeding on each one would wipe whatever was
+   * half-typed when the save that triggered the reload came back.
+   */
+  const seeded = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!profile || seeded.current === profile.uid) return
+    seeded.current = profile.uid
+    setDraft(toDraft(profile))
+  }, [profile])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [newStrategy, setNewStrategy] = useState('')
@@ -196,6 +226,7 @@ export function Settings({ profile }: SettingsProps) {
 
     try {
       await saveTradingSetup(toSetup(draft))
+      onSaved()
       toast.success('Settings saved', 'The coach will hold you to these.')
     } catch (cause) {
       const message = readableApiError(cause)
