@@ -349,8 +349,8 @@ export const SELECT_CHEVRON =
  */
 export const MODAL =
   'm-auto max-h-[min(88vh,900px)] overflow-hidden rounded-lg border border-line-strong bg-panel-solid p-0 text-fg shadow-[var(--shadow-pop)] ' +
-  'open:[animation:modal-in_0.28s_cubic-bezier(0.22,0.8,0.3,1)] ' +
-  'backdrop:bg-[rgba(6,5,15,0.62)] backdrop:backdrop-blur-[3px] open:backdrop:[animation:fade_0.28s_ease]'
+  'open:[animation:modal-in_0.28s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
+  'backdrop:bg-[rgba(6,5,15,0.62)] backdrop:backdrop-blur-[3px] open:backdrop:[animation:fade_0.28s_ease_backwards]'
 
 /**
  * Head, scrolling middle, pinned foot.
@@ -461,7 +461,7 @@ export const AVATAR_INITIALS =
   'grid size-full place-items-center text-[14px] font-semibold text-accent-ink bg-[linear-gradient(160deg,var(--color-accent-strong),var(--color-accent))]'
 
 export const ACCOUNT_MENU =
-  'absolute top-[calc(100%+10px)] right-0 z-40 w-244 overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)]'
+  'absolute top-[calc(100%+10px)] right-0 z-40 w-244 overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)_backwards]'
 
 export const ACCOUNT_HEAD =
   'flex items-center gap-11 border-b border-line bg-tint-1 px-15 py-14'
@@ -891,7 +891,7 @@ export const COMBO_EMPTY = 'px-11 py-10 text-[12px] leading-[1.5] text-fg-muted'
 /* --------------------------------------------------------- notifications */
 
 export const NOTIFY_MENU =
-  'absolute top-[calc(100%+10px)] right-0 z-40 flex w-[min(360px,calc(100vw-32px))] flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  'absolute top-[calc(100%+10px)] right-0 z-40 flex w-[min(360px,calc(100vw-32px))] flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
   /* The bell is ~120px in from the right edge, so a menu anchored to it but
      sized against the viewport hangs 88px off the left on a phone. Below 520px
      it stops being a dropdown and spans the screen with even gutters. The
@@ -1017,7 +1017,7 @@ export const DOCK_SEARCH_CLOSE =
  * need the room, and overhanging the thread costs nothing while open.
  */
 export const DOCK_RESULTS =
-  'absolute top-[calc(100%-4px)] left-8 z-20 max-h-232 w-284 max-w-[calc(100vw-72px)] overflow-y-auto overflow-x-hidden rounded-md border border-line-strong bg-panel-solid p-5 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)]'
+  'absolute top-[calc(100%-4px)] left-8 z-20 max-h-232 w-284 max-w-[calc(100vw-72px)] overflow-y-auto overflow-x-hidden rounded-md border border-line-strong bg-panel-solid p-5 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)_backwards]'
 
 /**
  * One match. Details lead, avatar closes the row on the right — the mirror of
@@ -1184,7 +1184,7 @@ export const TOUR_FILL =
  * depends on which side of the thread the message sits on.
  */
 export const DOCK_MSG_MENU =
-  'absolute z-30 flex min-w-120 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.12s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  'absolute z-30 flex min-w-120 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.12s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
   '[&>button]:flex [&>button]:items-center [&>button]:gap-9 [&>button]:rounded-sm [&>button]:px-10 [&>button]:py-7 [&>button]:text-left [&>button]:text-[12.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-150 [&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong'
 
 export const DOCK_MSG_DELETE =
@@ -1384,7 +1384,7 @@ export const DOCK_ATTACH =
  * left-anchored panel would hang off the card on a narrow screen.
  */
 export const RANGE_POP =
-  'absolute top-[calc(100%+8px)] right-0 z-40 w-[min(320px,calc(100vw-32px))] rounded-md border border-line-strong bg-panel-solid p-14 shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  'absolute top-[calc(100%+8px)] right-0 z-40 w-[min(320px,calc(100vw-32px))] rounded-md border border-line-strong bg-panel-solid p-14 shadow-[var(--shadow-pop)] [animation:menu-in_0.16s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
   'max-[520px]:fixed max-[520px]:top-auto max-[520px]:bottom-16 max-[520px]:right-16 max-[520px]:left-16 max-[520px]:w-auto'
 
 export const RANGE_HEAD = 'mb-12 flex items-center justify-between gap-8'
@@ -1489,7 +1489,7 @@ export const EDIT_CHIP_REMOVE =
  * left-aligned panel would hang off the edge of the page.
  */
 export const ACTION_MENU =
-  'absolute top-[calc(100%+6px)] right-0 z-40 flex min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  'absolute top-[calc(100%+6px)] right-0 z-40 flex min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
   '[&>button]:rounded-[6px] [&>button]:px-11 [&>button]:py-9 [&>button]:text-left [&>button]:text-[13.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-100 ' +
   '[&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong [&>button[aria-current]]:bg-tint-2 [&>button[aria-current]]:font-medium [&>button[aria-current]]:text-fg-strong'
 
@@ -1510,8 +1510,8 @@ export const DOCK_TRAY_THUMB_EMPTY =
  */
 export const VIEWER =
   'fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-fg ' +
-  'open:[animation:fade_0.2s_ease] ' +
-  'backdrop:bg-[rgba(4,3,10,0.86)] backdrop:backdrop-blur-[2px] open:backdrop:[animation:fade_0.2s_ease]'
+  'open:[animation:fade_0.2s_ease_backwards] ' +
+  'backdrop:bg-[rgba(4,3,10,0.86)] backdrop:backdrop-blur-[2px] open:backdrop:[animation:fade_0.2s_ease_backwards]'
 
 /** Fills the dialog; clicks landing here, on nothing, close the viewer. */
 export const VIEWER_STAGE =

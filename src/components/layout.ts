@@ -36,10 +36,18 @@ export const APP_SHELL =
  * the content column moves with the rail instead of being overlapped by it
  * for the length of the animation.
  */
+/*
+ * The rail width changes instantly, on purpose.
+ *
+ * grid-template-columns is a layout property: transitioning it makes the
+ * browser re-lay-out the whole page every frame — the chart SVG, the tables,
+ * every card — and measuring it gave frames of 83ms and 100ms against a 16.7ms
+ * budget. There is no GPU path for that, so the animation could only ever be
+ * the janky version of an instant change.
+ */
 export function appShell(collapsed: boolean): string {
   return (
     'grid min-h-screen max-shell:grid-cols-[1fr] ' +
-    'transition-[grid-template-columns] duration-200 ease-out ' +
     (collapsed ? 'grid-cols-[76px_1fr] ' : 'grid-cols-[300px_1fr] ') +
     SHELL_WASH
   )
