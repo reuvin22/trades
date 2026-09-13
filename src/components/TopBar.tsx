@@ -10,8 +10,6 @@ type TopBarProps = {
   navOpen: boolean
   onToggleNav: () => void
   /** Desktop only: the sidebar narrowed to a rail. */
-  collapsed: boolean
-  onToggleCollapse: () => void
 }
 
 /** Space-between so the burger sits left once it appears; with it hidden the
@@ -86,8 +84,6 @@ export function TopBar({
   onToggleTheme,
   navOpen,
   onToggleNav,
-  collapsed,
-  onToggleCollapse,
 }: TopBarProps) {
   const { user } = useAuth()
 
@@ -96,7 +92,6 @@ export function TopBar({
     // action cluster still lands hard right.
     <header className={TOPBAR}>
       <MenuButton open={navOpen} onToggle={onToggleNav} />
-      <CollapseButton collapsed={collapsed} onToggle={onToggleCollapse} />
 
       <div className="ml-auto flex items-center gap-16">
         <NotificationMenu />

@@ -1,6 +1,6 @@
 import { TRADER_NAV, type IconComponent } from '../navigation'
 import { navigate } from '../lib/useHashRoute'
-import { CloseIcon, PlusIcon } from './Icons'
+import { CollapseIcon, CloseIcon, PlusIcon } from './Icons'
 import { sidebarClass } from './layout'
 import { NAV_DISABLED } from './ui'
 
@@ -15,6 +15,7 @@ type SidebarProps = {
   /** Above the breakpoint: narrowed to a rail of icons. The control for this
    *  lives in the TopBar, so it stays reachable when the labels are gone. */
   collapsed: boolean
+  onToggleCollapse: () => void
 }
 
 /*
@@ -95,7 +96,9 @@ export function NavButton({
       }}
       className={
         'relative flex items-center gap-14 py-13 text-left text-[16px] transition-[color,background-color] duration-150 ' +
-        (collapsed ? 'shell:justify-center shell:gap-0 shell:px-0 px-32 ' : 'px-32 ') +
+        (collapsed
+          ? 'shell:mx-auto shell:size-44 shell:justify-center shell:gap-0 shell:rounded-[12px] shell:p-0 px-32 '
+          : 'px-32 ') +
         'animate-slide-left ' +
         // Nudges its label on hover, but only where there is somewhere to go.
         (disabled
@@ -105,6 +108,12 @@ export function NavButton({
           ? ''
           : active
           ? 'font-medium text-fg-strong bg-[linear-gradient(90deg,color-mix(in_srgb,var(--color-accent)_18%,transparent),color-mix(in_srgb,var(--color-accent)_5%,transparent))] ' +
+            // On the rail: kill the gradient (a background-image) and paint a
+            // solid tile (a background-colour) instead, so the two never fight
+            // over the same property. The edge bar goes with it.
+            (collapsed
+              ? 'shell:bg-none shell:bg-[color-mix(in_srgb,var(--color-accent)_24%,transparent)] shell:after:hidden shell:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-accent)_40%,transparent)] '
+              : '') +
             // The active rail, bled to the panel edge.
             "after:absolute after:inset-y-0 after:right-0 after:w-2 after:content-[''] " +
             'after:bg-[linear-gradient(180deg,var(--color-accent-strong),var(--color-accent))] ' +
@@ -155,6 +164,7 @@ export function Sidebar({
   open,
   onClose,
   collapsed,
+  onToggleCollapse,
 }: SidebarProps) {
   return (
     <>
@@ -191,6 +201,25 @@ export function Sidebar({
               {accountLabel}
             </p>
           </a>
+
+          {/* The control for the rail's width now lives on the rail. It is
+              shell-only because below that breakpoint the sidebar is a drawer
+              and there is nothing to collapse. */}
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-controls="primary-nav"
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            className={
+              'hidden shell:grid size-30 flex-none place-items-center rounded-sm text-fg-muted ' +
+              'transition-[color,background-color,transform] duration-150 hover:bg-tint-2 hover:text-fg-strong ' +
+              (collapsed ? 'rotate-180' : 'ml-auto')
+            }
+          >
+            <CollapseIcon />
+          </button>
         </div>
 
         <DrawerClose onClose={onClose} />

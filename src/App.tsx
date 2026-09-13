@@ -176,6 +176,7 @@ function App() {
         open={nav.open}
         onClose={nav.close}
         collapsed={rail.collapsed}
+        onToggleCollapse={rail.toggle}
       />
 
       <div className={WORKSPACE}>
@@ -184,8 +185,6 @@ function App() {
           onToggleTheme={toggle}
           navOpen={nav.open}
           onToggleNav={nav.toggle}
-          collapsed={rail.collapsed}
-          onToggleCollapse={rail.toggle}
         />
         <main className={CONTENT} key={route}>
           <TraderView
