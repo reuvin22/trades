@@ -254,6 +254,18 @@ export const CHART_EMPTY = 'px-10 py-46 text-center text-[13px] text-fg-muted'
 export const FILTER_ROW =
   'relative z-30 grid grid-cols-4 gap-14 max-[1100px]:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]'
 export const FILTER_CARD = 'flex cursor-pointer flex-col gap-10 px-18 pt-15 pb-16'
+
+/**
+ * A filter card that is entirely one button.
+ *
+ * The padding lives here rather than on the card so the click target fills
+ * it: with the card padded and a small control inside, most of what looks
+ * like a button isn't one, and finding the few pixels that open the menu is
+ * a puzzle the trader has to solve every time.
+ */
+export const FILTER_SHELL = 'relative'
+export const FILTER_TRIGGER =
+  'flex w-full cursor-pointer flex-col gap-10 px-18 pt-15 pb-16 text-left'
 export const FILTER_LABEL = 'text-[12.5px] font-medium text-fg-dim'
 export const FILTER_FIGURE = 'text-[14.5px] font-medium tabular-nums'
 

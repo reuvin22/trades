@@ -14,6 +14,7 @@ import { tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
 import { SESSIONS, SESSION_LABELS } from '../data/tradeForm'
 import type { Profile as ProfileRecord } from '../lib/profile'
+import { moneyIn, summarise, volumeLabel } from '../lib/journalStats'
 import {
   ChartBarsIcon,
   DateRangeIcon,
@@ -37,7 +38,6 @@ import {
   PILL,
   PILL_IDLE,
   PILL_ACCENT,
-  POS,
   ROW_STAGGER,
   SUMMARY_CARD,
   SUMMARY_FOOT,
@@ -136,19 +136,27 @@ function FilterSelects({
   return (
     <>
       {fields.map((field) => (
-        <div key={field.key} className={`${CARD} ${CARD_HOVER} ${FILTER_CARD}`}>
-          <span className={FILTER_LABEL}>{field.label}</span>
-          <SearchableSelect
-            label={field.label}
-            value={filters[field.key]}
-            options={field.options}
-            onChange={(value) => onChange({ ...filters, [field.key]: value })}
-          />
-        </div>
+        <SearchableSelect
+          key={field.key}
+          className={`${CARD} ${CARD_HOVER}`}
+          heading={field.label}
+          label={field.label}
+          value={filters[field.key]}
+          options={field.options}
+          onChange={(value) => onChange({ ...filters, [field.key]: value })}
+        />
       ))}
     </>
   )
 }
+
+/**
+ * What a card shows when the journal cannot answer it.
+ *
+ * An em dash rather than a zero: nothing recorded and a genuine zero are
+ * different facts, and only one of them is worth acting on.
+ */
+const EMPTY_FIGURE = '—'
 
 /** The presets, and how far back each one reaches. */
 const RANGE_DAYS = { '7D': 7, '30D': 30, '90D': 90 } as const
@@ -392,6 +400,12 @@ export function TradeJournal({
     [trades, filters, window],
   )
 
+  // Over the filtered rows, not the whole journal: these cards sit directly
+  // under the filters, and a figure that ignored them would be answering a
+  // question nobody asked.
+  const summary = useMemo(() => summarise(shown), [shown])
+  const money = useMemo(() => moneyIn(profile?.currency ?? "USD"), [profile?.currency])
+
   return (
     <>
       <div className={PAGE_HEAD}>
@@ -437,9 +451,7 @@ export function TradeJournal({
 
         <div className={`${CARD} ${CARD_HOVER} ${FILTER_CARD} cursor-default gap-8`}>
           <span className={FILTER_LABEL}>Total Volume</span>
-          <strong className={FILTER_FIGURE}>
-            <AnimatedNumber value={1.24} format={(n) => `${n.toFixed(2)}M Shares`} />
-          </strong>
+          <strong className={FILTER_FIGURE}>{volumeLabel(summary.volume)}</strong>
         </div>
       </div>
 
@@ -453,27 +465,51 @@ export function TradeJournal({
         <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
           <p className={SUMMARY_LABEL}>Win Rate</p>
           <p className={SUMMARY_VALUE}>
-            <AnimatedNumber value={68.4} format={(n) => n.toFixed(1)} />{' '}
-            <span className="text-[17px] font-normal text-fg-muted">%</span>
+            {summary.winRate === null ? (
+              EMPTY_FIGURE
+            ) : (
+              <>
+                <AnimatedNumber value={summary.winRate} format={(n) => n.toFixed(1)} />{' '}
+                <span className="text-[17px] font-normal text-fg-muted">%</span>
+              </>
+            )}
           </p>
-          <p className={`${SUMMARY_FOOT} ${POS}`}>&uarr; +2.1% from last week</p>
+          <p className={SUMMARY_FOOT}>
+            {summary.winRate === null
+              ? 'No closed trades in this range.'
+              : `${summary.wins} won, ${summary.losses} lost`}
+          </p>
           <ChartBarsIcon className={SUMMARY_WATERMARK} size={72} />
         </article>
 
         <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
           <p className={SUMMARY_LABEL}>Profit Factor</p>
           <p className={SUMMARY_VALUE}>
-            <AnimatedNumber value={2.42} format={(n) => n.toFixed(2)} />
+            {summary.profitFactor !== null ? (
+              <AnimatedNumber value={summary.profitFactor} format={(n) => n.toFixed(2)} />
+            ) : summary.unbeaten ? (
+              '∞'
+            ) : (
+              EMPTY_FIGURE
+            )}
           </p>
-          <p className={SUMMARY_FOOT}>Target: 2.0+</p>
+          <p className={SUMMARY_FOOT}>
+            {summary.profitFactor !== null
+              ? `${money(summary.grossProfit)} won against ${money(summary.grossLoss)} lost`
+              : summary.unbeaten
+                ? 'No losing trades in this range.'
+                : 'Nothing closed at a profit or a loss yet.'}
+          </p>
           <ScalesIcon className={SUMMARY_WATERMARK} size={72} />
         </article>
 
         <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
-          <p className={SUMMARY_LABEL}>Avg. Emotion Score</p>
-          <p className={SUMMARY_VALUE}>Neutral</p>
+          <p className={SUMMARY_LABEL}>Most Common Emotion</p>
+          <p className={SUMMARY_VALUE}>{summary.topEmotion ?? EMPTY_FIGURE}</p>
           <p className={SUMMARY_FOOT}>
-            Most common: <span className="[font-family:'Segoe_UI_Emoji','Apple_Color_Emoji',sans-serif]">&#128524;</span> Calmed
+            {summary.topEmotion === null
+              ? 'No emotions recorded in this range.'
+              : `${summary.emotionCount} of ${summary.emotionTotal} entries`}
           </p>
           <SmileIcon className={SUMMARY_WATERMARK} size={72} />
         </article>

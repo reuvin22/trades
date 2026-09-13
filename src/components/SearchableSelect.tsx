@@ -6,6 +6,9 @@ import {
   COMBO_OPTION_ACTIVE,
   COMBO_PANEL,
   COMBO_SEARCH,
+  FILTER_LABEL,
+  FILTER_SHELL,
+  FILTER_TRIGGER,
   SELECT_VALUE,
 } from './ui'
 
@@ -14,6 +17,16 @@ type SearchableSelectProps = {
   onChange: (value: string) => void
   options: string[]
   label: string
+  /**
+   * Render the label inside the trigger, and the whole thing as one card.
+   *
+   * Without this the caller draws a card, puts a heading in it and this
+   * control underneath — and only the control opens the menu, so most of the
+   * card is dead to the click that obviously ought to work.
+   */
+  heading?: string
+  /** Card classes for the shell, when it is drawn as one. */
+  className?: string
 }
 
 /**
@@ -35,6 +48,8 @@ export function SearchableSelect({
   onChange,
   options,
   label,
+  heading,
+  className,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -104,21 +119,25 @@ export function SearchableSelect({
   }
 
   return (
-    <div ref={wrapper} className="relative">
+    <div ref={wrapper} className={className ? `${FILTER_SHELL} ${className}` : 'relative'}>
       <button
         type="button"
-        className={SELECT_VALUE}
+        className={heading ? FILTER_TRIGGER : SELECT_VALUE}
         onClick={() => (open ? close() : setOpen(true))}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}: ${value}`}
       >
-        <span className="truncate">{value}</span>
-        <ChevronDownIcon
-          className={`flex-none text-fg-muted transition-transform duration-200 ease-out ${
-            open ? 'rotate-180' : ''
-          }`}
-        />
+        {heading && <span className={FILTER_LABEL}>{heading}</span>}
+
+        <span className={heading ? SELECT_VALUE : 'contents'}>
+          <span className="truncate">{value}</span>
+          <ChevronDownIcon
+            className={`flex-none text-fg-muted transition-transform duration-200 ease-out ${
+              open ? 'rotate-180' : ''
+            }`}
+          />
+        </span>
       </button>
 
       {open && (
