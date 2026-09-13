@@ -1315,6 +1315,20 @@ export const CHART_THUMB =
   'size-44 flex-none rounded-xs border border-line object-cover'
 export const CHART_TRAY_NAME = 'min-w-0 flex-1 text-[12px] text-fg-dim'
 export const CHART_TRAY_NOTE = 'block truncate text-[10.5px] text-fg-muted'
+/**
+ * The uploaded screenshot, shown back under the file input.
+ *
+ * A file input reports only a filename, which says nothing about whether the
+ * right chart went up — or whether it went up at all. The picture is the
+ * receipt, so it is only rendered once the key resolves to something the
+ * browser actually loaded.
+ */
+export const SHOT_PREVIEW =
+  'relative mt-8 overflow-hidden rounded-sm border border-line bg-tint-1'
+export const SHOT_PREVIEW_IMAGE = 'block max-h-200 w-full object-contain'
+export const SHOT_PREVIEW_CLEAR =
+  'absolute top-8 right-8 grid size-26 place-items-center rounded-full border border-line bg-panel text-fg-muted shadow-[var(--shadow-card)] transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+
 export const CHART_DROP =
   'grid size-34 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'
 

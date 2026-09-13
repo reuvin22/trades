@@ -323,6 +323,22 @@ export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
   return toProfile(wire)
 }
 
+/**
+ * Stores the avatar on its own, the moment it is uploaded.
+ *
+ * Not folded into the Save button. Choosing a photo reads as a completed act —
+ * the preview changes, so it looks done — and leaving it pending until a
+ * separate Save meant a refresh silently threw it away with no error to
+ * explain where it went.
+ */
+export async function saveProfilePhoto(photoURL: string): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: { photo_url: photoURL },
+  })
+  return toProfile(wire)
+}
+
 /** Remembers the language the coach should reply in. */
 export async function saveCoachLanguage(coachLanguage: string): Promise<Profile> {
   const wire = await apiFetch<ProfileWire>('/api/v1/me', {

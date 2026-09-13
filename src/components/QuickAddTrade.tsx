@@ -21,6 +21,7 @@ import { useToast } from '../lib/toast'
 import { Combobox } from './Combobox'
 import { ACCEPTED } from '../lib/chartImage'
 import { isHttpUrl, uploadImage } from '../lib/uploads'
+import { useImageUrl } from '../lib/useImageUrl'
 import { Select } from './Select'
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon, SpinnerIcon } from './Icons'
 import {
@@ -49,6 +50,9 @@ import {
   PILL,
   PILL_IDLE,
   PILL_ACCENT,
+  SHOT_PREVIEW,
+  SHOT_PREVIEW_CLEAR,
+  SHOT_PREVIEW_IMAGE,
   TAG_CLOUD,
   TAG_TOGGLE,
   TOGGLE,
@@ -136,6 +140,9 @@ export function QuickAddTrade({
 
   const linkValue = isLink ? trade.screenshot : ''
   const storedShot = trade.screenshot !== '' && !isLink
+  // Only in upload mode: a pasted link is shown as the text the trader typed,
+  // and a remote chart is not ours to render inside the form.
+  const shotPreview = useImageUrl(shotMode === 'upload' && storedShot ? trade.screenshot : null)
 
   async function attachShot(file: File | null) {
     if (!file) return
@@ -144,9 +151,12 @@ export function QuickAddTrade({
     try {
       update('screenshot', await uploadImage(file, 'charts', setShotBusy))
     } catch (cause) {
-      setShotError(
-        cause instanceof Error ? cause.message : 'That image could not be uploaded.',
-      )
+      const message = readableApiError(cause)
+      setShotError(message)
+      // A hint under a file input is easy to miss, and the failures that
+      // matter here — storage unconfigured, API unreachable — are ones the
+      // trader can do nothing about without being told.
+      toast.error('Could not upload that screenshot', message)
     } finally {
       setShotBusy(null)
     }
@@ -484,6 +494,20 @@ export function QuickAddTrade({
                             : 'A link to the chart, wherever it lives.'}
                 </span>
               </label>
+
+              {shotPreview ? (
+                <div className={`${SHOT_PREVIEW} col-span-2`}>
+                  <img className={SHOT_PREVIEW_IMAGE} src={shotPreview} alt="Chart screenshot" />
+                  <button
+                    type="button"
+                    className={SHOT_PREVIEW_CLEAR}
+                    aria-label="Remove screenshot"
+                    onClick={() => update('screenshot', '')}
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+              ) : null}
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Stop-loss</span>

@@ -7,6 +7,7 @@ import {
   ACCOUNT_TYPES,
   DEFAULT_ACCOUNT_TYPE,
   saveProfileDetails,
+  saveProfilePhoto,
   type AccountType,
   type Profile as ProfileRecord,
   type ProfileDetails,
@@ -114,11 +115,22 @@ export function Profile({ user, profile }: ProfileProps) {
     setAvatarError('')
 
     try {
-      update('photoURL', await uploadImage(file, 'profile', setAvatarBusy))
+      const key = await uploadImage(file, 'profile', setAvatarBusy)
+
+      // Stored straight away rather than waiting for Save. Without this the
+      // photo looked applied — the preview changed — and vanished on refresh.
+      setAvatarBusy('uploading')
+      await saveProfilePhoto(key)
+
+      update('photoURL', key)
+      toast.success('Photo updated', 'Your new picture is saved.')
     } catch (cause) {
-      setAvatarError(
-        cause instanceof Error ? cause.message : 'That image could not be uploaded.',
-      )
+      const message = readableApiError(cause)
+      setAvatarError(message)
+      // Loud, not a hint. The likely failures here — storage not configured,
+      // the API not reachable — say nothing about themselves from a preview
+      // that simply never appears.
+      toast.error('Could not upload that photo', message)
     } finally {
       setAvatarBusy(null)
     }

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { useImageUrl } from '../lib/useImageUrl'
 import type { AuthUser } from '../lib/useAuth'
 import { navigate } from '../lib/useHashRoute'
 import { signOutOfApp } from '../lib/useAuth'
@@ -53,6 +54,9 @@ export function AccountMenu({ user }: AccountMenuProps) {
   }
 
   const name = user?.displayName?.trim() || user?.email?.split('@')[0] || 'Trader'
+  // A stored photo is a key into a private bucket, not a URL. Google
+  // sign-in still hands us a real link, which passes through untouched.
+  const photo = useImageUrl(user?.photoURL)
 
   return (
     <div className="relative" ref={wrapper}>
@@ -66,8 +70,8 @@ export function AccountMenu({ user }: AccountMenuProps) {
         aria-label="Account menu"
         onClick={() => setOpen((current) => !current)}
       >
-        {user?.photoURL ? (
-          <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+        {photo ? (
+          <img src={photo} alt="" referrerPolicy="no-referrer" />
         ) : (
           <span className={AVATAR_INITIALS}>{name.slice(0, 1).toUpperCase()}</span>
         )}
@@ -77,8 +81,8 @@ export function AccountMenu({ user }: AccountMenuProps) {
         <div className={ACCOUNT_MENU} id={menuId} role="menu">
           <div className={ACCOUNT_HEAD}>
             <span className={ACCOUNT_AVATAR} aria-hidden="true">
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+              {photo ? (
+                <img src={photo} alt="" referrerPolicy="no-referrer" />
               ) : (
                 <span className={AVATAR_INITIALS}>{name.slice(0, 1).toUpperCase()}</span>
               )}

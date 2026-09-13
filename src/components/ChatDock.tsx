@@ -7,6 +7,7 @@ import {
   useState,
   type FormEvent,
 } from 'react'
+import { useImageUrl } from '../lib/useImageUrl'
 import {
   addContact,
   deleteMessage,
@@ -131,14 +132,13 @@ function toPerson(entry: DirectoryEntry | ChatPerson): Person {
  * than on the face, because the face clips its photo to a round crop.
  */
 function Avatar({ person, online }: { person: Person; online?: boolean }) {
+  const photo = useImageUrl(person.photoURL)
+
   return (
     <span className={DOCK_AVATAR} aria-hidden="true">
-      <span
-        className={DOCK_AVATAR_FACE}
-        style={person.photoURL ? undefined : { background: person.accent }}
-      >
-        {person.photoURL ? (
-          <img src={person.photoURL} alt="" referrerPolicy="no-referrer" />
+      <span className={DOCK_AVATAR_FACE} style={photo ? undefined : { background: person.accent }}>
+        {photo ? (
+          <img src={photo} alt="" referrerPolicy="no-referrer" />
         ) : (
           person.initials
         )}
