@@ -264,6 +264,15 @@ export const FILTER_CARD = 'flex cursor-pointer flex-col gap-10 px-18 pt-15 pb-1
  * a puzzle the trader has to solve every time.
  */
 export const FILTER_SHELL = 'relative'
+/**
+ * Applied to the filter card whose menu is open.
+ *
+ * Every card carries backdrop-blur, and a backdrop-filter establishes its own
+ * stacking context — so the panel's z-index only ordered it within its card,
+ * and the cards after it in the row painted straight over the top. Raising the
+ * card itself is what puts the menu above its neighbours.
+ */
+export const FILTER_SHELL_OPEN = 'z-50'
 export const FILTER_TRIGGER =
   'flex w-full cursor-pointer flex-col gap-10 px-18 pt-15 pb-16 text-left'
 export const FILTER_LABEL = 'text-[12.5px] font-medium text-fg-dim'
@@ -1489,9 +1498,13 @@ export const EDIT_CHIP_REMOVE =
  * left-aligned panel would hang off the edge of the page.
  */
 export const ACTION_MENU =
-  'absolute top-[calc(100%+6px)] right-0 z-40 flex min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
+  'absolute top-[calc(100%+6px)] right-0 z-40 flex max-w-[calc(100vw-32px)] min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)_backwards] ' +
   '[&>button]:rounded-[6px] [&>button]:px-11 [&>button]:py-9 [&>button]:text-left [&>button]:text-[13.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-100 ' +
   '[&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong [&>button[aria-current]]:bg-tint-2 [&>button[aria-current]]:font-medium [&>button[aria-current]]:text-fg-strong'
+
+/** For a menu whose trigger sits at the left of its row: anchored right, a
+ *  180px panel runs off the left edge of a phone. */
+export const ACTION_MENU_LEFT = 'right-auto left-0'
 
 /** The thumbnail slot before there is a thumbnail — a spinner in its place,
  *  so the tray keeps its shape rather than jumping when the image lands. */

@@ -24,6 +24,7 @@ import {
 } from '../components/Icons'
 import {
   ACTION_MENU,
+  ACTION_MENU_LEFT,
   CARD,
   CARD_HOVER,
   DATA_ERROR,
@@ -225,7 +226,7 @@ function RangeMenu({
       </button>
 
       {open && !picking && (
-        <div className={ACTION_MENU} role="menu">
+        <div className={`${ACTION_MENU} ${ACTION_MENU_LEFT}`} role="menu">
           {(Object.keys(RANGE_DAYS) as Preset[]).map((preset) => (
             <button
               key={preset}

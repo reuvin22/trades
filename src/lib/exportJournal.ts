@@ -133,10 +133,17 @@ export function downloadCsv(trades: StoredTrade[]): void {
 
   link.href = url
   link.download = `ragdex-journal-${FILE_STAMP.format(new Date())}.csv`
+  // Firefox and Android Chrome ignore a click on an element that is not in the
+  // document, so the link has to be attached before it is clicked.
+  link.style.display = 'none'
+  document.body.append(link)
   link.click()
+  link.remove()
 
-  // The blob stays alive until it is revoked, and a journal is not small.
-  URL.revokeObjectURL(url)
+  // Revoked on a later turn of the loop, not here: revoking in the same tick
+  // can pull the blob out from under a download that has not started yet,
+  // which is a save that silently produces nothing.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
 /* ------------------------------------------------------------------- PDF */
@@ -330,18 +337,29 @@ function documentHtml(trades: StoredTrade[], rangeLabel: string): string {
  * export nobody looks at until they need it.
  */
 export function printPdf(trades: StoredTrade[], rangeLabel: string): boolean {
-  const sheet = window.open('', '_blank', 'noopener,width=1100,height=800')
+  /*
+   * No `noopener` here, deliberately.
+   *
+   * window.open returns null whenever noopener is asked for — that is what the
+   * flag means — so the handle needed to write the document never arrived and
+   * this reported a blocked pop-up every single time. The window is filled
+   * with markup built here and navigates nowhere, so there is no third party
+   * to withhold the opener from.
+   */
+  const sheet = window.open('', '_blank', 'width=1100,height=800')
   if (!sheet) return false
 
   sheet.document.write(documentHtml(trades, rangeLabel))
   sheet.document.close()
 
-  // Give the new document a frame to lay out: printing an empty body is what
-  // happens if the dialogue opens first.
-  sheet.addEventListener('load', () => {
+  // document.close() can finish the load before a listener is attached, in
+  // which case the load event never arrives and the dialogue never opens.
+  const show = () => {
     sheet.focus()
     sheet.print()
-  })
+  }
+  if (sheet.document.readyState === 'complete') setTimeout(show, 80)
+  else sheet.addEventListener('load', show)
 
   return true
 }

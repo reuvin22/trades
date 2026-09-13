@@ -8,6 +8,7 @@ import {
   COMBO_SEARCH,
   FILTER_LABEL,
   FILTER_SHELL,
+  FILTER_SHELL_OPEN,
   FILTER_TRIGGER,
   SELECT_VALUE,
 } from './ui'
@@ -119,7 +120,9 @@ export function SearchableSelect({
   }
 
   return (
-    <div ref={wrapper} className={className ? `${FILTER_SHELL} ${className}` : 'relative'}>
+    <div ref={wrapper} className={`${className ? `${FILTER_SHELL} ${className}` : 'relative'} ${
+        open ? FILTER_SHELL_OPEN : ''
+      }`}>
       <button
         type="button"
         className={heading ? FILTER_TRIGGER : SELECT_VALUE}
