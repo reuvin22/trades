@@ -18,9 +18,18 @@ import {
 
 type AccountMenuProps = {
   user: AuthUser | null
+  /**
+   * The photo from the profile, which is the one the trader sets.
+   *
+   * Not read off `user`: that comes from the auth record, which holds
+   * whatever Google supplied at sign-in and does not change when someone
+   * uploads a new picture here. Falls back to it when the profile has
+   * none, so a Google account still shows a face on first load.
+   */
+  photoURL?: string
 }
 
-export function AccountMenu({ user }: AccountMenuProps) {
+export function AccountMenu({ user, photoURL }: AccountMenuProps) {
   const [open, setOpen] = useState(false)
   const wrapper = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -56,7 +65,7 @@ export function AccountMenu({ user }: AccountMenuProps) {
   const name = user?.displayName?.trim() || user?.email?.split('@')[0] || 'Trader'
   // A stored photo is a key into a private bucket, not a URL. Google
   // sign-in still hands us a real link, which passes through untouched.
-  const photo = useImageUrl(user?.photoURL)
+  const photo = useImageUrl(photoURL || user?.photoURL)
 
   return (
     <div className="relative" ref={wrapper}>

@@ -28,7 +28,7 @@ export type StoredTrade = {
   rationale: string
   stopLoss: number | null
   takeProfit: number | null
-  screenshot: string
+  screenshots: string[]
   netPl: number | null
   riskReward: number | null
   duration: string | null
@@ -91,6 +91,22 @@ function sessionsOf(wire: TradeWire): TradingSession[] {
   )
 }
 
+/**
+ * The charts on a trade, whichever shape the server sent.
+ *
+ * Same treatment as sessions above, for the same reason: a trade filed
+ * before charts could be plural holds one string under the old key.
+ */
+function screenshotsOf(wire: TradeWire): string[] {
+  const raw = Array.isArray(wire.screenshots)
+    ? wire.screenshots
+    : wire.screenshot
+      ? [wire.screenshot]
+      : []
+
+  return raw.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
+}
+
 function toStored(wire: TradeWire): StoredTrade {
   const entryAt = fromIso(wire.entry_at)
   const exitAt = fromIso(wire.exit_at)
@@ -110,7 +126,7 @@ function toStored(wire: TradeWire): StoredTrade {
     rationale: String(wire.rationale ?? ''),
     stopLoss: num(wire.stop_loss),
     takeProfit: num(wire.take_profit),
-    screenshot: String(wire.screenshot ?? ''),
+    screenshots: screenshotsOf(wire),
     netPl: num(wire.net_pl),
     riskReward: num(wire.risk_reward),
     duration: holdTimeOf(entryAt, exitAt),
@@ -148,7 +164,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     rationale: trade.rationale.trim(),
     stop_loss: toNumber(trade.stopLoss),
     take_profit: toNumber(trade.takeProfit),
-    screenshot: trade.screenshot.trim(),
+    screenshots: trade.screenshots,
     complied_entry: trade.compliedEntry,
     complied_exit: trade.compliedExit,
     complied_management: trade.compliedManagement,
@@ -231,7 +247,7 @@ export function toEntry(trade: StoredTrade): TradeEntry {
     rationale: trade.rationale,
     stopLoss: text(trade.stopLoss),
     takeProfit: text(trade.takeProfit),
-    screenshot: trade.screenshot,
+    screenshots: trade.screenshots,
     netPl: text(trade.netPl),
     compliedEntry: trade.compliedEntry as TradeEntry['compliedEntry'],
     compliedExit: trade.compliedExit as TradeEntry['compliedExit'],

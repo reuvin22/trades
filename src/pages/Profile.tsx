@@ -37,6 +37,7 @@ import {
   SAVE_ERROR,
   SAVE_NOTE,
   SECTION_TITLE,
+  SHOT_FILE,
   TAG_CLOUD,
   TAG_TOGGLE,
 } from '../components/ui'
@@ -44,6 +45,8 @@ import {
 type ProfileProps = {
   user: AuthUser | null
   profile: ProfileRecord | null
+  /** Refetch the profile: the header avatar reads the same record. */
+  onSaved: () => void
 }
 
 const TIMEZONES = [
@@ -92,7 +95,7 @@ function fromRecord(record: ProfileRecord): Form {
   }
 }
 
-export function Profile({ user, profile }: ProfileProps) {
+export function Profile({ user, profile, onSaved }: ProfileProps) {
   const [form, setForm] = useState<Form>(BLANK)
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -123,6 +126,7 @@ export function Profile({ user, profile }: ProfileProps) {
       await saveProfilePhoto(key)
 
       update('photoURL', key)
+      onSaved()
       toast.success('Photo updated', 'Your new picture is saved.')
     } catch (cause) {
       const message = readableApiError(cause)
@@ -179,6 +183,7 @@ export function Profile({ user, profile }: ProfileProps) {
         bio: form.bio.trim(),
       })
       setStatus('Profile saved.')
+      onSaved()
       toast.success('Profile saved', 'Your details are up to date.')
     } catch (cause) {
       const message = readableApiError(cause)
@@ -225,6 +230,7 @@ export function Profile({ user, profile }: ProfileProps) {
                 Profile photo
               </span>
               <input
+                className={SHOT_FILE}
                 type="file"
                 accept={ACCEPTED}
                 disabled={avatarBusy !== null}
@@ -240,7 +246,7 @@ export function Profile({ user, profile }: ProfileProps) {
                     ? 'Uploading…'
                     : avatarError !== ''
                       ? avatarError
-                      : 'Choose an image. It is shrunk before it is uploaded, and saved with the rest of the form.'}
+                      : 'Choose an image. It is shrunk, uploaded and saved straight away.'}
               </span>
             </label>
           </div>

@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
   EMOTIONS,
   EMPTY_TRADE,
+  MAX_SCREENSHOTS,
   MAX_SESSIONS,
   MISTAKE_TAGS,
   SESSIONS,
@@ -21,9 +22,8 @@ import { useToast } from '../lib/toast'
 import { Combobox } from './Combobox'
 import { ACCEPTED } from '../lib/chartImage'
 import { isHttpUrl, uploadImage } from '../lib/uploads'
-import { useImageUrl } from '../lib/useImageUrl'
 import { Select } from './Select'
-import { ArrowDownIcon, ArrowUpIcon, CloseIcon, SpinnerIcon } from './Icons'
+import { ArrowDownIcon, ArrowUpIcon, CloseIcon, ImageIcon, SpinnerIcon } from './Icons'
 import {
   ANSWER,
   COMPLIANCE,
@@ -50,9 +50,11 @@ import {
   PILL,
   PILL_IDLE,
   PILL_ACCENT,
-  SHOT_PREVIEW,
-  SHOT_PREVIEW_CLEAR,
-  SHOT_PREVIEW_IMAGE,
+  SHOT_DROP,
+  SHOT_FILE,
+  SHOT_LIST,
+  SHOT_NAME,
+  SHOT_ROW,
   TAG_CLOUD,
   TAG_TOGGLE,
   TOGGLE,
@@ -111,6 +113,21 @@ const COMPLIANCE_ROWS: { key: keyof TradeEntry; label: string }[] = [
   { key: 'compliedManagement', label: 'Management followed the plan' },
 ]
 
+/**
+ * What to call an attached chart.
+ *
+ * The filename while this dialog is open, since that is what the trader
+ * recognises. A link shows its own host and path. A key reopened for editing
+ * has neither — the filename never left the browser it was chosen in — so it
+ * falls back to the random part of the key, which at least tells two apart.
+ */
+function shotLabel(value: string, names: Record<string, string>): string {
+  if (names[value]) return names[value]
+  // The scheme carries no information here and costs a third of the width.
+  if (isHttpUrl(value)) return value.slice(value.indexOf('//') + 2)
+  return value.split('/').pop() ?? value
+}
+
 export function QuickAddTrade({
   open,
   onClose,
@@ -128,28 +145,60 @@ export function QuickAddTrade({
   const formId = useId()
 
   /*
-   * The screenshot field takes either a link or a file, and the stored value
-   * tells them apart on its own: an http(s) string is a link, anything else is
-   * a key in our own bucket. So the mode is derived from what is there rather
-   * than tracked as a second source of truth that could disagree with it.
+   * Charts take either a link or a file, and a stored value tells the two
+   * apart on its own: an http(s) string is a link, anything else is a key in
+   * our own bucket. So nothing tracks which is which — a second source of
+   * truth here is a second thing that can disagree with the list.
    */
-  const isLink = isHttpUrl(trade.screenshot)
   const [shotMode, setShotMode] = useState<'upload' | 'link'>('upload')
   const [shotBusy, setShotBusy] = useState<'preparing' | 'uploading' | null>(null)
   const [shotError, setShotError] = useState('')
 
-  const linkValue = isLink ? trade.screenshot : ''
-  const storedShot = trade.screenshot !== '' && !isLink
-  // Only in upload mode: a pasted link is shown as the text the trader typed,
-  // and a remote chart is not ours to render inside the form.
-  const shotPreview = useImageUrl(shotMode === 'upload' && storedShot ? trade.screenshot : null)
+  /*
+   * What each attached chart is called, keyed by what is stored.
+   *
+   * The key a file lands under is random, so the filename only exists here,
+   * in the browser, between choosing it and saving. Kept as a lookup rather
+   * than a parallel array so it cannot fall out of step with the list, and
+   * so a trade reopened for editing simply finds nothing and falls back.
+   */
+  const [shotNames, setShotNames] = useState<Record<string, string>>({})
 
-  async function attachShot(file: File | null) {
-    if (!file) return
+  const shots = trade.screenshots
+  const shotsFull = shots.length >= MAX_SCREENSHOTS
+
+  /**
+   * Take everything the trader picked, up to the cap.
+   *
+   * Uploaded one at a time rather than all at once: shrinking runs on the
+   * main thread, and four canvases racing each other makes the dialog stop
+   * responding — the same total wait, spent worse.
+   */
+  async function attachShots(files: FileList | null) {
+    if (!files || files.length === 0) return
     setShotError('')
 
+    const room = MAX_SCREENSHOTS - trade.screenshots.length
+    const chosen = Array.from(files).slice(0, room)
+
+    if (chosen.length < files.length) {
+      toast.info(
+        'Not all of those were attached',
+        `A trade holds ${MAX_SCREENSHOTS} charts, so the first ${chosen.length} were kept.`,
+      )
+    }
+
     try {
-      update('screenshot', await uploadImage(file, 'charts', setShotBusy))
+      for (const file of chosen) {
+        const key = await uploadImage(file, 'charts', setShotBusy)
+        setShotNames((current) => ({ ...current, [key]: file.name }))
+        setTrade((current) => ({
+          ...current,
+          screenshots: current.screenshots.includes(key)
+            ? current.screenshots
+            : [...current.screenshots, key],
+        }))
+      }
     } catch (cause) {
       const message = readableApiError(cause)
       setShotError(message)
@@ -160,6 +209,25 @@ export function QuickAddTrade({
     } finally {
       setShotBusy(null)
     }
+  }
+
+  /** A pasted link, added to the list the same way an upload is. */
+  function attachLink(value: string) {
+    const link = value.trim()
+    if (!isHttpUrl(link) || trade.screenshots.includes(link)) return
+
+    setShotError('')
+    setTrade((current) => ({
+      ...current,
+      screenshots: [...current.screenshots, link].slice(0, MAX_SCREENSHOTS),
+    }))
+  }
+
+  function removeShot(value: string) {
+    setTrade((current) => ({
+      ...current,
+      screenshots: current.screenshots.filter((entry) => entry !== value),
+    }))
   }
 
   // <dialog> gives us the focus trap, backdrop and Esc handling for free.
@@ -442,8 +510,8 @@ export function QuickAddTrade({
                 <span className={FIELD_HINT}>{sessionHint(trade.sessions)}</span>
               </div>
 
-              <label className={`${FIELD} col-span-2`}>
-                <span className={FIELD_LABEL}>Chart screenshot</span>
+              <div className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Chart screenshots</span>
 
                 <div className={TOGGLE_GROUP}>
                   {(['upload', 'link'] as const).map((mode) => (
@@ -462,22 +530,56 @@ export function QuickAddTrade({
                 {shotMode === 'link' ? (
                   <input
                     type="url"
-                    value={linkValue}
-                    onChange={(event) => update('screenshot', event.target.value)}
+                    aria-label="Link to a chart"
+                    disabled={shotsFull}
                     placeholder="https://www.tradingview.com/x/…"
+                    // Committed on blur or Enter rather than on every
+                    // keystroke: a half-typed URL is not a chart, and adding
+                    // one per character would fill the list with fragments.
+                    onBlur={(event) => {
+                      attachLink(event.target.value)
+                      event.target.value = ''
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter') return
+                      event.preventDefault()
+                      attachLink(event.currentTarget.value)
+                      event.currentTarget.value = ''
+                    }}
                   />
                 ) : (
-                  <span className={INPUT_PAIR}>
+                  <span className={SHOT_FILE}>
                     <input
                       type="file"
+                      aria-label="Chart images"
                       accept={ACCEPTED}
-                      disabled={shotBusy !== null}
+                      multiple
+                      disabled={shotBusy !== null || shotsFull}
                       onChange={(event) => {
-                        void attachShot(event.target.files?.[0] ?? null)
+                        void attachShots(event.target.files)
                         event.target.value = ''
                       }}
                     />
                   </span>
+                )}
+
+                {shots.length > 0 && (
+                  <ul className={SHOT_LIST}>
+                    {shots.map((value) => (
+                      <li key={value} className={SHOT_ROW}>
+                        <ImageIcon />
+                        <span className={SHOT_NAME}>{shotLabel(value, shotNames)}</span>
+                        <button
+                          type="button"
+                          className={SHOT_DROP}
+                          aria-label={`Remove ${shotLabel(value, shotNames)}`}
+                          onClick={() => removeShot(value)}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
 
                 <span className={FIELD_HINT}>
@@ -487,27 +589,13 @@ export function QuickAddTrade({
                       ? 'Uploading…'
                       : shotError !== ''
                         ? shotError
-                        : storedShot
-                          ? 'Image stored with this trade.'
+                        : shotsFull
+                          ? `That is the limit of ${MAX_SCREENSHOTS}. Remove one to add another.`
                           : shotMode === 'upload'
-                            ? 'Up to 10MB. Shrunk before it is sent.'
-                            : 'A link to the chart, wherever it lives.'}
+                            ? 'Choose one or more. Up to 10MB each, shrunk before they are sent.'
+                            : 'Paste a link and press Enter.'}
                 </span>
-              </label>
-
-              {shotPreview ? (
-                <div className={`${SHOT_PREVIEW} col-span-2`}>
-                  <img className={SHOT_PREVIEW_IMAGE} src={shotPreview} alt="Chart screenshot" />
-                  <button
-                    type="button"
-                    className={SHOT_PREVIEW_CLEAR}
-                    aria-label="Remove screenshot"
-                    onClick={() => update('screenshot', '')}
-                  >
-                    <CloseIcon />
-                  </button>
-                </div>
-              ) : null}
+              </div>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Stop-loss</span>

@@ -17,7 +17,7 @@ export type TradeEntry = {
   rationale: string
   stopLoss: string
   takeProfit: string
-  screenshot: string
+  screenshots: string[]
 
   netPl: string
   compliedEntry: Compliance
@@ -50,6 +50,9 @@ export type TradingSession = 'asia' | 'london' | 'newyork'
  * a third choice is a misclick rather than a longer trade.
  */
 export const MAX_SESSIONS = 2
+
+/** Mirrors MAX_SCREENSHOTS on the API, which refuses anything past it. */
+export const MAX_SCREENSHOTS = 6
 
 export const SESSIONS: { value: TradingSession; label: string }[] = [
   { value: 'asia', label: 'Asia' },
@@ -122,7 +125,7 @@ export const EMPTY_TRADE: TradeEntry = {
   rationale: '',
   stopLoss: '',
   takeProfit: '',
-  screenshot: '',
+  screenshots: [],
   netPl: '',
   compliedEntry: '',
   compliedExit: '',

@@ -83,7 +83,7 @@ function TraderView({
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'profile':
-      return <Profile user={user} profile={profile} />
+      return <Profile user={user} profile={profile} onSaved={reloadProfile} />
     case 'billing':
       return <Billing user={user} profile={profile} />
     case 'settings':
@@ -200,6 +200,7 @@ function App() {
           onToggleTheme={toggle}
           navOpen={nav.open}
           onToggleNav={nav.toggle}
+          photoURL={profile?.photoURL}
         />
         <main className={CONTENT} key={route}>
           <TraderView

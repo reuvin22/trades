@@ -1316,19 +1316,29 @@ export const CHART_THUMB =
 export const CHART_TRAY_NAME = 'min-w-0 flex-1 text-[12px] text-fg-dim'
 export const CHART_TRAY_NOTE = 'block truncate text-[10.5px] text-fg-muted'
 /**
- * The uploaded screenshot, shown back under the file input.
+ * Charts attached to a trade, listed by name.
  *
- * A file input reports only a filename, which says nothing about whether the
- * right chart went up — or whether it went up at all. The picture is the
- * receipt, so it is only rendered once the key resolves to something the
- * browser actually loaded.
+ * A name rather than a thumbnail: six charts rendered at any useful size
+ * push the rest of the form off screen, and the trader picked these files
+ * seconds ago — what they need is confirmation that each one arrived, which
+ * a filename gives and a postage-stamp crop of a candle chart doesn't.
  */
-export const SHOT_PREVIEW =
-  'relative mt-8 overflow-hidden rounded-sm border border-line bg-tint-1'
-export const SHOT_PREVIEW_IMAGE = 'block max-h-200 w-full object-contain'
-export const SHOT_PREVIEW_CLEAR =
-  'absolute top-8 right-8 grid size-26 place-items-center rounded-full border border-line bg-panel text-fg-muted shadow-[var(--shadow-card)] transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+export const SHOT_LIST = "mt-8 flex flex-col gap-6"
+export const SHOT_ROW =
+  'flex items-center gap-9 rounded-sm border border-line bg-tint-1 px-10 py-8 text-[12.5px] text-fg-dim [&_svg]:flex-none [&_svg]:text-fg-muted'
+/** Breaks anywhere, because a storage key has no spaces to break at. */
+export const SHOT_NAME = "min-w-0 flex-1 truncate"
+export const SHOT_DROP =
+  'grid size-24 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
 
+/**
+ * The file input itself.
+ *
+ * Bounded, because the control sizes itself to its button and filename and
+ * a bare one stretches its border the full width of the form — a long empty
+ * box that reads as a text field the trader is meant to type into.
+ */
+export const SHOT_FILE = "block w-full max-w-420"
 export const CHART_DROP =
   'grid size-34 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'
 

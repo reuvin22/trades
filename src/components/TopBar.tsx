@@ -9,6 +9,8 @@ type TopBarProps = {
   onToggleTheme: () => void
   navOpen: boolean
   onToggleNav: () => void
+  /** The profile photo, so the avatar changes as soon as one is saved. */
+  photoURL?: string
   /** Desktop only: the sidebar narrowed to a rail. */
 }
 
@@ -84,6 +86,7 @@ export function TopBar({
   onToggleTheme,
   navOpen,
   onToggleNav,
+  photoURL,
 }: TopBarProps) {
   const { user } = useAuth()
 
@@ -99,7 +102,7 @@ export function TopBar({
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </span>
         <span data-tour="account" className="contents">
-          <AccountMenu user={user} />
+          <AccountMenu user={user} photoURL={photoURL} />
         </span>
       </div>
     </header>
