@@ -1364,3 +1364,40 @@ export const SELECT_VALUE =
 export const COMBO_SEARCH =
   'sticky top-0 z-10 -m-4 mb-4 flex items-center gap-7 border-b border-line bg-panel-solid px-11 py-9 text-fg-muted ' +
   '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-none [&_input]:bg-transparent [&_input]:text-[13px] [&_input]:text-fg [&_input]:outline-none [&_input::placeholder]:text-fg-muted'
+
+/* ------------------------------------------------- trade detail & confirm */
+
+export const DETAIL_HEAD = 'flex min-w-0 flex-wrap items-center gap-10'
+export const DETAIL_TICKER =
+  'text-[21px] font-semibold tracking-[-0.02em] text-fg-strong'
+export const DETAIL_PL = 'text-[17px] font-semibold tabular-nums'
+
+/*
+ * Label above value, in as many columns as the width allows. A definition list
+ * rather than a table: this is one record's fields, not rows of records, and a
+ * table would promise a structure the content does not have.
+ */
+export const DETAIL_GRID =
+  'm-0 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-x-20 gap-y-16 px-26 py-22 ' +
+  '[&_dt]:text-[11px] [&_dt]:font-semibold [&_dt]:tracking-[0.1em] [&_dt]:text-fg-muted [&_dt]:uppercase ' +
+  '[&_dd]:mt-4 [&_dd]:mb-0 [&_dd]:ml-0 [&_dd]:text-[13.5px] [&_dd]:break-words [&_dd]:text-fg'
+
+/*
+ * The confirmation replaces the footer rather than stacking a second dialog on
+ * the first. A modal over a modal buries the thing being confirmed, which is
+ * the one thing worth reading before answering.
+ */
+export const CONFIRM_CARD =
+  'border-t border-line bg-[color-mix(in_srgb,var(--color-red)_7%,transparent)] px-26 pt-20 pb-22'
+export const CONFIRM_TITLE = 'text-[14.5px] font-semibold text-fg-strong'
+export const CONFIRM_BODY = 'mt-6 text-[12.5px] leading-[1.55] text-fg-dim'
+export const CONFIRM_FOOT = 'mt-18 flex flex-wrap items-center justify-end gap-10'
+
+/** Destructive. Paired with PILL, like the other two states. */
+export const PILL_DANGER =
+  'border-transparent bg-red text-white shadow-[0_6px_18px_-8px_var(--color-red)] hover:bg-[color-mix(in_srgb,var(--color-red)_85%,black)] hover:text-white'
+
+/** A journal row that opens. Focus is visible because a row has no outline of
+ *  its own once it becomes a control. */
+export const ROW_CLICKABLE =
+  'cursor-pointer outline-none focus-visible:bg-tint-2 focus-visible:[&>td:first-child]:before:scale-y-100'

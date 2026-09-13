@@ -187,8 +187,60 @@ export async function saveTrade(trade: TradeEntry): Promise<StoredTrade> {
   return toStored(created)
 }
 
+/**
+ * Edits an existing entry.
+ *
+ * PATCH rather than PUT, and the whole form is sent: the API treats an absent
+ * field as "leave alone", so a field the trader cleared has to arrive as an
+ * explicit null rather than be omitted — which is exactly what toWire already
+ * produces.
+ */
+export async function updateTrade(id: string, trade: TradeEntry): Promise<StoredTrade> {
+  const saved = await apiFetch<TradeWire>(`/api/v1/trades/${id}`, {
+    method: 'PATCH',
+    body: toWire(trade),
+  })
+  return toStored(saved)
+}
+
 export function deleteTrade(id: string): Promise<null> {
   return apiFetch<null>(`/api/v1/trades/${id}`, { method: 'DELETE' })
+}
+
+/**
+ * A stored entry back into the shape the form edits.
+ *
+ * The form holds every number as text, because a half-typed value is not a
+ * number yet and forcing it through one loses what was typed. Null becomes an
+ * empty string for the same reason: the input needs something to show.
+ */
+export function toEntry(trade: StoredTrade): TradeEntry {
+  const text = (value: number | null) => (value === null ? '' : String(value))
+
+  return {
+    ticker: trade.ticker,
+    direction: trade.direction,
+    size: text(trade.size),
+    sizeUnit: (trade.sizeUnit || 'Shares') as TradeEntry['sizeUnit'],
+    entryPrice: text(trade.entryPrice),
+    exitPrice: text(trade.exitPrice),
+    entryAt: trade.entryAt,
+    exitAt: trade.exitAt,
+    setup: trade.setup,
+    sessions: trade.sessions,
+    rationale: trade.rationale,
+    stopLoss: text(trade.stopLoss),
+    takeProfit: text(trade.takeProfit),
+    screenshot: trade.screenshot,
+    netPl: text(trade.netPl),
+    compliedEntry: trade.compliedEntry as TradeEntry['compliedEntry'],
+    compliedExit: trade.compliedExit as TradeEntry['compliedExit'],
+    compliedManagement: trade.compliedManagement as TradeEntry['compliedManagement'],
+    emotionBefore: trade.emotionBefore,
+    emotionDuring: trade.emotionDuring,
+    mistakes: trade.mistakes,
+    notes: trade.notes,
+  }
 }
 
 export type TradesState = {

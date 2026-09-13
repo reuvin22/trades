@@ -61,6 +61,14 @@ type QuickAddTradeProps = {
   open: boolean
   onClose: () => void
   onSave: (trade: TradeEntry) => void | Promise<void>
+  /**
+   * An existing entry to edit. Absent means a new one.
+   *
+   * The same form serves both: the fields, the validation and the derived
+   * figures are identical, and a second copy of a form this size is a second
+   * place for them to drift apart.
+   */
+  initial?: TradeEntry | null
 }
 
 /**
@@ -88,7 +96,13 @@ const COMPLIANCE_ROWS: { key: keyof TradeEntry; label: string }[] = [
   { key: 'compliedManagement', label: 'Management followed the plan' },
 ]
 
-export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
+export function QuickAddTrade({
+  open,
+  onClose,
+  onSave,
+  initial = null,
+}: QuickAddTradeProps) {
+  const editing = initial !== null
   const dialog = useRef<HTMLDialogElement>(null)
   const [trade, setTrade] = useState<TradeEntry>(EMPTY_TRADE)
   const [showGaps, setShowGaps] = useState(false)
@@ -103,10 +117,17 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
     if (!node) return
 
     if (open && !node.open) {
+      // Seeded on open rather than on every render: the trade being edited is
+      // a new object each time the journal reloads, and re-seeding mid-edit
+      // would throw away whatever had been typed.
+      setTrade(initial ?? EMPTY_TRADE)
+      setShowGaps(false)
+      setSaveError('')
       node.showModal()
     } else if (!open && node.open) {
       node.close()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   function update<K extends keyof TradeEntry>(key: K, value: TradeEntry[K]) {
@@ -162,9 +183,10 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
     try {
       await onSave(trade)
       // The dialog is about to close, so the confirmation has to live outside it.
+      const name = trade.ticker.trim() || 'Your trade'
       toast.success(
-        'Trade logged',
-        `${trade.ticker.trim() || 'Your trade'} is in the journal.`,
+        editing ? 'Trade updated' : 'Trade logged',
+        editing ? `${name} has been changed.` : `${name} is in the journal.`,
       )
       reset()
       onClose()
@@ -198,11 +220,12 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
         <header className={MODAL_HEAD}>
           <div>
             <h2 className={MODAL_TITLE} id={`${formId}-title`}>
-              Log a Trade
+              {editing ? 'Edit Trade' : 'Log a Trade'}
             </h2>
             <p className={MODAL_SUB}>
-              Execution, context and mindset — the three things that make a journal
-              worth reviewing.
+              {editing
+                ? 'Correcting the record is part of keeping one. The figures are recomputed on save.'
+                : 'Execution, context and mindset — the three things that make a journal worth reviewing.'}
             </p>
           </div>
           <button type="button" className={MODAL_CLOSE} onClick={onClose} aria-label="Close">
@@ -541,7 +564,7 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
             </button>
             <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={saving}>
               {saving && <SpinnerIcon className="animate-spin" size={14} />}
-              {saving ? 'Saving…' : 'Save Trade'}
+              {saving ? 'Saving…' : editing ? 'Save Changes' : 'Save Trade'}
             </button>
           </div>
         </footer>

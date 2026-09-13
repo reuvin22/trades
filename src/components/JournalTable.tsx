@@ -15,6 +15,7 @@ import {
   RESULT_LOSS,
   RESULT_WIN,
   ROW,
+  ROW_CLICKABLE,
   ROWS_STAGGER,
   SIDE_BADGE,
   SIDE_LONG,
@@ -32,6 +33,8 @@ type JournalTableProps = {
   trades: StoredTrade[]
   loading: boolean
   live: boolean
+  /** Opens one entry. Absent for the sample rows, which have nothing behind them. */
+  onSelect?: (trade: StoredTrade) => void
 }
 
 const dayFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
@@ -61,10 +64,13 @@ function toRow(trade: StoredTrade): JournalTrade {
   }
 }
 
-export function JournalTable({ trades, loading, live }: JournalTableProps) {
+export function JournalTable({ trades, loading, live, onSelect }: JournalTableProps) {
   const [page, setPage] = useState(1)
 
   const rows: JournalTrade[] = live ? trades.map(toRow) : JOURNAL_TRADES
+  // Keyed lookup rather than a parallel array: paging slices the rows, and an
+  // index into the page would stop matching the journal as soon as it did.
+  const byId = new Map(trades.map((entry) => [entry.id, entry]))
   const total = live ? rows.length : 42
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
   const current = Math.min(page, pageCount)
@@ -89,7 +95,30 @@ export function JournalTable({ trades, loading, live }: JournalTableProps) {
           </thead>
           <tbody className={ROWS_STAGGER}>
             {visible.map((trade) => (
-              <tr key={trade.id} className={ROW}>
+              <tr
+                key={trade.id}
+                className={`${ROW} ${onSelect && byId.has(trade.id) ? ROW_CLICKABLE : ''}`}
+                // A row is not a control, so it gets the parts of one it
+                // actually needs: a role, a tab stop, and Enter/Space.
+                role={onSelect && byId.has(trade.id) ? 'button' : undefined}
+                tabIndex={onSelect && byId.has(trade.id) ? 0 : undefined}
+                aria-label={
+                  onSelect && byId.has(trade.id)
+                    ? `Open ${trade.ticker} ${trade.side} from ${trade.date} ${trade.time}`
+                    : undefined
+                }
+                onClick={() => {
+                  const found = byId.get(trade.id)
+                  if (found && onSelect) onSelect(found)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  const found = byId.get(trade.id)
+                  if (!found || !onSelect) return
+                  event.preventDefault()
+                  onSelect(found)
+                }}
+              >
                 <td className={`${TD} px-18 py-16`}>
                   <span className="inline-flex items-center gap-9">
                     <span className={`size-7 flex-none rounded-full ${trade.side === 'Long' ? 'bg-green shadow-[0_0_8px_color-mix(in_srgb,var(--color-green)_70%,transparent)]' : 'bg-red shadow-[0_0_8px_color-mix(in_srgb,var(--color-red)_70%,transparent)]'}`} />

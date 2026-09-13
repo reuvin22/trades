@@ -45,6 +45,7 @@ type TraderViewProps = {
   trades: StoredTrade[]
   loading: boolean
   error: string | null
+  reload: () => void
 }
 
 function TraderView({
@@ -55,12 +56,21 @@ function TraderView({
   trades,
   loading,
   error,
+  reload,
 }: TraderViewProps) {
   switch (route) {
     case 'dashboard':
       return <Dashboard trades={trades} uid={uid} profile={profile} />
     case 'journal':
-      return <TradeJournal uid={uid} trades={trades} loading={loading} error={error} />
+      return (
+        <TradeJournal
+          uid={uid}
+          trades={trades}
+          loading={loading}
+          error={error}
+          reload={reload}
+        />
+      )
     case 'analytics':
       return <Analytics trades={trades} />
     case 'calendar':
@@ -195,6 +205,7 @@ function App() {
             trades={trades}
             loading={loading}
             error={error}
+            reload={reload}
           />
         </main>
       </div>

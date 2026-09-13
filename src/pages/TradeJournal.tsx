@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { JournalTable } from '../components/JournalTable'
+import { QuickAddTrade } from '../components/QuickAddTrade'
+import { TradeActions } from '../components/TradeActions'
+import { deleteTrade, toEntry, updateTrade } from '../lib/trades'
+import { readableApiError } from '../lib/api'
+import { useToast } from '../lib/toast'
 import { SearchableSelect } from '../components/SearchableSelect'
 import type { StoredTrade } from '../lib/trades'
 import { SESSION_LABELS } from '../data/tradeForm'
@@ -113,14 +118,28 @@ type TradeJournalProps = {
   trades: StoredTrade[]
   loading: boolean
   error: string | null
+  reload: () => void
 }
 
-export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps) {
+export function TradeJournal({
+  uid,
+  trades,
+  loading,
+  error,
+  reload,
+}: TradeJournalProps) {
   // A signed-in session is the only precondition now: the API is the single
   // thing this page talks to, and it either answers or reports why.
   const live = uid !== null
 
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+
+  // The entry a row opened, and the one being edited. Two pieces of state
+  // rather than one mode flag: editing opens on top of the detail view, and
+  // cancelling the edit should land back on it rather than on nothing.
+  const [selected, setSelected] = useState<StoredTrade | null>(null)
+  const [editing, setEditing] = useState<StoredTrade | null>(null)
+  const toast = useToast()
 
   // The filters were decorative until now — the table was handed every trade
   // whatever they said.
@@ -207,7 +226,44 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
         </article>
       </div>
 
-      <JournalTable trades={shown} loading={loading} live={live} />
+      <JournalTable
+        trades={shown}
+        loading={loading}
+        live={live}
+        onSelect={setSelected}
+      />
+
+      <TradeActions
+        trade={selected}
+        onClose={() => setSelected(null)}
+        onEdit={(trade) => {
+          setSelected(null)
+          setEditing(trade)
+        }}
+        onDelete={async (trade) => {
+          try {
+            await deleteTrade(trade.id)
+            setSelected(null)
+            reload()
+            toast.success('Trade deleted', `${trade.ticker || 'The entry'} is gone from your journal.`)
+          } catch (cause) {
+            const message = readableApiError(cause)
+            toast.error('Could not delete the trade', message)
+          }
+        }}
+      />
+
+      <QuickAddTrade
+        open={editing !== null}
+        initial={editing ? toEntry(editing) : null}
+        onClose={() => setEditing(null)}
+        onSave={async (entry) => {
+          if (!editing) return
+          await updateTrade(editing.id, entry)
+          setEditing(null)
+          reload()
+        }}
+      />
     </>
   )
 }
