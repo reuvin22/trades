@@ -1435,3 +1435,13 @@ export const PILL_DANGER =
  *  its own once it becomes a control. */
 export const ROW_CLICKABLE =
   'cursor-pointer outline-none focus-visible:bg-tint-2 focus-visible:[&>td:first-child]:before:scale-y-100'
+
+/**
+ * A chosen item with its own remove button — a list you edit, not a set you
+ * toggle. TAG_TOGGLE next door is for a fixed set of options; this is for a
+ * list whose contents the person owns.
+ */
+export const EDIT_CHIP =
+  'inline-flex items-center gap-7 rounded-full border border-line-strong bg-tint-2 py-6 pr-6 pl-13 text-[12.5px] text-fg'
+export const EDIT_CHIP_REMOVE =
+  'grid size-18 place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-red'

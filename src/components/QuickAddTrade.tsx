@@ -69,6 +69,15 @@ type QuickAddTradeProps = {
    * place for them to drift apart.
    */
   initial?: TradeEntry | null
+  /**
+   * The setups this trader named in Settings.
+   *
+   * Their list, not ours. Empty falls back to the stock names so a new
+   * account is not asked to invent a vocabulary before logging anything, and
+   * the field stays a Combobox either way — typing a setup that is on no list
+   * is still allowed, because that is how a new one gets named.
+   */
+  setups?: string[]
 }
 
 /**
@@ -101,6 +110,7 @@ export function QuickAddTrade({
   onClose,
   onSave,
   initial = null,
+  setups = [],
 }: QuickAddTradeProps) {
   const editing = initial !== null
   const dialog = useRef<HTMLDialogElement>(null)
@@ -360,7 +370,7 @@ export function QuickAddTrade({
                 <Combobox
                   value={trade.setup}
                   onChange={(setup) => update('setup', setup)}
-                  options={SETUPS}
+                  options={setups.length > 0 ? setups : SETUPS}
                   placeholder="Pick one or name your own"
                 />
               </label>

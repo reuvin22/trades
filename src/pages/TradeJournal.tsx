@@ -8,7 +8,8 @@ import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import { SearchableSelect } from '../components/SearchableSelect'
 import type { StoredTrade } from '../lib/trades'
-import { SESSION_LABELS } from '../data/tradeForm'
+import { SESSIONS, SESSION_LABELS } from '../data/tradeForm'
+import type { Profile as ProfileRecord } from '../lib/profile'
 import {
   ChartBarsIcon,
   DateRangeIcon,
@@ -63,32 +64,42 @@ const NO_FILTERS: Filters = {
 /**
  * One card per filter.
  *
- * The options come from the journal rather than from a list in the source.
- * They used to be three invented names — VWAP Bounce, Bull Flag, Overextended
- * — which belonged to no trade anyone had logged, so the filter offered
- * choices that could only ever return nothing.
+ * The options used to be three invented names — VWAP Bounce, Bull Flag,
+ * Overextended — which belonged to no trade anyone had logged, so the filter
+ * offered choices that could only ever return nothing. They now come from the
+ * trader: their setups from Settings, and the three sessions.
  */
 function FilterSelects({
   trades,
+  setups: configured,
   filters,
   onChange,
 }: {
   trades: StoredTrade[]
+  /** The setups named in Settings. The list this filter is meant to reflect. */
+  setups: string[]
   filters: Filters
   onChange: (next: Filters) => void
 }) {
   const setups = useMemo(() => {
-    const named = trades.map((trade) => trade.setup.trim()).filter(Boolean)
-    return [ANY_SETUP, ...[...new Set(named)].sort((a, b) => a.localeCompare(b))]
-  }, [trades])
+    // Settings first, in the order they chose. Then anything logged against a
+    // setup no longer on that list — removing a setup should not make the
+    // trades taken with it unfindable.
+    const known = new Set(configured.map((name) => name.toLowerCase()))
+    const orphaned = trades
+      .map((trade) => trade.setup.trim())
+      .filter((name) => name !== '' && !known.has(name.toLowerCase()))
 
-  const sessions = useMemo(() => {
-    // flatMap, because a trade held across a handover carries two. Both should
-    // offer themselves as filters, or the overlap becomes unfindable.
-    const used = trades.flatMap((trade) => trade.sessions)
-    const names = [...new Set(used)].map((key) => SESSION_LABELS[key] ?? key)
-    return [ANY_SESSION, ...names.sort((a, b) => a.localeCompare(b))]
-  }, [trades])
+    return [
+      ANY_SETUP,
+      ...configured,
+      ...[...new Set(orphaned)].sort((a, b) => a.localeCompare(b)),
+    ]
+  }, [configured, trades])
+
+  // All three, always. A session with no trades in it yet is still a question
+  // worth asking — and the answer, "none", is information.
+  const sessions = [ANY_SESSION, ...SESSIONS.map((entry) => entry.label)]
 
   const fields: { label: string; key: keyof Filters; options: string[] }[] = [
     { label: 'Setup', key: 'setup', options: setups },
@@ -119,10 +130,13 @@ type TradeJournalProps = {
   loading: boolean
   error: string | null
   reload: () => void
+  /** For the setups this trader has named in Settings. */
+  profile: ProfileRecord | null
 }
 
 export function TradeJournal({
   uid,
+  profile,
   trades,
   loading,
   error,
@@ -180,7 +194,12 @@ export function TradeJournal({
       </div>
 
       <div data-tour="filters" className={`${FILTER_ROW} ${ROW_STAGGER}`}>
-        <FilterSelects trades={trades} filters={filters} onChange={setFilters} />
+        <FilterSelects
+          trades={trades}
+          setups={profile?.strategies ?? []}
+          filters={filters}
+          onChange={setFilters}
+        />
 
         <div className={`${CARD} ${CARD_HOVER} ${FILTER_CARD} cursor-default gap-8`}>
           <span className={FILTER_LABEL}>Total Volume</span>
@@ -256,6 +275,7 @@ export function TradeJournal({
       <QuickAddTrade
         open={editing !== null}
         initial={editing ? toEntry(editing) : null}
+        setups={profile?.strategies ?? []}
         onClose={() => setEditing(null)}
         onSave={async (entry) => {
           if (!editing) return

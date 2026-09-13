@@ -15,19 +15,23 @@ import {
   type TradingSetup,
 } from '../lib/profile'
 import { Select } from '../components/Select'
-import { SpinnerIcon } from '../components/Icons'
+import { CloseIcon, SpinnerIcon } from '../components/Icons'
 import {
   CARD,
+  EDIT_CHIP,
+  EDIT_CHIP_REMOVE,
   FIELD,
   FIELD_GRID,
   FORM_SECTION,
   FIELD_HINT,
   FIELD_LABEL,
+  INPUT_PAIR,
   PAGE_HEAD,
   PAGE_SUB,
   PAGE_TITLE,
   PILL,
   PILL_ACCENT,
+  PILL_IDLE,
   SAVE_ERROR,
   SAVE_BAR,
   SECTION_TITLE,
@@ -118,6 +122,7 @@ export function Settings({ profile }: SettingsProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(profile))
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [newStrategy, setNewStrategy] = useState('')
   const toast = useToast()
 
   function update<K extends keyof Draft>(key: K, value: Draft[K]) {
@@ -143,14 +148,39 @@ export function Settings({ profile }: SettingsProps) {
     }))
   }
 
-  function toggleStrategy(name: string) {
+  /**
+   * Add a setup to the list, from the suggestions or typed in.
+   *
+   * Case-insensitive on the way in: "Breakout" and "breakout" are the same
+   * setup to a person, and letting both onto the list would split their trades
+   * into two buckets that each look half as significant as the truth.
+   */
+  function addStrategy(name: string) {
+    const trimmed = name.trim()
+    if (trimmed === '') return
+
+    setDraft((current) =>
+      current.strategies.some(
+        (entry) => entry.toLowerCase() === trimmed.toLowerCase(),
+      )
+        ? current
+        : { ...current, strategies: [...current.strategies, trimmed] },
+    )
+    setNewStrategy('')
+  }
+
+  function removeStrategy(name: string) {
     setDraft((current) => ({
       ...current,
-      strategies: current.strategies.includes(name)
-        ? current.strategies.filter((entry) => entry !== name)
-        : [...current.strategies, name],
+      strategies: current.strategies.filter((entry) => entry !== name),
     }))
   }
+
+  // The stock list, minus anything already chosen.
+  const suggestions = COMMON_STRATEGIES.filter(
+    (name) =>
+      !draft.strategies.some((entry) => entry.toLowerCase() === name.toLowerCase()),
+  )
 
   const capital = toNumber(draft.accountSize)
   const risk = toNumber(draft.riskPerTradePct)
@@ -337,22 +367,72 @@ export function Settings({ profile }: SettingsProps) {
         <div className={FIELD_GRID}>
           <div className={`${FIELD} col-span-full`}>
             <span className={FIELD_LABEL}>Setups you trade</span>
-            <div className={TAG_CLOUD}>
-              {COMMON_STRATEGIES.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  className={TAG_TOGGLE}
-                  aria-pressed={draft.strategies.includes(name)}
-                  onClick={() => toggleStrategy(name)}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
+
+            {draft.strategies.length > 0 && (
+              <div className={TAG_CLOUD}>
+                {draft.strategies.map((name) => (
+                  <span key={name} className={EDIT_CHIP}>
+                    {name}
+                    <button
+                      type="button"
+                      className={EDIT_CHIP_REMOVE}
+                      onClick={() => removeStrategy(name)}
+                      aria-label={`Remove ${name}`}
+                    >
+                      <CloseIcon size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Suggestions, not the list itself. Whatever is already on the
+                list drops out of here — offering it again reads as a second,
+                unselected copy of a setup they have already chosen. */}
+            {suggestions.length > 0 && (
+              <div className={TAG_CLOUD}>
+                {suggestions.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={TAG_TOGGLE}
+                    onClick={() => addStrategy(name)}
+                  >
+                    + {name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <span className={INPUT_PAIR}>
+              <input
+                value={newStrategy}
+                onChange={(event) => setNewStrategy(event.target.value)}
+                // Enter adds rather than submitting the whole form, which is
+                // the reflex after typing into a field like this.
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return
+                  event.preventDefault()
+                  addStrategy(newStrategy)
+                }}
+                placeholder="Add your own — ICT silver bullet, judas swing…"
+                aria-label="Add a setup"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className={`${PILL} ${PILL_IDLE}`}
+                onClick={() => addStrategy(newStrategy)}
+                disabled={newStrategy.trim() === ''}
+              >
+                Add
+              </button>
+            </span>
+
             <span className={FIELD_HINT}>
-              What you mean to trade. The journal records what you actually traded,
-              and the gap between the two is worth a conversation.
+              What you mean to trade. These are the setups the journal offers you
+              when logging a trade, and the ones it filters by — so the list should
+              be yours, not ours.
             </span>
           </div>
 

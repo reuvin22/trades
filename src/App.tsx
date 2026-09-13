@@ -69,6 +69,7 @@ function TraderView({
           loading={loading}
           error={error}
           reload={reload}
+          profile={profile}
         />
       )
     case 'analytics':
@@ -223,6 +224,7 @@ function App() {
 
       <QuickAddTrade
         open={logging}
+        setups={profile?.strategies ?? []}
         onClose={() => setLogging(false)}
         onSave={async (trade) => {
           if (!user) return
