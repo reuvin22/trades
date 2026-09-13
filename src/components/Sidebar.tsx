@@ -124,7 +124,21 @@ export function NavButton({
       <Icon size={size} className={`flex-none ${active ? 'opacity-100' : 'opacity-85'}`} />
       {/* Hidden rather than dropped: the button keeps its accessible name, so
           the rail reads the same to a screen reader as the full sidebar. */}
-      <span className={collapsed ? 'shell:sr-only' : ''}>{label}</span>
+      {/*
+        The slide. max-width rather than width so the label keeps its natural
+        size when open, and opacity so it goes before the space does. Both are
+        confined to a button that is a fixed 44px on the rail, so the page
+        behind the sidebar never re-lays-out — which is what made transitioning
+        the shell's own columns unusable.
+      */}
+      <span
+        className={
+          'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ' +
+          (collapsed ? 'shell:max-w-0 shell:opacity-0 max-w-200' : 'max-w-200')
+        }
+      >
+        {label}
+      </span>
     </button>
   )
 }

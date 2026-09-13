@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { DayDetail, type DaySelection } from '../components/DayDetail'
 import { dayKey, tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
+import type { Profile as ProfileRecord } from '../lib/profile'
+import { MISTAKE_TAGS } from '../data/tradeForm'
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -41,6 +43,8 @@ import {
 
 type CalendarProps = {
   trades: StoredTrade[]
+  /** Carries the setups this trader configured in Settings. */
+  profile: ProfileRecord | null
 }
 
 /*
@@ -68,7 +72,6 @@ function money(value: number): string {
 type Filters = {
   side: string
   mistake: string
-  status: string
   setup: string
   emotion: string
 }
@@ -76,7 +79,6 @@ type Filters = {
 const EMPTY_FILTERS: Filters = {
   side: 'all',
   mistake: 'all',
-  status: 'all',
   setup: 'all',
   emotion: 'all',
 }
@@ -123,7 +125,7 @@ function Dropdown({
   )
 }
 
-export function Calendar({ trades }: CalendarProps) {
+export function Calendar({ trades, profile }: CalendarProps) {
   const [anchor, setAnchor] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -155,16 +157,16 @@ export function Calendar({ trades }: CalendarProps) {
         { value: 'Long', label: 'Long' },
         { value: 'Short', label: 'Short' },
       ],
-      status: [
-        { value: 'all', label: 'All Statuses' },
-        { value: 'closed', label: 'Closed' },
-        { value: 'open', label: 'Open' },
-      ],
-      mistake: asOptions(mistakes, 'All Mistakes'),
-      setup: asOptions(setups, 'All Setups'),
+      // The full vocabulary, not just what has been used. A filter that only
+      // lists tags already in the journal cannot answer "have I ever done
+      // this?", which is the question a mistake filter exists for.
+      mistake: asOptions(new Set(MISTAKE_TAGS), 'All Mistakes'),
+      // The setups this trader configured in Settings, plus anything already
+      // logged under another name so old entries stay reachable.
+      setup: asOptions(new Set([...(profile?.strategies ?? []), ...setups]), 'All Setups'),
       emotion: asOptions(emotions, 'All Emotions'),
     }
-  }, [trades])
+  }, [trades, profile?.strategies])
 
   const filtered = useMemo(
     () =>
@@ -177,8 +179,6 @@ export function Calendar({ trades }: CalendarProps) {
         if (filters.mistake !== 'all' && !(trade.mistakes ?? []).includes(filters.mistake)) {
           return false
         }
-        if (filters.status === 'closed' && trade.exitPrice === null) return false
-        if (filters.status === 'open' && trade.exitPrice !== null) return false
         return true
       }),
     [trades, filters],
@@ -278,12 +278,6 @@ export function Calendar({ trades }: CalendarProps) {
             value={filters.mistake}
             options={options.mistake}
             onChange={(mistake) => setFilters((f) => ({ ...f, mistake }))}
-          />
-          <Dropdown
-            label="Status"
-            value={filters.status}
-            options={options.status}
-            onChange={(status) => setFilters((f) => ({ ...f, status }))}
           />
           <Dropdown
             label="Setup"

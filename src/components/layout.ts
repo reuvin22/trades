@@ -37,13 +37,15 @@ export const APP_SHELL =
  * for the length of the animation.
  */
 /*
- * The rail width changes instantly, on purpose.
+ * The width itself changes in one step, and the slide is done elsewhere.
  *
- * grid-template-columns is a layout property: transitioning it makes the
- * browser re-lay-out the whole page every frame — the chart SVG, the tables,
- * every card — and measuring it gave frames of 83ms and 100ms against a 16.7ms
- * budget. There is no GPU path for that, so the animation could only ever be
- * the janky version of an instant change.
+ * grid-template-columns is a layout property: every frame of a transition on
+ * it re-lays-out the whole page behind the sidebar. Measured at 200ms it spent
+ * 7 of 45 frames over budget with a 100ms worst case; shortening it to 160ms
+ * made it worse, not better (18 of 45, worst 133ms) — the per-frame cost is
+ * fixed, so a shorter duration only concentrates it. There is no GPU path for
+ * layout, so the motion lives in Sidebar instead, on transform and opacity,
+ * which compositing can actually animate.
  */
 export function appShell(collapsed: boolean): string {
   return (

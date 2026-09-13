@@ -80,7 +80,7 @@ function TraderView({
     case 'analytics':
       return <Analytics trades={trades} profile={profile} />
     case 'calendar':
-      return <Calendar trades={trades} />
+      return <Calendar trades={trades} profile={profile} />
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'profile':
