@@ -1643,3 +1643,33 @@ export const LANDING_CLOSER =
 
 export const LANDING_FOOT =
   'flex flex-wrap items-center gap-12 border-t border-line py-26 text-[12px] text-fg-muted'
+
+/* ------------------------------------------------------- landing pricing */
+
+export const PRICE_GRID =
+  'mt-38 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-18'
+
+export const PRICE_CARD =
+  'relative flex flex-col rounded-lg border border-line bg-panel p-28 backdrop-blur-[14px] ' +
+  'transition-[border-color,transform] duration-300 ease-out hover:-translate-y-3 hover:border-line-strong'
+/** The recommended plan carries the accent, so the eye lands on it first. */
+export const PRICE_CARD_FEATURED =
+  'border-transparent shadow-[var(--shadow-pop)] ' +
+  'bg-[linear-gradient(160deg,color-mix(in_srgb,var(--color-accent)_16%,var(--color-panel-solid)),var(--color-panel-solid))] ' +
+  'ring-1 ring-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]'
+
+export const PRICE_FLAG =
+  'absolute -top-10 right-24 rounded-full bg-accent px-12 py-4 text-[10.5px] font-semibold tracking-[0.08em] text-accent-ink uppercase'
+
+export const PRICE_NAME = 'text-[15px] font-semibold text-fg-strong'
+export const PRICE_BLURB = 'mt-6 text-[13px] leading-[1.55] text-fg-muted'
+export const PRICE_AMOUNT =
+  'mt-20 flex items-baseline gap-6 text-[40px] leading-none font-semibold tracking-[-0.03em] text-fg-strong tabular-nums'
+export const PRICE_PER = 'text-[13px] font-normal tracking-normal text-fg-muted'
+
+export const PRICE_FEATURES =
+  'mt-22 flex flex-1 list-none flex-col gap-11 p-0 text-[13.5px] leading-[1.5] text-fg-dim ' +
+  '[&>li]:flex [&>li]:items-start [&>li]:gap-9 [&>li>svg]:mt-2 [&>li>svg]:flex-none [&>li>svg]:text-accent-strong'
+
+export const PRICE_ACTION = 'mt-26 w-full justify-center'
+export const PRICE_NOTE = 'mt-20 text-center text-[12px] text-fg-muted'

@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { LoginBackdrop } from '../components/LoginBackdrop'
 import { ThemeToggle } from '../components/TopBar'
 import { navigate } from '../lib/useHashRoute'
+import { PLANS } from '../data/plans'
 import type { Theme } from '../lib/useTheme'
 import {
   AnalyticsIcon,
   ArrowUpRightIcon,
+  CheckIcon,
   CoachIcon,
   JournalIcon,
   ShieldIcon,
@@ -39,6 +41,17 @@ import {
   LANDING_TITLE,
   LANDING_TITLE_ACCENT,
   LANDING_TRUST,
+  PRICE_ACTION,
+  PRICE_AMOUNT,
+  PRICE_BLURB,
+  PRICE_CARD,
+  PRICE_CARD_FEATURED,
+  PRICE_FEATURES,
+  PRICE_FLAG,
+  PRICE_GRID,
+  PRICE_NAME,
+  PRICE_NOTE,
+  PRICE_PER,
   PILL,
   PILL_ACCENT,
   PILL_IDLE,
@@ -137,7 +150,7 @@ const STATS = [
 
 type LandingProps = {
   theme: Theme
-  onToggleTheme: () => void
+  onToggleTheme: (origin?: { x: number; y: number }) => void
 }
 
 /**
@@ -161,6 +174,9 @@ export function Landing({ theme, onToggleTheme }: LandingProps) {
 
           <div className={LANDING_NAV_ACTIONS}>
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+            <a href="#pricing" className={`${PILL} ${PILL_IDLE}`}>
+              Pricing
+            </a>
             <button
               type="button"
               className={`${PILL} ${PILL_IDLE}`}
@@ -250,6 +266,59 @@ export function Landing({ theme, onToggleTheme }: LandingProps) {
               ))}
             </div>
           </Reveal>
+        </section>
+
+        <section className={LANDING_SECTION} id="pricing">
+          <Reveal>
+            <p className={LANDING_KICKER}>Pricing</p>
+            <h2 className={LANDING_HEADING}>Two plans, priced per seat</h2>
+            <p className={LANDING_SUB}>
+              Both include the whole journal and the whole analytics suite. The
+              difference is whether you are reviewing only your own trading.
+            </p>
+          </Reveal>
+
+          <div className={PRICE_GRID}>
+            {PLANS.map((plan, index) => (
+              <Reveal key={plan.id} delay={index * 110}>
+                <article
+                  className={`${PRICE_CARD} ${index === 0 ? PRICE_CARD_FEATURED : ''}`}
+                >
+                  {index === 0 && <span className={PRICE_FLAG}>Most popular</span>}
+
+                  <h3 className={PRICE_NAME}>{plan.name}</h3>
+                  <p className={PRICE_BLURB}>{plan.blurb}</p>
+
+                  <p className={PRICE_AMOUNT}>
+                    ${plan.monthly}
+                    <span className={PRICE_PER}>/month</span>
+                  </p>
+
+                  <ul className={PRICE_FEATURES}>
+                    {plan.features.map((feature) => (
+                      <li key={feature}>
+                        <CheckIcon size={14} />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    type="button"
+                    className={`${PILL} ${index === 0 ? PILL_ACCENT : PILL_IDLE} ${PRICE_ACTION}`}
+                    onClick={() => navigate('login')}
+                  >
+                    Start with {plan.name}
+                  </button>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+
+          <p className={PRICE_NOTE}>
+            No card is taken up front, and nothing is charged while the billing
+            processor is still being connected.
+          </p>
         </section>
 
         <section className={LANDING_SECTION}>

@@ -6,7 +6,7 @@ import { NotificationMenu } from './NotificationMenu'
 
 type TopBarProps = {
   theme: Theme
-  onToggleTheme: () => void
+  onToggleTheme: (origin?: { x: number; y: number }) => void
   navOpen: boolean
   onToggleNav: () => void
   /** The profile photo, so the avatar changes as soon as one is saved. */
@@ -114,13 +114,18 @@ export function ThemeToggle({
   onToggle,
 }: {
   theme: Theme
-  onToggle: () => void
+  onToggle: (origin?: { x: number; y: number }) => void
 }) {
   return (
     <button
       type="button"
       className={ICON_BUTTON}
-      onClick={onToggle}
+      // The sweep starts at the switch itself, so the change reads as coming
+      // from the thing that was pressed.
+      onClick={(event) => {
+        const box = event.currentTarget.getBoundingClientRect()
+        onToggle({ x: box.left + box.width / 2, y: box.top + box.height / 2 })
+      }}
       aria-pressed={theme === 'light'}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >

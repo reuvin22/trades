@@ -5,7 +5,7 @@ import { MonitorIcon, UserGlyphIcon } from '../Icons'
 
 type AdminTopBarProps = {
   theme: Theme
-  onToggleTheme: () => void
+  onToggleTheme: (origin?: { x: number; y: number }) => void
   navOpen: boolean
   onToggleNav: () => void
 }

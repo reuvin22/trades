@@ -12,7 +12,7 @@ import { Placeholder } from '../Placeholder'
 type AdminShellProps = {
   route: string
   theme: Theme
-  onToggleTheme: () => void
+  onToggleTheme: (origin?: { x: number; y: number }) => void
 }
 
 export function AdminShell({ route, theme, onToggleTheme }: AdminShellProps) {

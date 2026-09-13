@@ -52,7 +52,7 @@ import {
 
 type LoginProps = {
   theme: Theme
-  onToggleTheme: () => void
+  onToggleTheme: (origin?: { x: number; y: number }) => void
   onPreview: () => void
   /** Called once a session exists, so the app can leave the login screen. */
   onSignedIn: () => void

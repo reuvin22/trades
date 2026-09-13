@@ -594,3 +594,48 @@
     background-clip: content-box;
   }
 }
+
+/* ------------------------------------------------- theme change animation */
+
+/*
+ * The new theme sweeps out from the switch that was pressed.
+ *
+ * A view transition snapshots the whole page, so the cards, borders, chips and
+ * rules all cross over together — the body's own background transition only
+ * ever covered the background, which is why the change used to look like two
+ * separate events.
+ *
+ * Only the incoming snapshot animates. The default is a cross-fade of both,
+ * which with two full-page images reads as a wash rather than a reveal, so
+ * both are pinned and the new one is clipped in instead.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 0;
+}
+
+::view-transition-new(root) {
+  z-index: 1;
+  animation: theme-sweep 0.52s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+@keyframes theme-sweep {
+  from {
+    clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-r, 150vmax) at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}
+
+/* Asked for less motion: swap the frames with no sweep at all. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
