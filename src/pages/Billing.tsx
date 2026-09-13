@@ -70,7 +70,7 @@ const PLANS: Plan[] = [
     blurb: 'For a trader working their own capital, on their own.',
     features: [
       'Unlimited journal entries and history',
-      'Analytics, and the habit costing you the most money',
+      'Analytics, and a regular read on how you actually trade',
       'The AI coach, on your own trades',
       'CSV export and broker import',
     ],

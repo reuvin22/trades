@@ -1,6 +1,7 @@
 import { currency } from '../data/dashboard'
 import type { DerivedStats } from '../lib/stats'
 import type { LeakState } from '../lib/insight'
+import type { LeakCadence } from '../lib/profile'
 import { AlertIcon, BoltIcon, RefreshIcon, SparkleIcon } from './Icons'
 import {
   CARD,
@@ -19,6 +20,21 @@ import {
 } from './ui'
 
 const NOTE = 'mt-12 flex items-center gap-6 text-[10.5px] text-fg-muted'
+
+/**
+ * The stretch of trading this reading covers.
+ *
+ * The card is about behaviour, and behaviour only means something over a
+ * span — "you size up after a loss" is a claim about a run of trades, not
+ * about one. Naming the cadence is what tells the reader which span they are
+ * looking at, and stops a monthly reading being taken for today's verdict.
+ */
+function overWhat(cadence: LeakCadence | null): string {
+  if (cadence === 'weekly') return 'Re-read every week'
+  if (cadence === 'monthly') return 'Re-read every month'
+  if (cadence === 'daily') return 'Re-read at the end of each day'
+  return 'Read from your logged trades'
+}
 
 /** How long ago the analysis ran, in the words someone would use out loud. */
 function whenRead(at: Date): string {
@@ -68,7 +84,7 @@ export function BestSetupCard({ stats }: { stats: DerivedStats }) {
 }
 
 /** Falls back to a local heuristic whenever the model has nothing to say. */
-function HeuristicHabit({ stats }: { stats: DerivedStats }) {
+function HeuristicBehaviour({ stats }: { stats: DerivedStats }) {
   const leaking = stats.fatigueAfterHour !== null && stats.fatigueExpectancy < 0
 
   return (
@@ -89,7 +105,7 @@ function HeuristicHabit({ stats }: { stats: DerivedStats }) {
   )
 }
 
-export function CostliestHabitCard({
+export function TradingBehaviourCard({
   stats,
   leak,
 }: {
@@ -109,7 +125,7 @@ export function CostliestHabitCard({
       <div className="flex items-center justify-between gap-12">
         <p className={INSIGHT_KICKER}>
           <AlertIcon className="text-red" />
-          What&apos;s costing you
+          How you&apos;re trading
         </p>
 
         {leak.result && (
@@ -141,7 +157,7 @@ export function CostliestHabitCard({
           <p className={INSIGHT_BODY}>
             Log {leak.needed - leak.have} more{' '}
             {leak.needed - leak.have === 1 ? 'trade' : 'trades'} and the coach can
-            tell you which habit is costing you the most.
+            start reading the pattern in how you trade.
           </p>
         </>
       )}
@@ -179,9 +195,8 @@ export function CostliestHabitCard({
             {/* When, not just that. A monthly reading being read as a reaction
                 to this morning's session is the misunderstanding worth
                 spending a line to avoid. */}
-            {leak.computedAt
-              ? `Read your journal ${whenRead(leak.computedAt)}`
-              : 'Written from your logged trades'}
+            {overWhat(leak.cadence)}
+            {leak.computedAt ? ` · last read ${whenRead(leak.computedAt)}` : ''}
           </p>
         </>
       )}
@@ -194,7 +209,7 @@ export function CostliestHabitCard({
               ? 'You fade in the afternoon'
               : 'Nothing obvious yet'}
           </h3>
-          <HeuristicHabit stats={stats} />
+          <HeuristicBehaviour stats={stats} />
         </>
       )}
     </article>

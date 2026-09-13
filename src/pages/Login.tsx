@@ -71,8 +71,8 @@ const HIGHLIGHTS = [
   },
   {
     icon: BoltIcon,
-    title: 'Find what costs you most',
-    body: 'The coach prices your worst habit — chasing losses, sizing up, trading tired.',
+    title: 'Reads how you trade',
+    body: 'The coach names the habit behind your results — chasing losses, sizing up, trading tired.',
   },
   {
     icon: ShieldIcon,

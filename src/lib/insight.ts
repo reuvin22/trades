@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, apiFetch, readableApiError } from './api'
+import type { LeakCadence } from './profile'
 
 export type LeakResult = {
   title: string
@@ -23,6 +24,9 @@ export type LeakState = {
    *  monthly reading is not mistaken for a reaction to this morning. */
   computedAt: Date | null
   nextAt: Date | null
+  /** How often it is re-read. What the card names as the timeline the
+   *  behaviour was read over. */
+  cadence: LeakCadence | null
   refresh: () => void
 }
 
@@ -38,6 +42,7 @@ type LeakWire = {
   needed: number | null
   computed_at: string | null
   next_at: string | null
+  cadence: LeakCadence | null
 }
 
 /**
@@ -58,6 +63,7 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     unavailable: boolean
     computedAt: Date | null
     nextAt: Date | null
+    cadence: LeakCadence | null
   }>({
     key: null,
     result: null,
@@ -67,6 +73,7 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     unavailable: false,
     computedAt: null,
     nextAt: null,
+    cadence: null,
   })
 
   const [nonce, setNonce] = useState(0)
@@ -99,6 +106,7 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
           unavailable: false,
           computedAt: body.computed_at ? new Date(body.computed_at) : null,
           nextAt: body.next_at ? new Date(body.next_at) : null,
+          cadence: body.cadence,
         }),
       )
       .catch((cause: unknown) => {
@@ -129,6 +137,7 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     unavailable: fresh && state.unavailable,
     computedAt: fresh ? state.computedAt : null,
     nextAt: fresh ? state.nextAt : null,
+    cadence: fresh ? state.cadence : null,
     refresh: useCallback(() => setNonce((current) => current + 1), []),
   }
 }

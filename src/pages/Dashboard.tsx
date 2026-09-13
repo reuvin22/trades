@@ -1,5 +1,5 @@
 import { EquityChart } from '../components/EquityChart'
-import { BestSetupCard, CostliestHabitCard } from '../components/InsightCards'
+import { BestSetupCard, TradingBehaviourCard } from '../components/InsightCards'
 import { PerformanceCalendar } from '../components/PerformanceCalendar'
 import { RecentActivity } from '../components/RecentActivity'
 import { StatCards } from '../components/StatCards'
@@ -26,7 +26,7 @@ export function Dashboard({ trades, uid }: DashboardProps) {
 
         <div data-tour="insights" className={`flex flex-col gap-18 max-[1280px]:grid max-[1280px]:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] ${ROW_STAGGER}`}>
           <BestSetupCard stats={stats} />
-          <CostliestHabitCard stats={stats} leak={leak} />
+          <TradingBehaviourCard stats={stats} leak={leak} />
           <PerformanceCalendar dailyPl={stats.dailyPl} />
         </div>
       </div>
