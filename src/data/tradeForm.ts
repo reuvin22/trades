@@ -13,7 +13,7 @@ export type TradeEntry = {
   exitAt: string
 
   setup: string
-  session: TradingSession
+  sessions: TradingSession[]
   rationale: string
   stopLoss: string
   takeProfit: string
@@ -31,32 +31,39 @@ export type TradeEntry = {
 }
 
 /**
- * Which session the trade was taken in.
+ * Which session or sessions the trade was taken in.
  *
- * The empty string is a real answer, not a missing one: a trader who does not
- * know says so, and the server works it out from the entry time rather than
- * leaving a hole in the statistics. Stored lowercase — it is an identifier,
- * and SESSIONS carries the label.
+ * A list, not one value, because the real sessions overlap: Asia runs into
+ * London and London into New York, and a trade held across a handover was
+ * genuinely taken in both. Forcing it into one bucket meant the other bucket
+ * quietly looked better than it was.
+ *
+ * An empty list is a real answer, not a missing one — a trader who does not
+ * know says so by choosing nothing, and the server works it out from the entry
+ * time rather than leaving a hole in the statistics. Stored lowercase: these
+ * are identifiers, and SESSIONS carries the label.
  */
-export type TradingSession = 'asia' | 'london' | 'newyork' | ''
+export type TradingSession = 'asia' | 'london' | 'newyork'
+
+/**
+ * Two, because the overlaps come in pairs. Asia and New York share no hour, so
+ * a third choice is a misclick rather than a longer trade.
+ */
+export const MAX_SESSIONS = 2
 
 export const SESSIONS: { value: TradingSession; label: string }[] = [
   { value: 'asia', label: 'Asia' },
   { value: 'london', label: 'London' },
   { value: 'newyork', label: 'New York' },
-  { value: '', label: 'No idea' },
 ]
 
 /** Stored value to display name, for anywhere that reads a session back. */
 export const SESSION_LABELS: Record<string, string> = Object.fromEntries(
-  SESSIONS.filter((entry) => entry.value !== '').map((entry) => [
-    entry.value,
-    entry.label,
-  ]),
+  SESSIONS.map((entry) => [entry.value, entry.label]),
 )
 
 /** Shown under the picker so the choice is informed rather than a guess. */
-export const SESSION_HOURS: Record<Exclude<TradingSession, ''>, string> = {
+export const SESSION_HOURS: Record<TradingSession, string> = {
   asia: 'Roughly 21:00-07:00 UTC — Sydney and Tokyo.',
   london: 'Roughly 07:00-12:00 UTC.',
   newyork: 'Roughly 12:00-21:00 UTC.',
@@ -111,7 +118,7 @@ export const EMPTY_TRADE: TradeEntry = {
   entryAt: '',
   exitAt: '',
   setup: '',
-  session: '',
+  sessions: [],
   rationale: '',
   stopLoss: '',
   takeProfit: '',

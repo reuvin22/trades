@@ -365,6 +365,30 @@ export const TOGGLE_LONG =
 export const TOGGLE_SHORT =
   'text-red border-[color-mix(in_srgb,var(--color-red)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_15%,transparent)]'
 
+/**
+ * A toggle whose selected state is the generic accent — for a choice that
+ * carries no colour of its own, the way Long and Short do.
+ *
+ * Separate from TOGGLE rather than folded into it. Direction depends on TOGGLE
+ * having *no* selected style, so that TOGGLE_LONG and TOGGLE_SHORT can supply
+ * green and red; putting an `aria-pressed:` background on the shared base would
+ * paint those two accent as well.
+ *
+ * Selected state rides on `aria-pressed` for the same reason TAG_TOGGLE does:
+ * it is the attribute the button already has to set for screen readers, so the
+ * styling cannot drift out of step with what is announced — and a variant is
+ * generated after the base utility, so it reliably beats `bg-tint-1` instead
+ * of winning or losing on stylesheet order.
+ */
+export const TOGGLE_CHOICE =
+  TOGGLE +
+  ' hover:border-line-strong hover:text-fg-strong' +
+  ' aria-pressed:border-transparent aria-pressed:bg-accent aria-pressed:font-medium' +
+  ' aria-pressed:text-accent-ink' +
+  ' aria-pressed:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_22%,transparent)]' +
+  ' aria-pressed:hover:bg-accent-strong aria-pressed:hover:text-accent-ink' +
+  ' disabled:cursor-not-allowed disabled:opacity-45'
+
 export const COMPLIANCE = 'flex flex-col overflow-hidden rounded-sm border border-line'
 export const COMPLIANCE_ROW =
   'flex items-center justify-between gap-16 bg-tint-1 px-14 py-10 text-[12.5px] text-fg-dim [&+&]:border-t [&+&]:border-line max-[760px]:flex-col max-[760px]:items-start max-[760px]:gap-8'

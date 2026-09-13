@@ -23,7 +23,7 @@ export type StoredTrade = {
   entryAt: string
   exitAt: string
   setup: string
-  session: TradingSession
+  sessions: TradingSession[]
   rationale: string
   stopLoss: number | null
   takeProfit: number | null
@@ -79,7 +79,7 @@ function toStored(wire: TradeWire): StoredTrade {
     entryAt,
     exitAt,
     setup: String(wire.setup ?? ''),
-    session: (wire.session ?? '') as TradingSession,
+    sessions: sessionsOf(wire),
     rationale: String(wire.rationale ?? ''),
     stopLoss: num(wire.stop_loss),
     takeProfit: num(wire.take_profit),
@@ -117,7 +117,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     entry_at: toIso(trade.entryAt),
     exit_at: toIso(trade.exitAt),
     setup: trade.setup.trim(),
-    session: trade.session,
+    sessions: trade.sessions,
     rationale: trade.rationale.trim(),
     stop_loss: toNumber(trade.stopLoss),
     take_profit: toNumber(trade.takeProfit),

@@ -181,14 +181,22 @@ export function Sidebar({
             <h1
               className={
                 'font-semibold tracking-[-0.02em] text-fg-strong ' +
-                // On the rail there is no room for the word, so the first
-                // letter stands in for it — still a link home, still RagDex.
-                (collapsed ? 'shell:text-[24px] text-[30px]' : 'text-[30px]')
+                // On the rail there is no room for the word, so a short mark
+                // stands in for it — still a link home, still RagDex. 20px,
+                // not 24: three letters have to clear 52px of usable rail
+                // (76px column less its px-12), and the focus ring needs room
+                // inside that too.
+                (collapsed ? 'shell:text-[20px] text-[30px]' : 'text-[30px]')
               }
             >
               <span className={collapsed ? 'shell:hidden' : ''}>RagDex</span>
-              <span className={collapsed ? 'hidden shell:inline' : 'hidden'} aria-hidden="true">
-                R
+              <span
+                className={
+                  (collapsed ? 'hidden shell:inline' : 'hidden') + ' tracking-[-0.04em]'
+                }
+                aria-hidden="true"
+              >
+                RDX
               </span>
               <span className={collapsed ? 'shell:sr-only' : 'hidden'}>RagDex</span>
             </h1>
@@ -201,26 +209,38 @@ export function Sidebar({
               {accountLabel}
             </p>
           </a>
-
-          {/* The control for the rail's width now lives on the rail. It is
-              shell-only because below that breakpoint the sidebar is a drawer
-              and there is nothing to collapse. */}
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-controls="primary-nav"
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            className={
-              'hidden shell:grid size-30 flex-none place-items-center rounded-sm text-fg-muted ' +
-              'transition-[color,background-color,transform] duration-150 hover:bg-tint-2 hover:text-fg-strong ' +
-              (collapsed ? 'rotate-180' : 'ml-auto')
-            }
-          >
-            <CollapseIcon />
-          </button>
         </div>
+
+        {/* The control for the rail's width rides the panel's right border
+            instead of sitting under the wordmark.
+
+            It has to. The rail is a 76px column with px-12 on it, so 52px of
+            usable width — a three-letter mark and a 30px button cannot share
+            that row, and stacking them is what put the button underneath RDX.
+            On the border it belongs to neither, and the panel is `sticky`, so
+            it is already the containing block this resolves against.
+
+            shell-only, as before: below that breakpoint the sidebar is a
+            drawer with overflow-y-auto, which would clip anything hanging off
+            its edge — and there is nothing to collapse there anyway. */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-controls="primary-nav"
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          className={
+            'absolute top-1/2 -right-14 z-10 hidden size-28 -translate-y-1/2 shell:grid ' +
+            'place-items-center rounded-full border border-line text-fg-muted ' +
+            'bg-[var(--color-sidebar-mid)] shadow-[var(--shadow-pop)] ' +
+            'transition-[color,background-color,transform] duration-150 ' +
+            'hover:bg-tint-2 hover:text-fg-strong ' +
+            (collapsed ? 'rotate-180' : '')
+          }
+        >
+          <CollapseIcon />
+        </button>
 
         <DrawerClose onClose={onClose} />
 
