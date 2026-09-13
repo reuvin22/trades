@@ -376,7 +376,7 @@ export function Settings({ profile }: SettingsProps) {
           </label>
 
           <label className={`${FIELD} col-span-2`}>
-            <span className={FIELD_LABEL}>Read what&apos;s working over</span>
+            <span className={FIELD_LABEL}>Read what&apos;s working</span>
             <Select
               value={draft.edgeWindow}
               onChange={(event) => update('edgeWindow', event.target.value as Period)}
@@ -394,8 +394,8 @@ export function Settings({ profile }: SettingsProps) {
             </Select>
             <span className={FIELD_HINT}>
               {EDGE_WINDOWS.find((entry) => entry.value === draft.edgeWindow)?.blurb}{' '}
-              Worked out in the browser as you look, so this one is a window
-              rather than a schedule.
+              Worked out in the browser as you look, so this is the stretch it
+              ranks over rather than a schedule.
             </span>
           </label>
 

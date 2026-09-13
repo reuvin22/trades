@@ -118,20 +118,25 @@ export type LeakCadence = Period
 /** How far back the "what is working" card reads. A window, not a schedule:
  *  that card is worked out in the browser the moment it renders. */
 export const EDGE_WINDOWS: { value: Period; label: string; blurb: string }[] = [
+  // Worded exactly like LEAK_CADENCES above, so the two settings read as the
+  // same three choices. The blurb carries the difference: this one is the
+  // stretch of trading being ranked, not a schedule.
   {
     value: 'daily',
-    label: 'Today only',
-    blurb: 'Just today. Thin unless you trade a lot in a session.',
+    label: 'End of each day',
+    blurb: 'Ranks your setups over today alone. Thin unless you trade a lot in a session.',
   },
   {
     value: 'weekly',
-    label: 'The last week',
-    blurb: 'Recent enough to act on, long enough to mean something.',
+    label: 'Every week',
+    blurb:
+      'Ranks your setups over the last week — recent enough to act on, long enough to mean something.',
   },
   {
     value: 'monthly',
-    label: 'The last month',
-    blurb: 'Enough trades per setup for the ranking to be worth reading.',
+    label: 'Every month',
+    blurb:
+      'Ranks your setups over the last month. Enough trades per setup for the ranking to be worth reading.',
   },
 ]
 
