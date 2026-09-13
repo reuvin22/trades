@@ -238,8 +238,21 @@ export const CHART_EMPTY = 'px-10 py-46 text-center text-[13px] text-fg-muted'
 
 /* ---------------------------------------------------------------- journal */
 
+/**
+ * The filter row sits above whatever follows it, because its dropdowns do.
+ *
+ * The lift has to be here rather than on the panel. CARD carries
+ * `backdrop-blur`, and a backdrop-filter creates a stacking context — so a
+ * panel inside a card is sealed into that card's context and its own z-index
+ * counts for nothing outside it. However high the panel goes, the card as a
+ * whole still paints in DOM order, which puts the summary cards below it on
+ * top of any open dropdown.
+ *
+ * Raising the row is what actually moves those panels forward, and it fixes
+ * all three filters at once rather than each one separately.
+ */
 export const FILTER_ROW =
-  'grid grid-cols-4 gap-14 max-[1100px]:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]'
+  'relative z-30 grid grid-cols-4 gap-14 max-[1100px]:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]'
 export const FILTER_CARD = 'flex cursor-pointer flex-col gap-10 px-18 pt-15 pb-16'
 export const FILTER_LABEL = 'text-[12.5px] font-medium text-fg-dim'
 export const FILTER_FIGURE = 'text-[14.5px] font-medium tabular-nums'
