@@ -149,30 +149,7 @@ export function downloadCsv(trades: StoredTrade[]): void {
 /* ------------------------------------------------------------------- PDF */
 
 /** Theme tokens lifted off the live page, so the document matches the app. */
-function palette(): Record<string, string> {
-  const computed = getComputedStyle(document.documentElement)
-  const read = (name: string, fallback: string) =>
-    computed.getPropertyValue(name).trim() || fallback
 
-  return {
-    ink: read('--color-fg-strong', '#11131a'),
-    body: read('--color-fg', '#2a2d38'),
-    muted: read('--color-fg-muted', '#767a89'),
-    line: read('--color-line', '#e2e4ec'),
-    accent: read('--color-accent', '#4b6dff'),
-    green: read('--color-green', '#18794e'),
-    red: read('--color-red', '#c4314b'),
-    panel: read('--color-panel-solid', '#ffffff'),
-  }
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 type Totals = {
   count: number
@@ -200,133 +177,7 @@ function totalsOf(trades: StoredTrade[]): Totals {
   }
 }
 
-function summaryCard(label: string, value: string, tone = ''): string {
-  return `<div class="stat"><p class="stat-label">${label}</p>
-    <p class="stat-value ${tone}">${value}</p></div>`
-}
 
-function documentHtml(trades: StoredTrade[], rangeLabel: string): string {
-  const c = palette()
-  const totals = totalsOf(trades)
-  const dark = document.documentElement.dataset.theme === 'dark'
-
-  const rows = trades
-    .map((trade) => {
-      const pl = trade.netPl
-      const tone = pl === null ? '' : pl >= 0 ? 'pos' : 'neg'
-
-      return `<tr>
-        <td>${escapeHtml(when(trade))}</td>
-        <td class="strong">${escapeHtml(trade.ticker || '—')}</td>
-        <td>${escapeHtml(trade.direction)}</td>
-        <td>${escapeHtml(trade.setup || '—')}</td>
-        <td>${escapeHtml(sessionsOf(trade) || '—')}</td>
-        <td class="num">${escapeHtml(money(trade.entryPrice))}</td>
-        <td class="num">${escapeHtml(money(trade.exitPrice))}</td>
-        <td class="num">${trade.riskReward === null ? '—' : `${trade.riskReward.toFixed(2)}R`}</td>
-        <td class="num ${tone}">${escapeHtml(money(pl))}</td>
-      </tr>`
-    })
-    .join('')
-
-  return `<!doctype html>
-<html lang="en" data-theme="${dark ? 'dark' : 'light'}">
-<head>
-<meta charset="utf-8">
-<title>RagDex — Trade Journal</title>
-<style>
-  /* Margins on the page rather than the body, so every printed sheet gets
-     them and not only the first. */
-  @page { size: A4 landscape; margin: 14mm 12mm; }
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: ${c.panel};
-    color: ${c.body};
-    font: 400 10pt/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  header { display: flex; align-items: flex-end; justify-content: space-between;
-           gap: 24px; padding-bottom: 12px; border-bottom: 2px solid ${c.ink}; }
-  .brand { font-size: 20pt; font-weight: 600; letter-spacing: -0.02em; color: ${c.ink}; }
-  .brand span { color: ${c.accent}; }
-  .sub { margin: 2px 0 0; font-size: 9pt; color: ${c.muted}; }
-  .meta { text-align: right; font-size: 8.5pt; color: ${c.muted}; }
-  .range { display: block; font-size: 11pt; font-weight: 500; color: ${c.ink}; }
-
-  .stats { display: flex; gap: 28px; margin: 18px 0 20px; }
-  .stat { flex: 1; }
-  .stat-label { margin: 0; font-size: 7.5pt; font-weight: 600; letter-spacing: 0.12em;
-                text-transform: uppercase; color: ${c.muted}; }
-  .stat-value { margin: 3px 0 0; font-size: 16pt; font-weight: 600; color: ${c.ink};
-                font-variant-numeric: tabular-nums; }
-
-  table { width: 100%; border-collapse: collapse; }
-  thead { display: table-header-group; }   /* repeats on every printed page */
-  tr { break-inside: avoid; }
-  th { padding: 0 8px 7px; font-size: 7.5pt; font-weight: 600; letter-spacing: 0.1em;
-       text-align: left; text-transform: uppercase; color: ${c.muted};
-       border-bottom: 1px solid ${c.line}; }
-  td { padding: 7px 8px; font-size: 9pt; border-bottom: 1px solid ${c.line};
-       vertical-align: top; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .strong { font-weight: 600; color: ${c.ink}; }
-  .pos { color: ${c.green}; }
-  .neg { color: ${c.red}; }
-
-  .empty { padding: 48px 0; text-align: center; color: ${c.muted}; }
-  footer { margin-top: 18px; font-size: 8pt; color: ${c.muted}; }
-</style>
-</head>
-<body>
-  <header>
-    <div>
-      <p class="brand">Rag<span>Dex</span></p>
-      <p class="sub">Trade journal</p>
-    </div>
-    <div class="meta">
-      <strong class="range">${escapeHtml(rangeLabel)}</strong>
-      Exported ${escapeHtml(LONG_DATE.format(new Date()))}
-    </div>
-  </header>
-
-  <section class="stats">
-    ${summaryCard('Trades', String(totals.count))}
-    ${summaryCard(
-      'Net P&amp;L',
-      MONEY.format(totals.netPl),
-      totals.netPl >= 0 ? 'pos' : 'neg',
-    )}
-    ${summaryCard(
-      'Win rate',
-      totals.winRate === null ? '—' : `${totals.winRate.toFixed(1)}%`,
-    )}
-    ${summaryCard(
-      'Profit factor',
-      totals.profitFactor === null ? '—' : totals.profitFactor.toFixed(2),
-    )}
-  </section>
-
-  ${
-    trades.length === 0
-      ? '<p class="empty">No trades in this range.</p>'
-      : `<table>
-    <thead><tr>
-      <th>Date</th><th>Ticker</th><th>Side</th><th>Setup</th><th>Session</th>
-      <th class="num">Entry</th><th class="num">Exit</th>
-      <th class="num">R:R</th><th class="num">Net P&amp;L</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`
-  }
-
-  <footer>Written from your own logged trades. Figures are realised, not marked to market.</footer>
-</body>
-</html>`
-}
 
 /**
  * Open the journal as a printable document and raise the print dialogue.
@@ -336,30 +187,105 @@ function documentHtml(trades: StoredTrade[], rangeLabel: string): string {
  * `@media print` means every future layout change risks quietly breaking an
  * export nobody looks at until they need it.
  */
-export function printPdf(trades: StoredTrade[], rangeLabel: string): boolean {
-  /*
-   * No `noopener` here, deliberately.
-   *
-   * window.open returns null whenever noopener is asked for — that is what the
-   * flag means — so the handle needed to write the document never arrived and
-   * this reported a blocked pop-up every single time. The window is filled
-   * with markup built here and navigates nowhere, so there is no third party
-   * to withhold the opener from.
-   */
-  const sheet = window.open('', '_blank', 'width=1100,height=800')
-  if (!sheet) return false
+/**
+ * Writes the journal to a real PDF file and saves it.
+ *
+ * This used to open a window and call print(), which left the browser's print
+ * dialogue in front of the trader and produced a file only if they then chose
+ * "Save as PDF" — and nothing at all on a phone, where that option often is
+ * not offered. Generating the document here means the button does what its
+ * label says: one click, one file, no dialogue.
+ *
+ * jsPDF is imported on demand. It and the table plugin together are larger
+ * than the rest of the page, and most sessions never export anything, so the
+ * cost belongs on the click rather than on every load.
+ */
+export async function downloadPdf(
+  trades: StoredTrade[],
+  rangeLabel: string,
+): Promise<void> {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
 
-  sheet.document.write(documentHtml(trades, rangeLabel))
-  sheet.document.close()
+  // Landscape: the table is nine columns wide and portrait squeezes the two
+  // that matter — setup and net P&L — into something unreadable.
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+  const width = doc.internal.pageSize.getWidth()
+  const totals = totalsOf(trades)
 
-  // document.close() can finish the load before a listener is attached, in
-  // which case the load event never arrives and the dialogue never opens.
-  const show = () => {
-    sheet.focus()
-    sheet.print()
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  doc.text('RagDex', 40, 46)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+  doc.setTextColor(110)
+  doc.text(`Trade journal · ${rangeLabel}`, 40, 64)
+  doc.text(
+    `Exported ${LONG_DATE.format(new Date())}`,
+    width - 40,
+    64,
+    { align: 'right' },
+  )
+
+  // The same four figures the app shows above the table, so a printed journal
+  // and the screen it came from never disagree.
+  const summary: [string, string][] = [
+    ['Trades', String(totals.count)],
+    ['Net P&L', money(totals.netPl)],
+    ['Win rate', totals.winRate === null ? '—' : `${totals.winRate.toFixed(1)}%`],
+    [
+      'Profit factor',
+      totals.profitFactor === null ? '—' : totals.profitFactor.toFixed(2),
+    ],
+  ]
+
+  summary.forEach(([label, value], index) => {
+    const x = 40 + index * 150
+    doc.setFontSize(8)
+    doc.setTextColor(130)
+    doc.text(label.toUpperCase(), x, 96)
+    doc.setFontSize(14)
+    doc.setTextColor(20)
+    doc.text(value, x, 114)
+  })
+
+  autoTable(doc, {
+    startY: 132,
+    head: [['Date', 'Ticker', 'Side', 'Setup', 'Session', 'Entry', 'Exit', 'R:R', 'Net P&L']],
+    body: trades.map((trade) => [
+      when(trade),
+      trade.ticker || '—',
+      trade.direction,
+      trade.setup || '—',
+      sessionsOf(trade) || '—',
+      money(trade.entryPrice),
+      money(trade.exitPrice),
+      trade.riskReward === null ? '—' : `${trade.riskReward.toFixed(2)}R`,
+      money(trade.netPl),
+    ]),
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 6, textColor: 45 },
+    headStyles: { fillColor: [124, 108, 246], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [246, 245, 252] },
+    columnStyles: { 8: { halign: 'right' } },
+    // A loss is worth seeing at a glance on paper too.
+    didParseCell: (data) => {
+      if (data.section !== 'body' || data.column.index !== 8) return
+      const value = trades[data.row.index]?.netPl
+      if (typeof value === 'number') {
+        data.cell.styles.textColor = value < 0 ? [194, 49, 75] : [24, 121, 78]
+      }
+    },
+    margin: { left: 40, right: 40 },
+  })
+
+  if (trades.length === 0) {
+    doc.setFontSize(11)
+    doc.setTextColor(130)
+    doc.text('No trades in this range.', 40, 160)
   }
-  if (sheet.document.readyState === 'complete') setTimeout(show, 80)
-  else sheet.addEventListener('load', show)
 
-  return true
+  doc.save(`ragdex-journal-${FILE_STAMP.format(new Date())}.pdf`)
 }

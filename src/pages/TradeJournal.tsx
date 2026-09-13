@@ -9,7 +9,7 @@ import { useToast } from '../lib/toast'
 import { SearchableSelect } from '../components/SearchableSelect'
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker'
 import { endOfDay, startOfDay } from '../lib/day'
-import { downloadCsv, printPdf } from '../lib/exportJournal'
+import { downloadCsv, downloadPdf } from '../lib/exportJournal'
 import { tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
 import { SESSIONS, SESSION_LABELS } from '../data/tradeForm'
@@ -430,12 +430,11 @@ export function TradeJournal({
 
           <ExportMenu
             onCsv={() => downloadCsv(shown)}
-            onPdf={() => {
-              if (!printPdf(shown, rangeLabel)) {
-                toast.error(
-                  'Could not open the export',
-                  'Your browser blocked the window. Allow pop-ups for this site and try again.',
-                )
+            onPdf={async () => {
+              try {
+                await downloadPdf(shown, rangeLabel)
+              } catch (cause) {
+                toast.error('Could not build the PDF', readableApiError(cause))
               }
             }}
           />
