@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from 'react'
 import { useImageUrl } from '../lib/useImageUrl'
+import { useImageViewer } from '../lib/imageViewer'
 import {
   addContact,
   deleteMessage,
@@ -285,6 +286,10 @@ function Bubble({
   onDelete,
 }: BubbleProps) {
   const interactive = mine && message.deletedAt === null
+  const viewer = useImageViewer()
+  // Held in a const so the handler below sees a string: narrowing from the
+  // JSX guard does not reach inside a closure.
+  const picture = message.image ?? ''
 
   const anchor = useRef<HTMLDivElement>(null)
   const card = useRef<HTMLDivElement>(null)
@@ -364,13 +369,15 @@ function Bubble({
         {message.image && (
           <img
             className={DOCK_IMAGE}
-            src={message.image}
+            src={picture}
             alt={message.text || 'Shared image'}
-            // The dock is narrow and a tall screenshot would push the rest of
-            // the conversation off screen, so it opens full size in a tab.
+            // The dock is narrow and a tall screenshot would push the rest
+            // of the conversation off screen, so it opens in the viewer. A new
+            // browser tab was the old answer: it loses the app, and a decrypted
+            // attachment is a blob URL that a fresh tab cannot always resolve.
             onClick={(event) => {
               event.stopPropagation()
-              window.open(message.image, '_blank', 'noopener,noreferrer')
+              viewer.open([{ src: picture, label: message.text || 'Shared image' }])
             }}
           />
         )}

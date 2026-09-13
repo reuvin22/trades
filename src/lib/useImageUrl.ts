@@ -48,3 +48,56 @@ export function useImageUrl(key: string | null | undefined): string | null {
 
   return key && resolved?.key === key ? resolved.url : null
 }
+
+/**
+ * Several keys at once, resolved together.
+ *
+ * Needed wherever a set of pictures is shown as a set — a trade's charts open
+ * into one viewer that steps between them, so every URL has to exist before
+ * any of them is clicked. Calling the single hook in a loop is not an option:
+ * the number of keys changes between renders, and hooks may not.
+ *
+ * Returns a list the same length and order as the keys given, holding null in
+ * each slot that has not resolved or could not be signed.
+ */
+export function useImageUrls(keys: string[]): (string | null)[] {
+  const [resolved, setResolved] = useState<Record<string, string>>({})
+
+  /*
+   * The effect is keyed on the contents rather than the array.
+   *
+   * Callers build this list inline, so its identity changes on every render;
+   * depending on it directly would re-sign every URL each time and never
+   * settle. A separator no key can contain makes the join unambiguous.
+   */
+  const signature = keys.join('\u0000')
+
+  useEffect(() => {
+    if (signature === '') return
+
+    let live = true
+    const wanted = signature.split('\u0000')
+
+    Promise.all(
+      wanted.map((key) =>
+        imageUrl(key)
+          .then((url) => [key, url] as const)
+          .catch(() => null),
+      ),
+    ).then((pairs) => {
+      if (!live) return
+
+      const next: Record<string, string> = {}
+      for (const pair of pairs) {
+        if (pair) next[pair[0]] = pair[1]
+      }
+      setResolved(next)
+    })
+
+    return () => {
+      live = false
+    }
+  }, [signature])
+
+  return keys.map((key) => resolved[key] ?? null)
+}

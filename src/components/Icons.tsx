@@ -599,3 +599,33 @@ export function BellOffIcon({ size = 18, className }: IconProps) {
     </svg>
   )
 }
+
+/* ------------------------------------------------------------ image viewer */
+
+export function ZoomInIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m20 20-4.7-4.7M10.5 7.5v6M7.5 10.5h6" />
+    </svg>
+  )
+}
+
+export function ZoomOutIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m20 20-4.7-4.7M7.5 10.5h6" />
+    </svg>
+  )
+}
+
+/** A quarter turn clockwise, which is what the button does. */
+export function RotateIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M20 11a8 8 0 1 0-2.3 6.3" />
+      <path d="M20 5v6h-6" />
+    </svg>
+  )
+}
