@@ -1686,3 +1686,56 @@ export const PRICE_FEATURES =
 
 export const PRICE_ACTION = 'mt-26 w-full justify-center'
 export const PRICE_NOTE = 'mt-20 text-center text-[12px] text-fg-muted'
+
+/* ------------------------------------------------------- dashboard panels */
+
+/**
+ * The greeting above the dashboard.
+ *
+ * Named rather than styled inline because it is the first thing on the page
+ * and sets the scale everything under it is read against.
+ */
+export const GREETING_ROW = 'mb-20 flex flex-wrap items-end justify-between gap-12'
+export const GREETING = 'text-[22px] font-medium tracking-[-0.02em] text-fg-strong'
+export const GREETING_SUB = 'mt-4 text-[13px] text-fg-dim'
+/** What the figures below are measured over. Small, and to the right. */
+export const GREETING_SPAN =
+  'rounded-full border border-line bg-tint-1 px-12 py-7 text-[11.5px] text-fg-dim'
+
+/** A panel with a heading, for the sections that are not single figures. */
+export const PANEL = 'px-20 pt-18 pb-20'
+export const PANEL_HEAD = 'mb-14 flex items-baseline justify-between gap-12'
+export const PANEL_TITLE =
+  'text-[11px] font-medium tracking-[0.13em] text-fg-muted uppercase'
+/** The sample size, beside the title. Always present where a mean is shown. */
+export const PANEL_NOTE = 'text-[11px] text-fg-muted tabular-nums'
+export const PANEL_EMPTY = 'py-14 text-[13px] leading-[1.55] text-fg-muted'
+
+/* ---- setup performance: a table, because it is one ---- */
+
+export const SETUP_TABLE = 'w-full border-collapse text-[13px]'
+export const SETUP_HEAD =
+  '[&>tr>th]:pb-9 [&>tr>th]:text-left [&>tr>th]:text-[10.5px] [&>tr>th]:font-medium [&>tr>th]:tracking-[0.1em] [&>tr>th]:text-fg-muted [&>tr>th]:uppercase [&>tr>th:not(:first-child)]:text-right'
+export const SETUP_BODY =
+  '[&>tr]:border-t [&>tr]:border-line [&>tr>td]:py-10 [&>tr>td]:tabular-nums [&>tr>td:not(:first-child)]:text-right'
+export const SETUP_NAME = 'max-w-160 truncate font-medium text-fg not-tabular-nums'
+
+/* ---- risk health ---- */
+
+export const RISK_GRID = 'grid grid-cols-2 gap-x-16 gap-y-14'
+export const RISK_ITEM = 'flex flex-col gap-4'
+export const RISK_LABEL = 'text-[11.5px] text-fg-muted'
+export const RISK_VALUE = 'text-[17px] font-medium tabular-nums text-fg-strong'
+/** The trader's own limit, under the figure it should be compared against. */
+export const RISK_AGAINST = 'text-[11px] text-fg-muted tabular-nums'
+
+/* ---- discipline ---- */
+
+export const SCORE_VALUE =
+  'text-[34px] leading-none font-medium tracking-[-0.02em] tabular-nums'
+export const SCORE_ROW = 'mt-16 flex flex-col gap-11'
+export const SCORE_LINE = 'flex items-center gap-10 text-[12.5px]'
+export const SCORE_NAME = 'w-104 flex-none text-fg-dim'
+export const SCORE_TRACK = 'h-6 flex-1 overflow-hidden rounded-full bg-tint-2'
+export const SCORE_FILL = 'block h-full rounded-full transition-[width] duration-500 ease-out'
+export const SCORE_PCT = 'w-40 flex-none text-right tabular-nums text-fg-dim'
