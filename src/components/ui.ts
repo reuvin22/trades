@@ -175,8 +175,6 @@ export const SHIMMER =
  */
 export const CHART_CARD = 'relative z-20 px-26 pt-24 pb-20'
 
-export const AXIS_LEGEND =
-  'mt-10 text-right text-[9.5px] leading-[1.5] tracking-[0.05em] text-fg-muted'
 
 /** The plot body. touch-action keeps vertical scrolling alive over the chart. */
 /*
@@ -1328,3 +1326,17 @@ export const RANGE_FOOT =
   'mt-12 flex items-center justify-between gap-10 border-t border-line pt-12 text-[11.5px] text-fg-muted'
 export const RANGE_CLEAR =
   'font-medium text-accent-strong transition-opacity duration-150 hover:underline disabled:opacity-40 disabled:no-underline'
+
+/**
+ * The searchable filter select.
+ *
+ * The closed state is a plain button rather than a `<select>`, so it inherits
+ * the page's type and colours instead of the operating system's.
+ */
+export const SELECT_VALUE =
+  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-8 text-left text-[14.5px] text-fg'
+
+/** The search field pinned inside the panel, above the options. */
+export const COMBO_SEARCH =
+  'sticky top-0 z-10 -m-4 mb-4 flex items-center gap-7 border-b border-line bg-panel-solid px-11 py-9 text-fg-muted ' +
+  '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-none [&_input]:bg-transparent [&_input]:text-[13px] [&_input]:text-fg [&_input]:outline-none [&_input::placeholder]:text-fg-muted'

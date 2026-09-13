@@ -3,7 +3,6 @@ import { compactCurrency, shortDate } from '../data/dashboard'
 import { OPENING_BALANCE, type EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
 import {
-  AXIS_LEGEND,
   CARD,
   CARD_HEAD,
   CARD_TITLE,
@@ -105,10 +104,6 @@ export function RollingEquityCurve({ equity }: { equity: EquityPoint[] }) {
         </div>
       </div>
 
-      <p className={AXIS_LEGEND}>
-        x = Time
-        <br />Y = Account Equity
-      </p>
 
       {paths === null ? (
         <p className={CHART_EMPTY}>

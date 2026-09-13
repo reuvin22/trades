@@ -1,5 +1,4 @@
 import {
-  AXIS_LEGEND,
   CARD,
   CARD_HEAD,
   CARD_SUB,
@@ -155,8 +154,14 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
             <button
               key={option}
               type="button"
-              className={`${SEGMENT} ${range === option ? SEGMENT_ACTIVE : SEGMENT_IDLE}`}
-              aria-pressed={range === option}
+              // Only when no custom span is set. `range` keeps its last preset
+              // so clearing the calendar returns to it, which meant 90D sat
+              // highlighted next to an active Custom — two buttons claiming to
+              // be the current view.
+              className={`${SEGMENT} ${
+                custom === null && range === option ? SEGMENT_ACTIVE : SEGMENT_IDLE
+              }`}
+              aria-pressed={custom === null && range === option}
               onClick={() => {
                 setRange(option)
                 setCustom(null)
@@ -202,11 +207,6 @@ export function EquityChart({ equity }: { equity: EquityPoint[] }) {
           )}
         </div>
       </div>
-
-      <p className={AXIS_LEGEND}>
-        x = Time
-        <br />Y = Account Equity
-      </p>
 
       <div
         className={PLOT}

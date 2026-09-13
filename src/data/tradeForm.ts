@@ -47,6 +47,14 @@ export const SESSIONS: { value: TradingSession; label: string }[] = [
   { value: '', label: 'No idea' },
 ]
 
+/** Stored value to display name, for anywhere that reads a session back. */
+export const SESSION_LABELS: Record<string, string> = Object.fromEntries(
+  SESSIONS.filter((entry) => entry.value !== '').map((entry) => [
+    entry.value,
+    entry.label,
+  ]),
+)
+
 /** Shown under the picker so the choice is informed rather than a guess. */
 export const SESSION_HOURS: Record<Exclude<TradingSession, ''>, string> = {
   asia: 'Roughly 21:00-07:00 UTC — Sydney and Tokyo.',

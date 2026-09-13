@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { JournalTable } from '../components/JournalTable'
-import { JOURNAL_FILTERS } from '../data/journal'
+import { SearchableSelect } from '../components/SearchableSelect'
 import type { StoredTrade } from '../lib/trades'
+import { SESSION_LABELS } from '../data/tradeForm'
 import {
   ChartBarsIcon,
-  ChevronDownIcon,
   DateRangeIcon,
   DownloadIcon,
   ScalesIcon,
@@ -36,35 +36,71 @@ import {
   SUMMARY_WATERMARK,
 } from '../components/ui'
 
-function FilterSelects() {
-  const [values, setValues] = useState(
-    () => JOURNAL_FILTERS.map((filter) => filter.options[0]),
-  )
+const ANY_SETUP = 'All setups'
+const ANY_SESSION = 'All sessions'
+const ANY_RESULT = 'All results'
+
+const RESULTS = [ANY_RESULT, 'Winner', 'Loser', 'Still open']
+
+function resultOf(trade: StoredTrade): string {
+  if (trade.netPl === null) return 'Still open'
+  return trade.netPl >= 0 ? 'Winner' : 'Loser'
+}
+
+type Filters = { setup: string; session: string; result: string }
+
+const NO_FILTERS: Filters = {
+  setup: ANY_SETUP,
+  session: ANY_SESSION,
+  result: ANY_RESULT,
+}
+
+/**
+ * One card per filter.
+ *
+ * The options come from the journal rather than from a list in the source.
+ * They used to be three invented names — VWAP Bounce, Bull Flag, Overextended
+ * — which belonged to no trade anyone had logged, so the filter offered
+ * choices that could only ever return nothing.
+ */
+function FilterSelects({
+  trades,
+  filters,
+  onChange,
+}: {
+  trades: StoredTrade[]
+  filters: Filters
+  onChange: (next: Filters) => void
+}) {
+  const setups = useMemo(() => {
+    const named = trades.map((trade) => trade.setup.trim()).filter(Boolean)
+    return [ANY_SETUP, ...[...new Set(named)].sort((a, b) => a.localeCompare(b))]
+  }, [trades])
+
+  const sessions = useMemo(() => {
+    const used = trades.map((trade) => trade.session).filter(Boolean)
+    const names = [...new Set(used)].map((key) => SESSION_LABELS[key] ?? key)
+    return [ANY_SESSION, ...names.sort((a, b) => a.localeCompare(b))]
+  }, [trades])
+
+  const fields: { label: string; key: keyof Filters; options: string[] }[] = [
+    { label: 'Setup', key: 'setup', options: setups },
+    { label: 'Session', key: 'session', options: sessions },
+    { label: 'Result', key: 'result', options: RESULTS },
+  ]
 
   return (
     <>
-      {JOURNAL_FILTERS.map((filter, index) => (
-        <label key={filter.label} className={`${CARD} ${CARD_HOVER} ${FILTER_CARD}`}>
-          <span className={FILTER_LABEL}>{filter.label}</span>
-          <span className="relative flex items-center [&>select]:w-full [&>select]:appearance-none [&>select]:cursor-pointer [&>select]:border-none [&>select]:bg-transparent [&>select]:pr-26 [&>select]:text-[14.5px] [&>select]:text-fg [&>select]:outline-none [&_option]:bg-panel-solid [&_option]:text-fg [&_svg]:transition-transform [&_svg]:duration-200 [&_svg]:ease-out [&:focus-within_svg]:rotate-180">
-            <select
-              value={values[index]}
-              onChange={(event) => {
-                const next = event.target.value
-                setValues((current) =>
-                  current.map((value, i) => (i === index ? next : value)),
-                )
-              }}
-            >
-              {filter.options.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <ChevronDownIcon className="pointer-events-none absolute right-0 text-fg-muted" />
-          </span>
-        </label>
+      {fields.map((field) => (
+        <div key={field.key} className={`${CARD} ${CARD_HOVER} ${FILTER_CARD}`}>
+          <span className={FILTER_LABEL}>{field.label}</span>
+          <SearchableSelect
+            label={field.label}
+            value={filters[field.key]}
+            options={field.options}
+            onChange={(value) => onChange({ ...filters, [field.key]: value })}
+          />
+        </div>
       ))}
     </>
   )
@@ -81,6 +117,22 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
   // A signed-in session is the only precondition now: the API is the single
   // thing this page talks to, and it either answers or reports why.
   const live = uid !== null
+
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+
+  // The filters were decorative until now — the table was handed every trade
+  // whatever they said.
+  const shown = useMemo(
+    () =>
+      trades.filter(
+        (trade) =>
+          (filters.setup === ANY_SETUP || trade.setup.trim() === filters.setup) &&
+          (filters.session === ANY_SESSION ||
+            SESSION_LABELS[trade.session] === filters.session) &&
+          (filters.result === ANY_RESULT || resultOf(trade) === filters.result),
+      ),
+    [trades, filters],
+  )
 
   return (
     <>
@@ -105,7 +157,7 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
       </div>
 
       <div data-tour="filters" className={`${FILTER_ROW} ${ROW_STAGGER}`}>
-        <FilterSelects />
+        <FilterSelects trades={trades} filters={filters} onChange={setFilters} />
 
         <div className={`${CARD} ${CARD_HOVER} ${FILTER_CARD} cursor-default gap-8`}>
           <span className={FILTER_LABEL}>Total Volume</span>
@@ -151,7 +203,7 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
         </article>
       </div>
 
-      <JournalTable trades={trades} loading={loading} live={live} />
+      <JournalTable trades={shown} loading={loading} live={live} />
     </>
   )
 }

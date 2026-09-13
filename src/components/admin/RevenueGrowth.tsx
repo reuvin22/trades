@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import {
-  AXIS_LEGEND,
   CARD,
   CARD_HEAD,
   CARD_SUB,
@@ -86,10 +85,6 @@ export function RevenueGrowth() {
         </div>
       </div>
 
-      <p className={AXIS_LEGEND}>
-        x = Timeline
-        <br />Y = Revenue (USD)
-      </p>
 
       <div className={`${PLOT} h-300 [&>div>span]:text-[10px]`}>
         <div className={Y_AXIS} aria-hidden="true">
