@@ -1,6 +1,6 @@
 import { TRADER_NAV, type IconComponent } from '../navigation'
 import { navigate } from '../lib/useHashRoute'
-import { CloseIcon, CollapseIcon, PlusIcon } from './Icons'
+import { CloseIcon, PlusIcon } from './Icons'
 import { sidebarClass } from './layout'
 import { NAV_DISABLED } from './ui'
 
@@ -12,9 +12,9 @@ type SidebarProps = {
   /** Below the shell breakpoint the sidebar is a drawer; above it, permanent. */
   open: boolean
   onClose: () => void
-  /** Above the breakpoint: narrowed to a rail of icons. */
+  /** Above the breakpoint: narrowed to a rail of icons. The control for this
+   *  lives in the TopBar, so it stays reachable when the labels are gone. */
   collapsed: boolean
-  onToggleCollapse: () => void
 }
 
 /*
@@ -148,34 +148,6 @@ export function QuickAddButton({
   )
 }
 
-/** Collapses the sidebar to a rail and back. Desktop only — below the
- *  breakpoint the sidebar is already a drawer that closes entirely. */
-export function CollapseToggle({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean
-  onToggle: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-      aria-expanded={!collapsed}
-      aria-controls="primary-nav"
-      title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-      className={
-        'hidden size-30 flex-none place-items-center rounded-full text-fg-muted ' +
-        'transition-[color,background-color,transform] duration-150 hover:bg-tint-2 hover:text-fg-strong shell:grid ' +
-        (collapsed ? 'rotate-180' : '')
-      }
-    >
-      <CollapseIcon />
-    </button>
-  )
-}
-
 export function Sidebar({
   route,
   accountLabel,
@@ -183,7 +155,6 @@ export function Sidebar({
   open,
   onClose,
   collapsed,
-  onToggleCollapse,
 }: SidebarProps) {
   return (
     <>
@@ -220,8 +191,6 @@ export function Sidebar({
               {accountLabel}
             </p>
           </a>
-
-          <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
         </div>
 
         <DrawerClose onClose={onClose} />

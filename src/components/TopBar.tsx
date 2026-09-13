@@ -1,7 +1,7 @@
 import { useAuth } from '../lib/useAuth'
 import { AccountMenu } from './AccountMenu'
 import type { Theme } from '../lib/useTheme'
-import { ContrastIcon, MenuIcon } from './Icons'
+import { CollapseIcon, ContrastIcon, MenuIcon } from './Icons'
 import { NotificationMenu } from './NotificationMenu'
 
 type TopBarProps = {
@@ -9,6 +9,9 @@ type TopBarProps = {
   onToggleTheme: () => void
   navOpen: boolean
   onToggleNav: () => void
+  /** Desktop only: the sidebar narrowed to a rail. */
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
 /** Space-between so the burger sits left once it appears; with it hidden the
@@ -45,7 +48,47 @@ export function MenuButton({ open, onToggle }: { open: boolean; onToggle: () => 
   )
 }
 
-export function TopBar({ theme, onToggleTheme, navOpen, onToggleNav }: TopBarProps) {
+/**
+ * Collapses the sidebar to a rail of icons.
+ *
+ * The desktop counterpart to MenuButton, in the same slot: above the shell
+ * breakpoint the sidebar is permanent and this narrows it, below it the
+ * sidebar is a drawer and the burger opens it. Exactly one of the two is ever
+ * on screen, which is why they share a corner.
+ *
+ * It lives here rather than inside the sidebar because a control for the
+ * sidebar's own width should not disappear along with the sidebar's contents.
+ */
+export function CollapseButton({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-controls="primary-nav"
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+      title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+      className={`${ICON_BUTTON} hidden shell:grid ${collapsed ? 'rotate-180' : ''}`}
+    >
+      <CollapseIcon />
+    </button>
+  )
+}
+
+export function TopBar({
+  theme,
+  onToggleTheme,
+  navOpen,
+  onToggleNav,
+  collapsed,
+  onToggleCollapse,
+}: TopBarProps) {
   const { user } = useAuth()
 
   return (
@@ -53,6 +96,7 @@ export function TopBar({ theme, onToggleTheme, navOpen, onToggleNav }: TopBarPro
     // action cluster still lands hard right.
     <header className={TOPBAR}>
       <MenuButton open={navOpen} onToggle={onToggleNav} />
+      <CollapseButton collapsed={collapsed} onToggle={onToggleCollapse} />
 
       <div className="ml-auto flex items-center gap-16">
         <NotificationMenu />
