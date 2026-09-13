@@ -1445,3 +1445,14 @@ export const EDIT_CHIP =
   'inline-flex items-center gap-7 rounded-full border border-line-strong bg-tint-2 py-6 pr-6 pl-13 text-[12.5px] text-fg'
 export const EDIT_CHIP_REMOVE =
   'grid size-18 place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-red'
+
+/**
+ * A dropdown hung off a page-header action.
+ *
+ * Right-aligned, because these sit at the end of a header row and a
+ * left-aligned panel would hang off the edge of the page.
+ */
+export const ACTION_MENU =
+  'absolute top-[calc(100%+6px)] right-0 z-40 flex min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)] ' +
+  '[&>button]:rounded-[6px] [&>button]:px-11 [&>button]:py-9 [&>button]:text-left [&>button]:text-[13.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-100 ' +
+  '[&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong [&>button[aria-current]]:bg-tint-2 [&>button[aria-current]]:font-medium [&>button[aria-current]]:text-fg-strong'

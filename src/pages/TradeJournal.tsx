@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { JournalTable } from '../components/JournalTable'
 import { QuickAddTrade } from '../components/QuickAddTrade'
@@ -7,6 +7,10 @@ import { deleteTrade, toEntry, updateTrade } from '../lib/trades'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import { SearchableSelect } from '../components/SearchableSelect'
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker'
+import { endOfDay, startOfDay } from '../lib/day'
+import { downloadCsv, printPdf } from '../lib/exportJournal'
+import { tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
 import { SESSIONS, SESSION_LABELS } from '../data/tradeForm'
 import type { Profile as ProfileRecord } from '../lib/profile'
@@ -18,6 +22,7 @@ import {
   SmileIcon,
 } from '../components/Icons'
 import {
+  ACTION_MENU,
   CARD,
   CARD_HOVER,
   DATA_ERROR,
@@ -47,6 +52,20 @@ const ANY_SESSION = 'All sessions'
 const ANY_RESULT = 'All results'
 
 const RESULTS = [ANY_RESULT, 'Winner', 'Loser']
+
+/**
+ * Whether a trade falls inside the chosen window.
+ *
+ * Dated by entry, falling back to when it was written — the same rule the
+ * statistics use, so the table and the figures never disagree about which day
+ * a trade belongs to.
+ */
+function inWindow(trade: StoredTrade, span: { from: number; to: number }): boolean {
+  const date = tradeDate(trade)
+  if (date === null) return false
+  const at = date.getTime()
+  return at >= span.from && at <= span.to
+}
 
 /*
  * The same rule the table labels a row with, deliberately.
@@ -131,6 +150,175 @@ function FilterSelects({
   )
 }
 
+/** The presets, and how far back each one reaches. */
+const RANGE_DAYS = { '7D': 7, '30D': 30, '90D': 90 } as const
+type Preset = keyof typeof RANGE_DAYS
+
+const RANGE_LABEL: Record<Preset, string> = {
+  '7D': 'Last 7 days',
+  '30D': 'Last 30 days',
+  '90D': 'Last 90 days',
+}
+
+const SPAN = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
+
+/**
+ * The range control: a preset, or a span off the calendar.
+ *
+ * A menu rather than the dashboard's segmented row, because this sits in a
+ * page header beside another action and four side-by-side buttons would crowd
+ * the title off a narrow screen. The calendar itself is the same component the
+ * chart uses.
+ */
+function RangeMenu({
+  range,
+  custom,
+  onPreset,
+  onCustom,
+}: {
+  range: Preset
+  custom: DateRange | null
+  onPreset: (next: Preset) => void
+  onCustom: (span: DateRange | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [picking, setPicking] = useState(false)
+  const wrapper = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open && !picking) return
+
+    function onPointerDown(event: PointerEvent) {
+      if (wrapper.current?.contains(event.target as Node)) return
+      setOpen(false)
+      setPicking(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [open, picking])
+
+  return (
+    <div ref={wrapper} className="relative">
+      <button
+        type="button"
+        className={`${PILL} ${PILL_IDLE}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((current) => !current)
+          setPicking(false)
+        }}
+      >
+        <DateRangeIcon />
+        {custom
+          ? `${SPAN.format(custom.from)} – ${SPAN.format(custom.to)}`
+          : RANGE_LABEL[range]}
+      </button>
+
+      {open && !picking && (
+        <div className={ACTION_MENU} role="menu">
+          {(Object.keys(RANGE_DAYS) as Preset[]).map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              role="menuitem"
+              // A preset is only the current view when no custom span is set.
+              aria-current={custom === null && range === preset ? 'true' : undefined}
+              onClick={() => {
+                onPreset(preset)
+                setOpen(false)
+              }}
+            >
+              {RANGE_LABEL[preset]}
+            </button>
+          ))}
+          <button type="button" role="menuitem" onClick={() => setPicking(true)}>
+            Custom range…
+          </button>
+        </div>
+      )}
+
+      {picking && (
+        <DateRangePicker
+          value={custom}
+          onApply={(next) => {
+            onCustom(next)
+            setPicking(false)
+            setOpen(false)
+          }}
+          onClear={() => {
+            onCustom(null)
+            setPicking(false)
+            setOpen(false)
+          }}
+          onClose={() => {
+            setPicking(false)
+            setOpen(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/** Export, then which kind. */
+function ExportMenu({ onCsv, onPdf }: { onCsv: () => void; onPdf: () => void }) {
+  const [open, setOpen] = useState(false)
+  const wrapper = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    function onPointerDown(event: PointerEvent) {
+      if (!wrapper.current?.contains(event.target as Node)) setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [open])
+
+  return (
+    <div ref={wrapper} className="relative">
+      <button
+        type="button"
+        className={`${PILL} ${PILL_ACCENT}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <DownloadIcon />
+        Export
+      </button>
+
+      {open && (
+        <div className={ACTION_MENU} role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onPdf()
+            }}
+          >
+            PDF
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onCsv()
+            }}
+          >
+            CSV
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 type TradeJournalProps = {
   uid: string | null
   trades: StoredTrade[]
@@ -155,6 +343,31 @@ export function TradeJournal({
 
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
 
+  // The preset is kept even while a custom span is showing, so clearing the
+  // calendar returns to whatever was chosen before rather than a default.
+  const [range, setRange] = useState<Preset>('30D')
+  const [custom, setCustom] = useState<DateRange | null>(null)
+
+  const rangeLabel = custom
+    ? `${SPAN.format(custom.from)} – ${SPAN.format(custom.to)}`
+    : RANGE_LABEL[range]
+
+  /** The window, as a pair of instants. `to` is the end of that day. */
+  const window = useMemo(() => {
+    if (custom) {
+      return {
+        from: startOfDay(custom.from).getTime(),
+        to: endOfDay(custom.to).getTime(),
+      }
+    }
+
+    const from = startOfDay(new Date())
+    // Inclusive of today, so "last 7 days" is a week of trading rather than
+    // six days and this morning.
+    from.setDate(from.getDate() - (RANGE_DAYS[range] - 1))
+    return { from: from.getTime(), to: Infinity }
+  }, [range, custom])
+
   // The entry a row opened, and the one being edited. Two pieces of state
   // rather than one mode flag: editing opens on top of the detail view, and
   // cancelling the edit should land back on it rather than on nothing.
@@ -168,6 +381,7 @@ export function TradeJournal({
     () =>
       trades.filter(
         (trade) =>
+          inWindow(trade, window) &&
           (filters.setup === ANY_SETUP || trade.setup.trim() === filters.setup) &&
           (filters.session === ANY_SESSION ||
             trade.sessions.some(
@@ -175,7 +389,7 @@ export function TradeJournal({
             )) &&
           (filters.result === ANY_RESULT || resultOf(trade) === filters.result),
       ),
-    [trades, filters],
+    [trades, filters, window],
   )
 
   return (
@@ -189,14 +403,27 @@ export function TradeJournal({
         </div>
 
         <div className={PAGE_ACTIONS}>
-          <button type="button" className={`${PILL} ${PILL_IDLE}`}>
-            <DateRangeIcon />
-            Last 30 Days
-          </button>
-          <button type="button" className={`${PILL} ${PILL_ACCENT}`}>
-            <DownloadIcon />
-            Export CSV
-          </button>
+          <RangeMenu
+            range={range}
+            custom={custom}
+            onPreset={(next) => {
+              setRange(next)
+              setCustom(null)
+            }}
+            onCustom={setCustom}
+          />
+
+          <ExportMenu
+            onCsv={() => downloadCsv(shown)}
+            onPdf={() => {
+              if (!printPdf(shown, rangeLabel)) {
+                toast.error(
+                  'Could not open the export',
+                  'Your browser blocked the window. Allow pop-ups for this site and try again.',
+                )
+              }
+            }}
+          />
         </div>
       </div>
 

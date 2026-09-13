@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons'
+import { startOfDay } from '../lib/day'
 import {
   RANGE_BAND,
   RANGE_BAND_END,
@@ -30,13 +31,6 @@ export type DateRange = { from: Date; to: Date }
 
 function weekdayIndex(date: Date): number {
   return (date.getDay() + 6) % 7
-}
-
-/** Midnight local. Every comparison here is by day, never by instant. */
-export function startOfDay(date: Date): Date {
-  const copy = new Date(date)
-  copy.setHours(0, 0, 0, 0)
-  return copy
 }
 
 function sameDay(a: Date, b: Date): boolean {
