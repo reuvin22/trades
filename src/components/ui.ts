@@ -327,7 +327,17 @@ export const MODAL =
   'open:[animation:modal-in_0.28s_cubic-bezier(0.22,0.8,0.3,1)] ' +
   'backdrop:bg-[rgba(6,5,15,0.62)] backdrop:backdrop-blur-[3px] open:backdrop:[animation:fade_0.28s_ease]'
 
-export const MODAL_FORM = 'flex max-h-[inherit] flex-col'
+/**
+ * Head, scrolling middle, pinned foot.
+ *
+ * The dialog caps its own height and hides its overflow, so something inside
+ * has to be the thing that scrolls. Without this the tail of a long body is
+ * simply clipped — and since the footer is the last child, what gets clipped
+ * is the buttons.
+ */
+export const MODAL_SHELL = 'flex max-h-[inherit] flex-col'
+
+export const MODAL_FORM = MODAL_SHELL
 export const MODAL_HEAD =
   'flex items-start justify-between gap-20 border-b border-line px-26 pt-22 pb-18'
 export const MODAL_TITLE = 'text-[21px] font-semibold tracking-[-0.02em] text-fg-strong'
@@ -802,6 +812,17 @@ export const MODAL_WIDE = 'w-[min(920px,calc(100vw-32px))]'
 
 /** Narrower than the trade form: this one reads rather than collects. */
 export const MODAL_NARROW = 'w-[min(560px,calc(100vw-32px))]'
+
+/**
+ * The trade detail. Between the two: it reads rather than collects, but it has
+ * a dozen short figures to show.
+ *
+ * A `<dialog>` shrink-wraps its content, so with no width at all this one
+ * collapsed to a single column of labels — twelve rows tall, which pushed its
+ * own footer past the height cap and out of sight. At this width the detail
+ * grid's auto-fit columns actually get to fit.
+ */
+export const MODAL_DETAIL = 'w-[min(720px,calc(100vw-32px))]'
 
 /** The day cell is a button, so it needs the affordances one has. */
 export const CAL_DAY_BUTTON =

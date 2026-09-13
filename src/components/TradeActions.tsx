@@ -13,8 +13,10 @@ import {
   DETAIL_TICKER,
   MODAL,
   MODAL_CLOSE,
+  MODAL_DETAIL,
   MODAL_FOOT,
   MODAL_HEAD,
+  MODAL_SHELL,
   PILL,
   PILL_ACCENT,
   PILL_DANGER,
@@ -95,136 +97,146 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
   return (
     <dialog
       ref={dialog}
-      className={MODAL}
+      className={`${MODAL} ${MODAL_DETAIL}`}
       aria-labelledby="trade-actions-title"
       // Esc and backdrop both close the whole thing, never just the confirm.
       onCancel={(event) => {
         event.preventDefault()
         if (!working) onClose()
       }}
+      onClick={(event) => {
+        // A click on the dialog itself is a click on the backdrop. Ignored
+        // mid-delete: losing the dialog while the request is in flight would
+        // leave no way to see whether it worked.
+        if (event.target === dialog.current && !working) onClose()
+      }}
     >
-      <div className={MODAL_HEAD}>
-        <div className={DETAIL_HEAD}>
-          <span className={DETAIL_TICKER} id="trade-actions-title">
-            {trade.ticker || '—'}
-          </span>
-          <span className={`${SIDE_BADGE} ${long ? SIDE_LONG : SIDE_SHORT}`}>
-            {trade.direction.toUpperCase()}
-          </span>
-          <span className={`${DETAIL_PL} ${pl >= 0 ? 'text-green' : 'text-red'}`}>
-            {pl >= 0 ? '+' : ''}
-            {money(trade.netPl)}
-          </span>
+      <div className={MODAL_SHELL}>
+        <div className={MODAL_HEAD}>
+          <div className={DETAIL_HEAD}>
+            <span className={DETAIL_TICKER} id="trade-actions-title">
+              {trade.ticker || '—'}
+            </span>
+            <span className={`${SIDE_BADGE} ${long ? SIDE_LONG : SIDE_SHORT}`}>
+              {trade.direction.toUpperCase()}
+            </span>
+            <span className={`${DETAIL_PL} ${pl >= 0 ? 'text-green' : 'text-red'}`}>
+              {pl >= 0 ? '+' : ''}
+              {money(trade.netPl)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className={MODAL_CLOSE}
+            onClick={onClose}
+            disabled={working}
+            aria-label="Close"
+          >
+            <CloseIcon size={18} />
+          </button>
         </div>
 
-        <button
-          type="button"
-          className={MODAL_CLOSE}
-          onClick={onClose}
-          disabled={working}
-          aria-label="Close"
-        >
-          <CloseIcon size={18} />
-        </button>
-      </div>
+        {/* min-h-0 as well as overflow: a flex child will not shrink below its
+            content without it, so the scroll would never engage. */}
+        <dl className={`${DETAIL_GRID} min-h-0 overflow-y-auto`}>
+          <Row label="Setup" value={trade.setup} />
+          <Row
+            label="Size"
+            value={trade.size === null ? '—' : `${trade.size} ${trade.sizeUnit}`}
+          />
+          <Row label="Entry" value={money(trade.entryPrice)} />
+          <Row label="Exit" value={money(trade.exitPrice)} />
+          <Row label="Opened" value={when(trade.entryAt)} />
+          <Row label="Closed" value={when(trade.exitAt)} />
+          <Row label="Stop" value={money(trade.stopLoss)} />
+          <Row label="Target" value={money(trade.takeProfit)} />
+          <Row
+            label="R:R"
+            value={trade.riskReward === null ? '—' : `${trade.riskReward.toFixed(2)}R`}
+          />
+          <Row label="Held" value={trade.duration ?? '—'} />
+          <Row label="Before" value={trade.emotionBefore} />
+          <Row label="During" value={trade.emotionDuring} />
+          {trade.mistakes.length > 0 && (
+            <div className="col-span-full">
+              <dt>Mistakes</dt>
+              <dd>{trade.mistakes.join(', ')}</dd>
+            </div>
+          )}
+          {trade.rationale && (
+            <div className="col-span-full">
+              <dt>Rationale</dt>
+              <dd>{trade.rationale}</dd>
+            </div>
+          )}
+          {trade.notes && (
+            <div className="col-span-full">
+              <dt>Notes</dt>
+              <dd>{trade.notes}</dd>
+            </div>
+          )}
+        </dl>
 
-      <dl className={DETAIL_GRID}>
-        <Row label="Setup" value={trade.setup} />
-        <Row
-          label="Size"
-          value={trade.size === null ? '—' : `${trade.size} ${trade.sizeUnit}`}
-        />
-        <Row label="Entry" value={money(trade.entryPrice)} />
-        <Row label="Exit" value={money(trade.exitPrice)} />
-        <Row label="Opened" value={when(trade.entryAt)} />
-        <Row label="Closed" value={when(trade.exitAt)} />
-        <Row label="Stop" value={money(trade.stopLoss)} />
-        <Row label="Target" value={money(trade.takeProfit)} />
-        <Row
-          label="R:R"
-          value={trade.riskReward === null ? '—' : `${trade.riskReward.toFixed(2)}R`}
-        />
-        <Row label="Held" value={trade.duration ?? '—'} />
-        <Row label="Before" value={trade.emotionBefore} />
-        <Row label="During" value={trade.emotionDuring} />
-        {trade.mistakes.length > 0 && (
-          <div className="col-span-full">
-            <dt>Mistakes</dt>
-            <dd>{trade.mistakes.join(', ')}</dd>
-          </div>
-        )}
-        {trade.rationale && (
-          <div className="col-span-full">
-            <dt>Rationale</dt>
-            <dd>{trade.rationale}</dd>
-          </div>
-        )}
-        {trade.notes && (
-          <div className="col-span-full">
-            <dt>Notes</dt>
-            <dd>{trade.notes}</dd>
-          </div>
-        )}
-      </dl>
+        {confirming ? (
+          <div className={CONFIRM_CARD} role="alertdialog" aria-labelledby="confirm-title">
+            <p className={CONFIRM_TITLE} id="confirm-title">
+              Delete this entry?
+            </p>
+            <p className={CONFIRM_BODY}>
+              {trade.ticker || 'This trade'}
+              {trade.entryAt ? ` from ${when(trade.entryAt)}` : ''} will be removed from
+              your journal. Your statistics recalculate without it. This cannot be undone.
+            </p>
 
-      {confirming ? (
-        <div className={CONFIRM_CARD} role="alertdialog" aria-labelledby="confirm-title">
-          <p className={CONFIRM_TITLE} id="confirm-title">
-            Delete this entry?
-          </p>
-          <p className={CONFIRM_BODY}>
-            {trade.ticker || 'This trade'}
-            {trade.entryAt ? ` from ${when(trade.entryAt)}` : ''} will be removed from
-            your journal. Your statistics recalculate without it. This cannot be undone.
-          </p>
-
-          <div className={CONFIRM_FOOT}>
+            <div className={CONFIRM_FOOT}>
+              <button
+                type="button"
+                className={`${PILL} ${PILL_IDLE}`}
+                onClick={() => setConfirming(false)}
+                disabled={working}
+              >
+                Keep it
+              </button>
+              <button
+                type="button"
+                className={`${PILL} ${PILL_DANGER}`}
+                disabled={working}
+                onClick={async () => {
+                  setWorking(true)
+                  try {
+                    await onDelete(trade)
+                  } finally {
+                    setWorking(false)
+                  }
+                }}
+              >
+                {working && <SpinnerIcon className="animate-spin" size={14} />}
+                {working ? 'Deleting…' : 'Delete trade'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={MODAL_FOOT}>
             <button
               type="button"
               className={`${PILL} ${PILL_IDLE}`}
-              onClick={() => setConfirming(false)}
-              disabled={working}
+              onClick={() => setConfirming(true)}
             >
-              Keep it
+              <TrashIcon size={14} />
+              Delete
             </button>
             <button
               type="button"
-              className={`${PILL} ${PILL_DANGER}`}
-              disabled={working}
-              onClick={async () => {
-                setWorking(true)
-                try {
-                  await onDelete(trade)
-                } finally {
-                  setWorking(false)
-                }
-              }}
+              className={`${PILL} ${PILL_ACCENT}`}
+              onClick={() => onEdit(trade)}
             >
-              {working && <SpinnerIcon className="animate-spin" size={14} />}
-              {working ? 'Deleting…' : 'Delete trade'}
+              <PencilIcon size={14} />
+              Edit trade
             </button>
           </div>
-        </div>
-      ) : (
-        <div className={MODAL_FOOT}>
-          <button
-            type="button"
-            className={`${PILL} ${PILL_IDLE}`}
-            onClick={() => setConfirming(true)}
-          >
-            <TrashIcon size={14} />
-            Delete
-          </button>
-          <button
-            type="button"
-            className={`${PILL} ${PILL_ACCENT}`}
-            onClick={() => onEdit(trade)}
-          >
-            <PencilIcon size={14} />
-            Edit trade
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </dialog>
   )
 }
