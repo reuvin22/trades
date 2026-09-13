@@ -9,10 +9,14 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check:env": "node scripts/check-env.mjs",
-    "prebuild": "node scripts/check-env.mjs",
-    "postbuild": "node scripts/check-env.mjs --dist",
+    "prebuild": "node scripts/check-env.mjs && node seo/generate.mjs",
+    "postbuild": "node scripts/check-env.mjs --dist && node seo/audit.mjs",
     "vercel:env": "node scripts/vercel-env.mjs",
-    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,database"
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,database",
+    "seo:generate": "node seo/generate.mjs",
+    "seo:image": "node seo/og-image.mjs",
+    "seo:check": "node seo/audit.mjs",
+    "seo": "npm run seo:generate && npm run seo:image && npm run seo:check"
   },
   "dependencies": {
     "firebase": "^12.19.0",

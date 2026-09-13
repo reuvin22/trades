@@ -13,11 +13,56 @@
          did nothing on a phone with a gesture bar or nav bar. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#06050f" />
-    <meta
-      name="description"
-      content="RagDex — Know Your Trades. Grow Your Edge. A trading journal that turns your logged trades into an honest read on your edge and your habits."
-    />
-    <title>RagDex — Know Your Trades. Grow Your Edge.</title>
+
+    <!--
+      Everything below comes from seo/site.config.mjs. Change it there and
+      run `npm run seo:check` — these tags are verified against that file on
+      every build, so an edit here alone will be caught rather than shipped.
+    -->
+    <meta name="description" content="Log every trade with the context and emotion behind it. RagDex turns your journal into an honest read on your edge, your habits and the leaks costing you money." />
+
+    <!-- The one real address of this page. Without it, the same content
+         reachable at two URLs competes with itself. -->
+    <link rel="canonical" href="https://trades-sable-mu.vercel.app/" />
+
+    <!-- How the link looks pasted into Slack, X, Discord or iMessage. The
+         image URL must be absolute: those servers fetch it themselves. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RagDex" />
+    <meta property="og:url" content="https://trades-sable-mu.vercel.app/" />
+    <meta property="og:title" content="RagDex — Trading Journal with an AI Coach" />
+    <meta property="og:description" content="Log every trade with the context and emotion behind it. RagDex turns your journal into an honest read on your edge, your habits and the leaks costing you money." />
+    <meta property="og:image" content="https://trades-sable-mu.vercel.app/og-image.png" />
+    <meta property="og:image:alt" content="The RagDex dashboard, showing an equity curve and a trade journal" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RagDex — Trading Journal with an AI Coach" />
+    <meta name="twitter:description" content="Log every trade with the context and emotion behind it. RagDex turns your journal into an honest read on your edge, your habits and the leaks costing you money." />
+    <meta name="twitter:image" content="https://trades-sable-mu.vercel.app/og-image.png" />
+
+    <title>RagDex — Trading Journal with an AI Coach</title>
+
+    <!-- Stated plainly, for the machines: what this is, who makes it, what
+         it costs. This is what rich results are built from. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "RagDex",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "https://trades-sable-mu.vercel.app",
+        "description": "Log every trade with the context and emotion behind it. RagDex turns your journal into an honest read on your edge, your habits and the leaks costing you money.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Free plan available"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
