@@ -1497,3 +1497,73 @@ export const ACTION_MENU =
  *  so the tray keeps its shape rather than jumping when the image lands. */
 export const DOCK_TRAY_THUMB_EMPTY =
   'grid size-34 flex-none place-items-center rounded-xs border border-line bg-tint-1 text-fg-muted'
+
+/* ---------------------------------------------------------- image viewer */
+
+/**
+ * The lightbox: a dialog that fills the screen rather than sitting in it.
+ *
+ * `max-w-none`/`max-h-none` because the shared MODAL caps its own size, and a
+ * picture being examined wants every pixel available. The backdrop is darker
+ * than a normal modal's for the same reason — what is being looked at is the
+ * image, and the app behind it is a distraction.
+ */
+export const VIEWER =
+  'fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-fg ' +
+  'open:[animation:fade_0.2s_ease] ' +
+  'backdrop:bg-[rgba(4,3,10,0.86)] backdrop:backdrop-blur-[2px] open:backdrop:[animation:fade_0.2s_ease]'
+
+/** Fills the dialog; clicks landing here, on nothing, close the viewer. */
+export const VIEWER_STAGE =
+  'relative grid h-full w-full place-items-center overflow-hidden select-none'
+
+/**
+ * The image itself.
+ *
+ * No transition on the transform: a zoom that eases looks considered until it
+ * is chasing a drag, at which point the picture lags behind the cursor.
+ */
+export const VIEWER_IMAGE =
+  'max-h-[86vh] max-w-[92vw] object-contain will-change-transform [transform-origin:center]'
+
+export const VIEWER_BAR =
+  'absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-8 p-16'
+
+/** The controls, floating on their own panel so they read over any picture. */
+export const VIEWER_TOOLS =
+  'flex items-center gap-4 rounded-full border border-line-strong bg-panel-solid/95 p-6 shadow-[var(--shadow-pop)] backdrop-blur-[6px]'
+
+export const VIEWER_BUTTON =
+  'grid size-34 place-items-center rounded-full text-fg-dim transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-35'
+
+/** Reads out the zoom level, and doubles as the reset button. */
+export const VIEWER_LEVEL =
+  'min-w-52 rounded-full px-10 py-7 text-center text-[12px] font-medium tabular-nums text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+
+export const VIEWER_CLOSE =
+  'absolute top-16 right-16 z-10 grid size-36 place-items-center rounded-full border border-line-strong bg-panel-solid/95 text-fg-dim shadow-[var(--shadow-pop)] transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+
+/** Which of several, top left, opposite the close button. */
+export const VIEWER_COUNT =
+  'absolute top-16 left-16 z-10 max-w-[50vw] truncate rounded-full border border-line-strong bg-panel-solid/95 px-14 py-9 text-[12px] text-fg-dim shadow-[var(--shadow-pop)]'
+
+/** Step to the next picture. Centred vertically, clear of the toolbar. */
+export const VIEWER_STEP =
+  'absolute top-1/2 z-10 grid size-40 -translate-y-1/2 place-items-center rounded-full border border-line-strong bg-panel-solid/95 text-fg-dim shadow-[var(--shadow-pop)] transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+
+/* ------------------------------------------------- pictures on a trade */
+
+/**
+ * Charts attached to a trade, as the detail view shows them back.
+ *
+ * Thumbnails here rather than filenames: in the form a name confirms the right
+ * file went up, but reading an entry back the picture *is* the content — and
+ * it is the one field a trader opens the row to look at.
+ */
+export const SHOT_STRIP = 'mt-8 flex flex-wrap gap-8'
+export const SHOT_TILE =
+  'relative size-72 cursor-zoom-in overflow-hidden rounded-sm border border-line bg-tint-1 transition-[border-color,transform] duration-150 hover:border-line-strong hover:scale-[1.03]'
+export const SHOT_TILE_IMAGE = 'size-full object-cover'
+/** A tile whose image has not resolved yet, or is a link we cannot render. */
+export const SHOT_TILE_EMPTY =
+  'grid size-full place-items-center text-fg-muted [&_svg]:opacity-60'
