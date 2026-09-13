@@ -16,7 +16,6 @@ import { CameraIcon, SpinnerIcon, UserGlyphIcon } from '../components/Icons'
 import { ACCEPTED } from '../lib/chartImage'
 import { uploadImage } from '../lib/uploads'
 import { useImageUrl } from '../lib/useImageUrl'
-import { useImageViewer } from '../lib/imageViewer'
 import {
   ACCOUNT_ACTIONS,
   ACCOUNT_CARD,
@@ -97,7 +96,6 @@ function fromRecord(record: ProfileRecord): Form {
 }
 
 export function Profile({ user, profile, onSaved }: ProfileProps) {
-  const viewer = useImageViewer()
   const [form, setForm] = useState<Form>(BLANK)
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -220,15 +218,7 @@ export function Profile({ user, profile, onSaved }: ProfileProps) {
           <div className={IDENTITY}>
             <span className={IDENTITY_AVATAR}>
               {avatarSrc ? (
-                <img
-                  src={avatarSrc}
-                  alt="Your profile photo"
-                  className="cursor-zoom-in"
-                  referrerPolicy="no-referrer"
-                  onClick={() =>
-                    viewer.open([{ src: avatarSrc, label: 'Profile photo' }])
-                  }
-                />
+                <img src={avatarSrc} alt="" referrerPolicy="no-referrer" />
               ) : (
                 <span className={AVATAR_INITIALS}>{initial}</span>
               )}

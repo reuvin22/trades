@@ -12,7 +12,6 @@ import {
   SendIcon,
   UserGlyphIcon,
 } from '../components/Icons'
-import { useImageViewer } from '../lib/imageViewer'
 import {
   BUBBLE,
   BUBBLE_COACH,
@@ -190,7 +189,6 @@ function LanguagePicker({
 }
 
 export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
-  const viewer = useImageViewer()
   // Held locally as well as on the profile. The save can fail — most
   // often because the security rules have not been published yet — and when it
   // does the conversation must still open rather than stranding the user on a
@@ -374,14 +372,7 @@ export function AiCoach({ user, profile, tradeCount }: AiCoachProps) {
                   <div className={`${BUBBLE} ${BUBBLE_TRADER}`}>
                     {turn.text}
                     {turn.image && (
-                      <img
-                        className={`${CHART_SENT} cursor-zoom-in`}
-                        src={turn.image}
-                        alt="Chart you sent"
-                        onClick={() =>
-                          viewer.open([{ src: turn.image!, label: 'Chart you sent' }])
-                        }
-                      />
+                      <img className={CHART_SENT} src={turn.image} alt="Chart you sent" />
                     )}
                   </div>
                   <span className={`${CHAT_AVATAR} ${CHAT_AVATAR_TRADER}`} aria-hidden="true">

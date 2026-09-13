@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { StoredTrade } from '../lib/trades'
 import { currency } from '../data/dashboard'
 import { PencilIcon, SpinnerIcon, TrashIcon, CloseIcon } from './Icons'
-import { ChartStrip } from './ChartStrip'
 import {
   CONFIRM_BODY,
   CONFIRM_CARD,
@@ -175,16 +174,6 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
             <div className="col-span-full">
               <dt>Notes</dt>
               <dd>{trade.notes}</dd>
-            </div>
-          )}
-          {/* Last, and full width: it is the tallest thing here, and a row of
-              thumbnails between two text fields breaks the reading order. */}
-          {trade.screenshots.length > 0 && (
-            <div className="col-span-full">
-              <dt>{trade.screenshots.length === 1 ? 'Chart' : 'Charts'}</dt>
-              <dd>
-                <ChartStrip keys={trade.screenshots} />
-              </dd>
             </div>
           )}
         </dl>
