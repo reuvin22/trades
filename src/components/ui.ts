@@ -1456,3 +1456,8 @@ export const ACTION_MENU =
   'absolute top-[calc(100%+6px)] right-0 z-40 flex min-w-180 flex-col overflow-hidden rounded-md border border-line-strong bg-panel-solid p-4 shadow-[var(--shadow-pop)] [animation:menu-in_0.14s_cubic-bezier(0.22,0.8,0.3,1)] ' +
   '[&>button]:rounded-[6px] [&>button]:px-11 [&>button]:py-9 [&>button]:text-left [&>button]:text-[13.5px] [&>button]:text-fg-dim [&>button]:transition-colors [&>button]:duration-100 ' +
   '[&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong [&>button[aria-current]]:bg-tint-2 [&>button[aria-current]]:font-medium [&>button[aria-current]]:text-fg-strong'
+
+/** The thumbnail slot before there is a thumbnail — a spinner in its place,
+ *  so the tray keeps its shape rather than jumping when the image lands. */
+export const DOCK_TRAY_THUMB_EMPTY =
+  'grid size-34 flex-none place-items-center rounded-xs border border-line bg-tint-1 text-fg-muted'

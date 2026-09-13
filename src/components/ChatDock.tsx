@@ -92,6 +92,7 @@ import {
   DOCK_TRAY,
   DOCK_TRAY_NAME,
   DOCK_TRAY_THUMB,
+  DOCK_TRAY_THUMB_EMPTY,
   DOCK_UNREAD,
   MODAL_CLOSE,
 } from './ui'
@@ -479,6 +480,10 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   const [editing, setEditing] = useState<ChatMessage | null>(null)
   /** A picture waiting to go with the next message, already downscaled. */
   const [attached, setAttached] = useState<string | null>(null)
+  /** Shrinking it. Seconds of canvas work on a large screenshot. */
+  const [preparing, setPreparing] = useState(false)
+  /** Encrypting and writing it. Text lands instantly; a picture does not. */
+  const [sendingImage, setSendingImage] = useState(false)
 
   // Anywhere else is a dismissal — the usual contract for a context menu.
   useEffect(() => {
@@ -532,6 +537,8 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     setActiveId(uid)
     setDraft('')
     setAttached(null)
+    setPreparing(false)
+    setSendingImage(false)
     setFailure(null)
     setHeld(null)
     setEditing(null)
@@ -564,9 +571,13 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     const rewriting = editing
     const picture = attached
     setDraft('')
-    setAttached(null)
     setEditing(null)
     setFailure(null)
+    // The picture stays in the tray until the write lands, so the dock shows
+    // "Sending image…" rather than going blank while the encryption and the
+    // upload happen.
+    if (picture) setSendingImage(true)
+    else setAttached(null)
 
     try {
       if (rewriting !== null) {
@@ -576,11 +587,14 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
       } else {
         await sendMessage(me, activeId, text, picture ?? undefined)
       }
+      setAttached(null)
     } catch (cause) {
       setDraft(text)
       setAttached(picture)
       setEditing(rewriting)
       setFailure(readableApiError(cause))
+    } finally {
+      setSendingImage(false)
     }
   }
 
@@ -595,10 +609,18 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     if (!file) return
     setFailure(null)
 
+    // Shrinking a phone screenshot means decoding it, redrawing it and
+    // re-encoding it — seconds of work on a large one, with nothing on screen
+    // to say so. Silence there reads as a click that did not register, so the
+    // tray appears immediately and fills in when the work is done.
+    setPreparing(true)
+
     try {
       setAttached(await prepareChatImage(file))
     } catch (cause) {
       setFailure(cause instanceof Error ? cause.message : 'That image could not be used.')
+    } finally {
+      setPreparing(false)
     }
   }
 
@@ -795,18 +817,37 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     </p>
                   )}
 
-                  {attached !== null && (
-                    <div className={DOCK_TRAY}>
-                      <img className={DOCK_TRAY_THUMB} src={attached} alt="" />
-                      <span className={DOCK_TRAY_NAME}>Image ready to send</span>
-                      <button
-                        type="button"
-                        className={DOCK_ATTACH}
-                        onClick={() => setAttached(null)}
-                        aria-label="Remove image"
-                      >
-                        <CloseIcon size={14} />
-                      </button>
+                  {(attached !== null || preparing || sendingImage) && (
+                    <div className={DOCK_TRAY} aria-live="polite">
+                      {attached === null ? (
+                        <span className={DOCK_TRAY_THUMB_EMPTY}>
+                          <SpinnerIcon className="animate-spin" size={14} />
+                        </span>
+                      ) : (
+                        <img className={DOCK_TRAY_THUMB} src={attached} alt="" />
+                      )}
+
+                      <span className={DOCK_TRAY_NAME}>
+                        {preparing
+                          ? 'Preparing image…'
+                          : sendingImage
+                            ? 'Sending image…'
+                            : 'Image ready to send'}
+                      </span>
+
+                      {/* No way out mid-flight: cancelling a send that has
+                          already left would clear the tray without stopping
+                          anything. */}
+                      {!preparing && !sendingImage && (
+                        <button
+                          type="button"
+                          className={DOCK_ATTACH}
+                          onClick={() => setAttached(null)}
+                          aria-label="Remove image"
+                        >
+                          <CloseIcon size={14} />
+                        </button>
+                      )}
                     </div>
                   )}
 

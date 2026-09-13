@@ -19,6 +19,8 @@ import {
 } from '../data/tradeForm'
 import { useToast } from '../lib/toast'
 import { Combobox } from './Combobox'
+import { ACCEPTED } from '../lib/chartImage'
+import { isHttpUrl, uploadImage } from '../lib/uploads'
 import { Select } from './Select'
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon, SpinnerIcon } from './Icons'
 import {
@@ -120,6 +122,35 @@ export function QuickAddTrade({
   const [saveError, setSaveError] = useState('')
   const toast = useToast()
   const formId = useId()
+
+  /*
+   * The screenshot field takes either a link or a file, and the stored value
+   * tells them apart on its own: an http(s) string is a link, anything else is
+   * a key in our own bucket. So the mode is derived from what is there rather
+   * than tracked as a second source of truth that could disagree with it.
+   */
+  const isLink = isHttpUrl(trade.screenshot)
+  const [shotMode, setShotMode] = useState<'upload' | 'link'>('upload')
+  const [shotBusy, setShotBusy] = useState<'preparing' | 'uploading' | null>(null)
+  const [shotError, setShotError] = useState('')
+
+  const linkValue = isLink ? trade.screenshot : ''
+  const storedShot = trade.screenshot !== '' && !isLink
+
+  async function attachShot(file: File | null) {
+    if (!file) return
+    setShotError('')
+
+    try {
+      update('screenshot', await uploadImage(file, 'charts', setShotBusy))
+    } catch (cause) {
+      setShotError(
+        cause instanceof Error ? cause.message : 'That image could not be uploaded.',
+      )
+    } finally {
+      setShotBusy(null)
+    }
+  }
 
   // <dialog> gives us the focus trap, backdrop and Esc handling for free.
   useEffect(() => {
@@ -403,12 +434,55 @@ export function QuickAddTrade({
 
               <label className={`${FIELD} col-span-2`}>
                 <span className={FIELD_LABEL}>Chart screenshot</span>
-                <input
-                  type="url"
-                  value={trade.screenshot}
-                  onChange={(event) => update('screenshot', event.target.value)}
-                  placeholder="Paste an image or TradingView link"
-                />
+
+                <div className={TOGGLE_GROUP}>
+                  {(['upload', 'link'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={TOGGLE}
+                      aria-pressed={shotMode === mode}
+                      onClick={() => setShotMode(mode)}
+                    >
+                      {mode === 'upload' ? 'Upload' : 'Paste a link'}
+                    </button>
+                  ))}
+                </div>
+
+                {shotMode === 'link' ? (
+                  <input
+                    type="url"
+                    value={linkValue}
+                    onChange={(event) => update('screenshot', event.target.value)}
+                    placeholder="https://www.tradingview.com/x/…"
+                  />
+                ) : (
+                  <span className={INPUT_PAIR}>
+                    <input
+                      type="file"
+                      accept={ACCEPTED}
+                      disabled={shotBusy !== null}
+                      onChange={(event) => {
+                        void attachShot(event.target.files?.[0] ?? null)
+                        event.target.value = ''
+                      }}
+                    />
+                  </span>
+                )}
+
+                <span className={FIELD_HINT}>
+                  {shotBusy === 'preparing'
+                    ? 'Preparing the image…'
+                    : shotBusy === 'uploading'
+                      ? 'Uploading…'
+                      : shotError !== ''
+                        ? shotError
+                        : storedShot
+                          ? 'Image stored with this trade.'
+                          : shotMode === 'upload'
+                            ? 'Up to 10MB. Shrunk before it is sent.'
+                            : 'A link to the chart, wherever it lives.'}
+                </span>
               </label>
 
               <label className={FIELD}>

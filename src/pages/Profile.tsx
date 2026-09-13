@@ -12,6 +12,9 @@ import {
   type ProfileDetails,
 } from '../lib/profile'
 import { CameraIcon, SpinnerIcon, UserGlyphIcon } from '../components/Icons'
+import { ACCEPTED } from '../lib/chartImage'
+import { uploadImage } from '../lib/uploads'
+import { useImageUrl } from '../lib/useImageUrl'
 import {
   ACCOUNT_ACTIONS,
   ACCOUNT_CARD,
@@ -94,7 +97,32 @@ export function Profile({ user, profile }: ProfileProps) {
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [avatarBusy, setAvatarBusy] = useState<'preparing' | 'uploading' | null>(null)
+  const [avatarError, setAvatarError] = useState('')
+
+  /*
+   * Uploaded straight away rather than held until Save.
+   *
+   * The preview beside the field is the confirmation that the right image was
+   * chosen, and it cannot show one until the bytes are somewhere it can read
+   * them from. What the form then carries is the key, which is what saves.
+   */
   const toast = useToast()
+
+  async function chooseAvatar(file: File | null) {
+    if (!file) return
+    setAvatarError('')
+
+    try {
+      update('photoURL', await uploadImage(file, 'profile', setAvatarBusy))
+    } catch (cause) {
+      setAvatarError(
+        cause instanceof Error ? cause.message : 'That image could not be uploaded.',
+      )
+    } finally {
+      setAvatarBusy(null)
+    }
+  }
 
   // Seeding during render is React's documented way to adjust state when props
   // arrive; doing it in an effect would render once with empty fields first.
@@ -149,6 +177,7 @@ export function Profile({ user, profile }: ProfileProps) {
     }
   }
 
+  const avatarSrc = useImageUrl(form.photoURL)
   const initial = (form.displayName || user?.email || 'T').slice(0, 1).toUpperCase()
   const zones = [form.timezone, ...TIMEZONES.filter((zone) => zone !== form.timezone)].filter(
     Boolean,
@@ -171,8 +200,8 @@ export function Profile({ user, profile }: ProfileProps) {
 
           <div className={IDENTITY}>
             <span className={IDENTITY_AVATAR}>
-              {form.photoURL ? (
-                <img src={form.photoURL} alt="" referrerPolicy="no-referrer" />
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="" referrerPolicy="no-referrer" />
               ) : (
                 <span className={AVATAR_INITIALS}>{initial}</span>
               )}
@@ -181,14 +210,26 @@ export function Profile({ user, profile }: ProfileProps) {
             <label className={`${FIELD} min-w-0 flex-1 max-[900px]:w-full [&>span]:justify-start [&>span]:gap-7`}>
               <span className={FIELD_LABEL}>
                 <CameraIcon />
-                Avatar image URL
+                Profile photo
               </span>
               <input
-                type="url"
-                value={form.photoURL}
-                onChange={(event) => update('photoURL', event.target.value)}
-                placeholder="https://…"
+                type="file"
+                accept={ACCEPTED}
+                disabled={avatarBusy !== null}
+                onChange={(event) => {
+                  void chooseAvatar(event.target.files?.[0] ?? null)
+                  event.target.value = ''
+                }}
               />
+              <span className={FIELD_HINT}>
+                {avatarBusy === 'preparing'
+                  ? 'Preparing the image…'
+                  : avatarBusy === 'uploading'
+                    ? 'Uploading…'
+                    : avatarError !== ''
+                      ? avatarError
+                      : 'Choose an image. It is shrunk before it is uploaded, and saved with the rest of the form.'}
+              </span>
             </label>
           </div>
 

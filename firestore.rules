@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Firestore is served ONLY through the RagDex API, which uses the Admin SDK —
+// and the Admin SDK bypasses these rules entirely. No browser reads this
+// database directly, so there is nothing here for rules to permit.
+//
+// Deny-all is therefore the correct and strongest setting. It is not a
+// placeholder: it is what stops a leaked web API key from reaching the journal,
+// and it is why every repository function in ragdex-be takes a verified uid
+// first — that discipline, not these rules, is what enforces tenant isolation.
+//
+// Chat is the one exception to "no direct database access", and it lives in the
+// Realtime Database instead. Its boundary is database.rules.json.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
