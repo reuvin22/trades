@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { readCache, writeCache } from './cache'
 import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
 import { SESSIONS } from '../data/tradeForm'
 import type { TradeEntry, TradingSession } from '../data/tradeForm'
@@ -179,8 +180,16 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
 const PAGE_SIZE = 100
 
 /** Every page, followed to the end. A journal is read whole by the charts. */
-async function fetchAll(signal?: AbortSignal): Promise<StoredTrade[]> {
-  const all: StoredTrade[] = []
+/**
+ * Every page, as the API returned them.
+ *
+ * Wire rows rather than mapped ones because this is what gets cached, and
+ * a cache of mapped objects would have to survive JSON — which turns the
+ * dates back into strings. Callers map; the mapper is the one place that
+ * knows the shape either way.
+ */
+async function fetchAll(signal?: AbortSignal): Promise<TradeWire[]> {
+  const all: TradeWire[] = []
   let cursor: string | null = null
 
   do {
@@ -188,7 +197,7 @@ async function fetchAll(signal?: AbortSignal): Promise<StoredTrade[]> {
       query: { limit: PAGE_SIZE, cursor: cursor ?? undefined },
       signal,
     })
-    all.push(...page.items.map(toStored))
+    all.push(...page.items)
     cursor = page.next_cursor
   } while (cursor !== null)
 
@@ -286,16 +295,40 @@ export function useTrades(uid: string | null): TradesState {
   const [nonce, setNonce] = useState(0)
   const reload = useCallback(() => setNonce((current) => current + 1), [])
 
+  /*
+   * Last session's rows, adopted during render rather than in an effect.
+   *
+   * In an effect this would paint an empty journal first and replace it a
+   * frame later — the exact flash the cache exists to remove. Adjusting state
+   * while rendering on a changed input is React's documented way to do this.
+   */
+  const [seeded, setSeeded] = useState<string | null>(null)
+  if (uid && seeded !== uid) {
+    setSeeded(uid)
+    const cached = readCache<TradeWire[]>('trades', uid)
+    if (cached) setState({ uid, trades: cached.map(toStored), error: null })
+  }
+
   useEffect(() => {
     if (!uid) return
 
     const abort = new AbortController()
 
     fetchAll(abort.signal)
-      .then((trades) => setState({ uid, trades, error: null }))
+      .then((wires) => {
+        writeCache('trades', uid, wires)
+        setState({ uid, trades: wires.map(toStored), error: null })
+      })
       .catch((cause: unknown) => {
         if (abort.signal.aborted) return
-        setState({ uid, trades: [], error: readableApiError(cause) })
+        // The cached rows stay on screen rather than being cleared behind an
+        // error: stale rows a moment old beat an empty journal, and the
+        // message says why nothing newer arrived.
+        setState((current) =>
+          current.uid === uid
+            ? { ...current, error: readableApiError(cause) }
+            : { uid, trades: [], error: readableApiError(cause) },
+        )
       })
 
     return () => abort.abort()

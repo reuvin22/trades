@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { readCache, writeCache } from './cache'
 import { apiFetch, date, num, readableApiError } from './api'
 import type { AuthUser } from './useAuth'
 
@@ -380,6 +381,19 @@ export function useProfile(user: AuthUser | null): ProfileState {
 
   const uid = user?.uid ?? null
 
+  // Same treatment as the journal: last session's profile during render, so
+  // the name and the avatar are there on the first frame.
+  const [seeded, setSeeded] = useState<string | null>(null)
+  if (uid && seeded !== uid) {
+    setSeeded(uid)
+    const cached = readCache<ProfileWire>('profile', uid)
+    if (cached) {
+      // isNewAccount stays false: a cache means this account has been here
+      // before, and the tour has its own memory besides.
+      setState({ uid, profile: toProfile(cached), isNewAccount: false, error: null })
+    }
+  }
+
   useEffect(() => {
     if (!uid) return
 
@@ -387,6 +401,7 @@ export function useProfile(user: AuthUser | null): ProfileState {
 
     apiFetch<ProfileWire>('/api/v1/me', { signal: abort.signal })
       .then((wire) => {
+        writeCache('profile', uid, wire)
         const profile = toProfile(wire)
         const created = profile.createdAt
         setState({

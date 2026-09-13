@@ -4,6 +4,8 @@ import { ApiError, apiFetch } from './api'
 import { auth } from './firebase'
 import { goOffline } from './chat'
 import { forgetKeys } from './messagecrypto'
+import { forgetCache } from './cache'
+import { forgetImageUrls } from './uploads'
 
 /**
  * The signed-in trader.
@@ -232,6 +234,12 @@ export async function signOutOfApp() {
   // Thread keys are per-session. Leaving them behind would let the next person
   // at this browser read what the last one was sent.
   forgetKeys()
+
+  // The same argument for everything else this browser is holding: the cached
+  // profile and journal, and the signed URLs that would still open an image
+  // for the minutes left on them.
+  forgetCache()
+  forgetImageUrls()
 
   return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }

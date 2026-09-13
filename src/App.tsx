@@ -18,6 +18,7 @@ import {
 } from './lib/profile'
 import { saveTrade, useTrades } from './lib/trades'
 import { useTheme } from './lib/useTheme'
+import { useWarmup } from './lib/useWarmup'
 import { labelForRoute } from './navigation'
 import { AiCoach } from './pages/AiCoach'
 import { Analytics } from './pages/Analytics'
@@ -97,7 +98,12 @@ function App() {
   const route = useHashRoute()
   const { theme, toggle } = useTheme()
   const { user, confirmed, pending, refresh } = useAuth()
-  const { profile, isNewAccount, reload: reloadProfile } = useProfile(user)
+  const {
+    profile,
+    isNewAccount,
+    loading: profileLoading,
+    reload: reloadProfile,
+  } = useProfile(user)
   const [logging, setLogging] = useState(false)
   const nav = useNavDrawer(route)
   const rail = useCollapsedNav()
@@ -111,6 +117,9 @@ function App() {
   // Confirmed, not merely signed in. A Google account arrives with Firebase
   // already calling it verified, so that flag cannot be the gate — this one is.
   const signedIn = (Boolean(user) && confirmed) || preview
+  const warming = useWarmup(
+    !pending && signedIn && !preview && (loading || profileLoading),
+  )
 
   /*
    * The tour runs once for a new account. Derived rather than held in an
@@ -152,7 +161,13 @@ function App() {
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])
 
-  if (pending) return <SplashScreen />
+  /*
+   * Held until there is something to show, not merely until the session is
+   * known. With a cache from this tab there is nothing to wait for and the
+   * splash never appears; without one it stays up rather than letting an
+   * empty shell through. Preview has no account and so nothing to fetch.
+   */
+  if (pending || warming) return <SplashScreen />
 
   // A signed-in but unconfirmed address gets the gate, never the app.
   if (user && !confirmed && !preview) {
