@@ -10,7 +10,7 @@ import {
   CHART_EMPTY,
   EQUITY_LINE,
   GRIDLINES,
-  PLOT,
+  PLOT_BASE,
   PLOT_SVG,
   X_AXIS,
   Y_AXIS,
@@ -121,7 +121,7 @@ export function RollingEquityCurve({
         </p>
       ) : (
         <>
-          <div className={`${PLOT} h-300 [&>div>span]:text-[9.5px]`}>
+          <div className={`${PLOT_BASE} h-300 [&>div>span]:text-[9.5px]`}>
             <div className={Y_AXIS} aria-hidden="true">
               {scale.ticks.map((tick) => (
                 <span key={tick} style={{ top: `${(scaleY(tick) / H) * 100}%` }}>

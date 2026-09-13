@@ -18,6 +18,7 @@ import {
   POS,
   SHIMMER,
 } from './ui'
+import { ClampedText } from './ClampedText'
 
 const NOTE = 'mt-12 flex items-center gap-6 text-[10.5px] text-fg-muted'
 
@@ -188,7 +189,8 @@ export function TradingBehaviourCard({
       {!leak.loading && leak.result && (
         <>
           <h3 className={INSIGHT_TITLE}>{leak.result.title}</h3>
-          <p className={INSIGHT_BODY}>{leak.result.finding}</p>
+          {/* The one field here with no length the coach agrees to. */}
+          <ClampedText>{leak.result.finding}</ClampedText>
 
           {leak.result.costLabel && (
             <p className={INSIGHT_COST}>

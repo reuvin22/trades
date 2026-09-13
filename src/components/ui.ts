@@ -173,7 +173,16 @@ export const SHIMMER =
  * whichever card comes later in the DOM. Raising the card is safe: the grid
  * columns have a gap, so nothing but the tooltip ever overlaps.
  */
-export const CHART_CARD = 'relative z-20 px-26 pt-24 pb-20'
+/**
+ * The equity card, which fills whatever height the row turns out to be.
+ *
+ * A column, so the plot below the header can take the remaining space
+ * rather than standing at a fixed 400px. The rail beside it holds cards
+ * whose height depends on what the coach wrote, and a chart that could
+ * not follow left a dead rectangle underneath it on exactly the days the
+ * coach had most to say.
+ */
+export const CHART_CARD = 'relative z-20 flex h-full flex-col px-26 pt-24 pb-20'
 
 
 /** The plot body. touch-action keeps vertical scrolling alive over the chart. */
@@ -181,7 +190,26 @@ export const CHART_CARD = 'relative z-20 px-26 pt-24 pb-20'
  * pl-46 reserves the Y axis; pr-10 keeps the last point off the card edge,
  * where the marker used to half-overhang and the curve looked sheared off.
  */
-export const PLOT = 'relative mt-4 h-400 touch-pan-y pl-46 pr-10 max-shell:h-300'
+/**
+ * Grows into the space the card has, never below a readable minimum.
+ *
+ * The SVG inside is `preserveAspectRatio="none"`, so it simply fills
+ * whatever box it is given — the strokes already carry
+ * `non-scaling-stroke` for precisely this reason.
+ */
+/** Everything about the plot box except how tall it is. */
+export const PLOT_BASE = 'relative mt-4 touch-pan-y pl-46 pr-10'
+
+/**
+ * The dashboard plot: grows into the space its card has.
+ *
+ * Stated as its own constant rather than PLOT_BASE plus an override at
+ * the call site. Two height utilities on one element are settled by the
+ * order Tailwind happens to emit them in, not by the order they are
+ * written — so an override like that works until a rebuild reorders it.
+ */
+export const PLOT =
+  `${PLOT_BASE} min-h-340 flex-1 max-shell:min-h-300`
 
 /*
  * The drawing area, and the containing block for everything positioned against
@@ -1739,3 +1767,22 @@ export const SCORE_NAME = 'w-104 flex-none text-fg-dim'
 export const SCORE_TRACK = 'h-6 flex-1 overflow-hidden rounded-full bg-tint-2'
 export const SCORE_FILL = 'block h-full rounded-full transition-[width] duration-500 ease-out'
 export const SCORE_PCT = 'w-40 flex-none text-right tabular-nums text-fg-dim'
+
+/* ------------------------------------------- keeping a long finding in hand */
+
+/**
+ * A body of text trimmed to a few lines, with the rest a click away.
+ *
+ * The coach writes as much as the finding warrants, and some findings warrant
+ * a paragraph. In a 320px rail that paragraph is what turns a summary card
+ * into a column twice the height of the chart beside it — leaving a void on
+ * one side of the row and pushing everything below it down.
+ *
+ * Clamping rather than scrolling: a scrollbar inside a card on a dashboard is
+ * a thing nobody finds, and the first few lines are where the coach puts the
+ * point anyway.
+ */
+export const INSIGHT_CLAMP = 'line-clamp-6'
+
+export const INSIGHT_MORE =
+  'mt-8 text-[12px] font-medium text-accent-strong transition-opacity duration-150 hover:opacity-80'
