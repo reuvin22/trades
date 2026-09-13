@@ -46,11 +46,18 @@ const ANY_SETUP = 'All setups'
 const ANY_SESSION = 'All sessions'
 const ANY_RESULT = 'All results'
 
-const RESULTS = [ANY_RESULT, 'Winner', 'Loser', 'Still open']
+const RESULTS = [ANY_RESULT, 'Winner', 'Loser']
 
+/*
+ * The same rule the table labels a row with, deliberately.
+ *
+ * An unpriced entry used to come back as "Still open", which was never one of
+ * the options in RESULTS — so those rows matched no filter but "All results",
+ * while the table beside them was already calling them winners. Two names for
+ * one row is worse than treating a missing P&L as flat.
+ */
 function resultOf(trade: StoredTrade): string {
-  if (trade.netPl === null) return 'Still open'
-  return trade.netPl >= 0 ? 'Winner' : 'Loser'
+  return (trade.netPl ?? 0) >= 0 ? 'Winner' : 'Loser'
 }
 
 type Filters = { setup: string; session: string; result: string }
