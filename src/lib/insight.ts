@@ -18,6 +18,11 @@ export type LeakState = {
   /** Null when the feature simply is not configured — not worth alarming over. */
   error: string | null
   unavailable: boolean
+  /** When the stored analysis was worked out, and when it is next due. Null
+   *  until there is a result — the card uses them to say how old it is, so a
+   *  monthly reading is not mistaken for a reaction to this morning. */
+  computedAt: Date | null
+  nextAt: Date | null
   refresh: () => void
 }
 
@@ -31,6 +36,8 @@ type LeakWire = {
   } | null
   trade_count: number
   needed: number | null
+  computed_at: string | null
+  next_at: string | null
 }
 
 /**
@@ -49,6 +56,8 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     have: number
     error: string | null
     unavailable: boolean
+    computedAt: Date | null
+    nextAt: Date | null
   }>({
     key: null,
     result: null,
@@ -56,6 +65,8 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     have: 0,
     error: null,
     unavailable: false,
+    computedAt: null,
+    nextAt: null,
   })
 
   const [nonce, setNonce] = useState(0)
@@ -86,6 +97,8 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
           have: body.trade_count,
           error: null,
           unavailable: false,
+          computedAt: body.computed_at ? new Date(body.computed_at) : null,
+          nextAt: body.next_at ? new Date(body.next_at) : null,
         }),
       )
       .catch((cause: unknown) => {
@@ -114,6 +127,8 @@ export function useBehavioralLeak(uid: string | null, tradeCount: number): LeakS
     have: fresh ? state.have : 0,
     error: fresh ? state.error : null,
     unavailable: fresh && state.unavailable,
+    computedAt: fresh ? state.computedAt : null,
+    nextAt: fresh ? state.nextAt : null,
     refresh: useCallback(() => setNonce((current) => current + 1), []),
   }
 }

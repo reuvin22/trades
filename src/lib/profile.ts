@@ -43,6 +43,8 @@ export type Profile = {
   strategies?: string[]
   /** The non-negotiables, in their own words. */
   tradingRules?: string
+  /** How often the behavioural leak is re-analysed. */
+  leakCadence?: LeakCadence
 
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
@@ -96,6 +98,37 @@ export const FUNDING_TYPES: {
     value: 'demo',
     label: 'Demo',
     blurb: 'Practising. The habits are real even though the money is not.',
+  },
+]
+
+/**
+ * How often the behavioural leak is re-analysed.
+ *
+ * Not only a cost setting, though it is that too — the analysis used to run on
+ * every dashboard load. It also decides what the finding is about: a daily
+ * read speaks to yesterday's session, a monthly one to a pattern.
+ */
+export type LeakCadence = 'daily' | 'weekly' | 'monthly'
+
+export const LEAK_CADENCES: {
+  value: LeakCadence
+  label: string
+  blurb: string
+}[] = [
+  {
+    value: 'daily',
+    label: 'End of each day',
+    blurb: 'A fresh read every day. Best while you are actively fixing a habit.',
+  },
+  {
+    value: 'weekly',
+    label: 'Every week',
+    blurb: 'A week is enough trades for a pattern and short enough to act on.',
+  },
+  {
+    value: 'monthly',
+    label: 'Every month',
+    blurb: 'For swing traders, or anyone whose week is only a few trades.',
   },
 ]
 
@@ -191,6 +224,7 @@ function toProfile(wire: ProfileWire): Profile {
     maxTradesPerDay: num(wire.max_trades_per_day),
     strategies: Array.isArray(wire.strategies) ? wire.strategies.map(String) : [],
     tradingRules: String(wire.trading_rules ?? ''),
+    leakCadence: (wire.leak_cadence as LeakCadence) ?? 'daily',
     plan: String(wire.plan ?? 'individual'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),
@@ -231,6 +265,7 @@ export type TradingSetup = {
   maxTradesPerDay: number | null
   strategies: string[]
   tradingRules: string
+  leakCadence: LeakCadence
 }
 
 export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
@@ -249,6 +284,7 @@ export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
       max_trades_per_day: setup.maxTradesPerDay,
       strategies: setup.strategies,
       trading_rules: setup.tradingRules,
+      leak_cadence: setup.leakCadence,
     },
   })
   return toProfile(wire)

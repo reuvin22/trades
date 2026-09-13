@@ -4,9 +4,11 @@ import { useToast } from '../lib/toast'
 import {
   COMMON_STRATEGIES,
   FUNDING_TYPES,
+  LEAK_CADENCES,
   MARKET_TYPES,
   saveTradingSetup,
   type FundingType,
+  type LeakCadence,
   type MarketType,
   type Profile as ProfileRecord,
   type TradingSetup,
@@ -62,6 +64,7 @@ type Draft = {
   maxTradesPerDay: string
   strategies: string[]
   tradingRules: string
+  leakCadence: LeakCadence
 }
 
 function toDraft(record: ProfileRecord | null): Draft {
@@ -79,6 +82,7 @@ function toDraft(record: ProfileRecord | null): Draft {
     maxTradesPerDay: text(record?.maxTradesPerDay),
     strategies: record?.strategies ?? [],
     tradingRules: record?.tradingRules ?? '',
+    leakCadence: record?.leakCadence ?? 'daily',
   }
 }
 
@@ -102,6 +106,7 @@ function toSetup(draft: Draft): TradingSetup {
     maxTradesPerDay: toNumber(draft.maxTradesPerDay),
     strategies: draft.strategies,
     tradingRules: draft.tradingRules.trim(),
+    leakCadence: draft.leakCadence,
   }
 }
 
@@ -327,6 +332,27 @@ export function Settings({ profile }: SettingsProps) {
               and the gap between the two is worth a conversation.
             </span>
           </div>
+
+          <label className={`${FIELD} col-span-2`}>
+            <span className={FIELD_LABEL}>Analyse my behavioural leak</span>
+            <Select
+              value={draft.leakCadence}
+              onChange={(event) =>
+                update('leakCadence', event.target.value as LeakCadence)
+              }
+            >
+              {LEAK_CADENCES.map((cadence) => (
+                <option key={cadence.value} value={cadence.value}>
+                  {cadence.label}
+                </option>
+              ))}
+            </Select>
+            <span className={FIELD_HINT}>
+              {LEAK_CADENCES.find((entry) => entry.value === draft.leakCadence)?.blurb}{' '}
+              The card keeps the last reading in between, and its refresh button
+              re-runs it whenever you want.
+            </span>
+          </label>
 
           <label className={`${FIELD} col-span-full`}>
             <span className={FIELD_LABEL}>Your non-negotiable rules</span>

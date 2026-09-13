@@ -20,6 +20,24 @@ import {
 
 const NOTE = 'mt-12 flex items-center gap-6 text-[10.5px] text-fg-muted'
 
+/** How long ago the analysis ran, in the words someone would use out loud. */
+function whenRead(at: Date): string {
+  const minutes = Math.round((Date.now() - at.getTime()) / 60_000)
+
+  if (minutes < 2) return 'just now'
+  if (minutes < 60) return `${minutes} minutes ago`
+
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return hours === 1 ? 'an hour ago' : `${hours} hours ago`
+
+  const days = Math.round(hours / 24)
+  if (days === 1) return 'yesterday'
+  if (days < 7) return `${days} days ago`
+
+  const weeks = Math.round(days / 7)
+  return weeks === 1 ? 'last week' : `${weeks} weeks ago`
+}
+
 export function SystemSignalCard({ stats }: { stats: DerivedStats }) {
   const best = stats.bestSetup
 
@@ -158,7 +176,12 @@ export function BehavioralLeakCard({
 
           <p className={NOTE}>
             <SparkleIcon size={11} />
-            Written from your logged trades
+            {/* When, not just that. A monthly reading being read as a reaction
+                to this morning's session is the misunderstanding worth
+                spending a line to avoid. */}
+            {leak.computedAt
+              ? `Read your journal ${whenRead(leak.computedAt)}`
+              : 'Written from your logged trades'}
           </p>
         </>
       )}
