@@ -12,10 +12,6 @@ import {
   PLOT_MARKER,
   PLOT_AREA,
   PLOT_SVG,
-  SEGMENT,
-  SEGMENTED,
-  SEGMENT_ACTIVE,
-  SEGMENT_IDLE,
   TOOLTIP,
   TOOLTIP_DATE,
   TOOLTIP_VALUE,
@@ -26,20 +22,6 @@ import { useMemo, useState, type PointerEvent } from 'react'
 import { compactCurrency, currency, shortDate } from '../data/dashboard'
 import type { EquityPoint } from '../lib/stats'
 import { smoothPath } from '../lib/curve'
-import { DateRangePicker, type DateRange } from './DateRangePicker'
-import { CalendarIcon } from './Icons'
-
-const RANGES = ['90D', '30D', '7D'] as const
-type Preset = (typeof RANGES)[number]
-
-const RANGE_DAYS: Record<Preset, number> = { '90D': 90, '30D': 30, '7D': 7 }
-
-/** Inclusive, which is what a person means by "Jun 1 to Jun 7". */
-function daysBetween(from: Date, to: Date): number {
-  return Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1
-}
-
-const spanLabel = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
 
 const W = 1000
 const H = 400
@@ -65,38 +47,33 @@ function buildScale(values: number[], opening: number) {
 export function EquityChart({
   equity,
   opening,
+  spanLabel: caption,
 }: {
   equity: EquityPoint[]
   /** The account the curve starts from. See startingCapital(). */
   opening: number
+  /** What the page is currently showing, for the subtitle. */
+  spanLabel: string
 }) {
-  const [range, setRange] = useState<Preset>('90D')
-  const [custom, setCustom] = useState<DateRange | null>(null)
-  const [picking, setPicking] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
+  /*
+   * Drawn whole: the page has already narrowed `equity` to the chosen
+   * window, so filtering again here would apply the range twice.
+   */
   const series = useMemo(() => {
-    // An explicit span wins when one is set; otherwise the preset window.
-    const cutoff = custom ? new Date(custom.from) : new Date()
-    if (!custom) cutoff.setDate(cutoff.getDate() - RANGE_DAYS[range])
-
-    // The end day is inclusive, so reach to the last moment of it.
-    const until = custom ? new Date(custom.to.getTime() + 86_399_999) : null
-    const within = equity.filter(
-      (point) => point.date >= cutoff && (until === null || point.date <= until),
-    )
-
-    // Always open on the starting balance so a single trade still draws a line.
+    // Always open on the starting balance so a single trade still draws a
+    // line rather than a dot.
     const first: EquityPoint = {
-      date: cutoff,
-      value: within.length > 0 ? within[0].value - 0 : opening,
+      date: equity[0]?.date ?? new Date(),
+      value: opening,
       index: -1,
     }
 
-    return within.length === 0
+    return equity.length === 0
       ? [first, { ...first, date: new Date(), index: 0 }]
-      : [{ ...first, value: opening }, ...within]
-  }, [equity, range, custom, opening])
+      : [first, ...equity]
+  }, [equity, opening])
 
   const scale = useMemo(
     () => buildScale(series.map((point) => point.value), opening),
@@ -152,70 +129,9 @@ export function EquityChart({
       <div className={CARD_HEAD}>
         <div>
           <h2 className={CARD_TITLE}>Cumulative Equity</h2>
-          <p className={CARD_SUB}>
-            {custom
-              ? `Realized returns over ${daysBetween(custom.from, custom.to)} days, ${spanLabel.format(custom.from)} to ${spanLabel.format(custom.to)}`
-              : `Realized returns over the last ${RANGE_DAYS[range]} days`}
-          </p>
+          <p className={CARD_SUB}>Realized returns · {caption}</p>
         </div>
 
-        <div className={SEGMENTED} role="group" aria-label="Chart range">
-          {RANGES.map((option) => (
-            <button
-              key={option}
-              type="button"
-              // Only when no custom span is set. `range` keeps its last preset
-              // so clearing the calendar returns to it, which meant 90D sat
-              // highlighted next to an active Custom — two buttons claiming to
-              // be the current view.
-              className={`${SEGMENT} ${
-                custom === null && range === option ? SEGMENT_ACTIVE : SEGMENT_IDLE
-              }`}
-              aria-pressed={custom === null && range === option}
-              onClick={() => {
-                setRange(option)
-                setCustom(null)
-                setPicking(false)
-                setHovered(null)
-              }}
-            >
-              {option}
-            </button>
-          ))}
-
-          {/* The fourth option is a span rather than a window, so it opens a
-              calendar instead of switching directly. */}
-          <button
-            type="button"
-            className={`${SEGMENT} inline-flex items-center gap-6 ${custom ? SEGMENT_ACTIVE : SEGMENT_IDLE}`}
-            aria-pressed={custom !== null}
-            aria-haspopup="dialog"
-            aria-expanded={picking}
-            onClick={() => setPicking((open) => !open)}
-          >
-            <CalendarIcon size={13} />
-            {custom
-              ? `${spanLabel.format(custom.from)} – ${spanLabel.format(custom.to)}`
-              : 'Custom'}
-          </button>
-
-          {picking && (
-            <DateRangePicker
-              value={custom}
-              onApply={(next) => {
-                setCustom(next)
-                setPicking(false)
-                setHovered(null)
-              }}
-              onClear={() => {
-                setCustom(null)
-                setPicking(false)
-                setHovered(null)
-              }}
-              onClose={() => setPicking(false)}
-            />
-          )}
-        </div>
       </div>
 
       <div
@@ -237,7 +153,7 @@ export function EquityChart({
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="none"
             role="img"
-            aria-label={`Cumulative equity over the last ${RANGE_DAYS[range]} days`}
+            aria-label={`Cumulative equity, ${caption}`}
           >
             <defs>
               <linearGradient id="equity-fill" x1="0" y1="0" x2="0" y2="1">

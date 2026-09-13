@@ -65,9 +65,18 @@ function overSpan(window: Period): string {
 export function BestSetupCard({
   stats,
   window,
+  caption,
 }: {
   stats: DerivedStats
   window: Period
+  /**
+   * What the figures were read over, when the page is filtering.
+   *
+   * Overrides the window from Settings rather than sitting beside it: two
+   * spans named on one card is one span too many, and the page-level one
+   * is the one the trader just chose.
+   */
+  caption?: string | null
 }) {
   const best = stats.bestSetup
 
@@ -95,7 +104,7 @@ export function BestSetupCard({
       </p>
       {/* Which span, so this is not read as an all-time verdict — and so the
           two cards are visibly looking at different stretches of trading. */}
-      {best && <p className={NOTE}>Read over {overSpan(window)}</p>}
+      {best && <p className={NOTE}>Read over {caption ?? overSpan(window)}</p>}
     </article>
   )
 }
