@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
+import { SESSIONS } from '../data/tradeForm'
 import type { TradeEntry, TradingSession } from '../data/tradeForm'
 
 /**
@@ -62,6 +63,32 @@ function holdTimeOf(entryAt: string, exitAt: string): string | null {
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
+}
+
+const SESSION_VALUES = new Set<string>(SESSIONS.map((entry) => entry.value))
+
+/**
+ * The sessions on a wire trade, in either shape.
+ *
+ * The API sends `sessions`; it used to send a single `session`, and the two
+ * halves of this app deploy separately, so for the length of a rollout a
+ * client can meet a server that has not shipped yet. Reading both means the
+ * journal renders through that window instead of showing every trade as
+ * session-less.
+ *
+ * Unknown values are dropped rather than passed through: a label this build
+ * cannot name is worse than no label at all.
+ */
+function sessionsOf(wire: TradeWire): TradingSession[] {
+  const raw = Array.isArray(wire.sessions)
+    ? wire.sessions
+    : wire.session
+      ? [wire.session]
+      : []
+
+  return raw.filter((entry): entry is TradingSession =>
+    SESSION_VALUES.has(entry as string),
+  )
 }
 
 function toStored(wire: TradeWire): StoredTrade {

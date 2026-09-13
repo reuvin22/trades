@@ -3,9 +3,11 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
   EMOTIONS,
   EMPTY_TRADE,
+  MAX_SESSIONS,
   MISTAKE_TAGS,
   SESSIONS,
   SESSION_HOURS,
+  SESSION_LABELS,
   SETUPS,
   inconsistencies,
   missingRequired,
@@ -13,6 +15,7 @@ import {
   type Direction,
   type SizeUnit,
   type TradeEntry,
+  type TradingSession,
 } from '../data/tradeForm'
 import { useToast } from '../lib/toast'
 import { Combobox } from './Combobox'
@@ -47,6 +50,7 @@ import {
   TAG_CLOUD,
   TAG_TOGGLE,
   TOGGLE,
+  TOGGLE_CHOICE,
   TOGGLE_GROUP,
   TOGGLE_LONG,
   TOGGLE_SHORT,
@@ -57,6 +61,25 @@ type QuickAddTradeProps = {
   open: boolean
   onClose: () => void
   onSave: (trade: TradeEntry) => void | Promise<void>
+}
+
+/**
+ * What to say under the session picker.
+ *
+ * Three states, because the choice means three different things. Nothing
+ * picked is a question the server will answer from the entry time; one is the
+ * band that session covers; two is the overlap, which is the case the trader
+ * reached for the second button to describe.
+ */
+function sessionHint(sessions: TradingSession[]): string {
+  if (sessions.length === 0) {
+    return 'Left unknown, this is worked out from the entry time.'
+  }
+
+  if (sessions.length === 1) return SESSION_HOURS[sessions[0]]
+
+  const names = sessions.map((entry) => SESSION_LABELS[entry]).join(' and ')
+  return `Held across ${names} — this trade counts towards both.`
 }
 
 const COMPLIANCE_ROWS: { key: keyof TradeEntry; label: string }[] = [
@@ -97,6 +120,23 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
         ? current.mistakes.filter((existing) => existing !== tag)
         : [...current.mistakes, tag],
     }))
+  }
+
+  function toggleSession(value: TradingSession) {
+    setTrade((current) => {
+      if (current.sessions.includes(value)) {
+        return {
+          ...current,
+          sessions: current.sessions.filter((entry) => entry !== value),
+        }
+      }
+
+      // The cap is enforced here as well as on the button. The disabled
+      // attribute is a hint to the person using the form; this is the rule.
+      if (current.sessions.length >= MAX_SESSIONS) return current
+
+      return { ...current, sessions: [...current.sessions, value] }
+    })
   }
 
   function reset() {
@@ -305,23 +345,27 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
               <div className={`${FIELD} col-span-full`}>
                 <span className={FIELD_LABEL}>Session</span>
                 <div className={TOGGLE_GROUP}>
-                  {SESSIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={TOGGLE}
-                      aria-pressed={trade.session === option.value}
-                      onClick={() => update('session', option.value)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {SESSIONS.map((option) => {
+                    const picked = trade.sessions.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={TOGGLE_CHOICE}
+                        aria-pressed={picked}
+                        // Only the third choice is blocked, and only while two
+                        // are already held — so the control reads as full
+                        // rather than broken, and any picked session can still
+                        // be tapped off to make room.
+                        disabled={!picked && trade.sessions.length >= MAX_SESSIONS}
+                        onClick={() => toggleSession(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
                 </div>
-                <span className={FIELD_HINT}>
-                  {trade.session === ''
-                    ? 'Left unknown, this is worked out from the entry time.'
-                    : SESSION_HOURS[trade.session]}
-                </span>
+                <span className={FIELD_HINT}>{sessionHint(trade.sessions)}</span>
               </div>
 
               <label className={`${FIELD} col-span-2`}>

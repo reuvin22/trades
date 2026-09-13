@@ -78,7 +78,9 @@ function FilterSelects({
   }, [trades])
 
   const sessions = useMemo(() => {
-    const used = trades.map((trade) => trade.session).filter(Boolean)
+    // flatMap, because a trade held across a handover carries two. Both should
+    // offer themselves as filters, or the overlap becomes unfindable.
+    const used = trades.flatMap((trade) => trade.sessions)
     const names = [...new Set(used)].map((key) => SESSION_LABELS[key] ?? key)
     return [ANY_SESSION, ...names.sort((a, b) => a.localeCompare(b))]
   }, [trades])
@@ -128,7 +130,9 @@ export function TradeJournal({ uid, trades, loading, error }: TradeJournalProps)
         (trade) =>
           (filters.setup === ANY_SETUP || trade.setup.trim() === filters.setup) &&
           (filters.session === ANY_SESSION ||
-            SESSION_LABELS[trade.session] === filters.session) &&
+            trade.sessions.some(
+              (entry) => SESSION_LABELS[entry] === filters.session,
+            )) &&
           (filters.result === ANY_RESULT || resultOf(trade) === filters.result),
       ),
     [trades, filters],
