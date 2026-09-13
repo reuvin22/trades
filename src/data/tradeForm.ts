@@ -26,6 +26,8 @@ export type TradeEntry = {
   emotionBefore: string
   emotionDuring: string
   mistakes: string[]
+  /** The catch-all, for anything the other fields have no box for. */
+  notes: string
 }
 
 /**
@@ -113,6 +115,7 @@ export const EMPTY_TRADE: TradeEntry = {
   emotionBefore: '',
   emotionDuring: '',
   mistakes: [],
+  notes: '',
 }
 
 function toNumber(value: string): number | null {

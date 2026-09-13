@@ -1,7 +1,7 @@
 import { currency } from '../data/dashboard'
 import type { DerivedStats } from '../lib/stats'
 import type { LeakState } from '../lib/insight'
-import type { LeakCadence } from '../lib/profile'
+import type { LeakCadence, Period } from '../lib/profile'
 import { AlertIcon, BoltIcon, RefreshIcon, SparkleIcon } from './Icons'
 import {
   CARD,
@@ -54,7 +54,20 @@ function whenRead(at: Date): string {
   return weeks === 1 ? 'last week' : `${weeks} weeks ago`
 }
 
-export function BestSetupCard({ stats }: { stats: DerivedStats }) {
+/** The span this card reads over, said the way a person would say it. */
+function overSpan(window: Period): string {
+  if (window === 'daily') return 'today'
+  if (window === 'weekly') return 'the last week'
+  return 'the last month'
+}
+
+export function BestSetupCard({
+  stats,
+  window,
+}: {
+  stats: DerivedStats
+  window: Period
+}) {
   const best = stats.bestSetup
 
   return (
@@ -79,6 +92,9 @@ export function BestSetupCard({ stats }: { stats: DerivedStats }) {
           'Log a few trades with a setup name and this will show which one works best for you.'
         )}
       </p>
+      {/* Which span, so this is not read as an all-time verdict — and so the
+          two cards are visibly looking at different stretches of trading. */}
+      {best && <p className={NOTE}>Read over {overSpan(window)}</p>}
     </article>
   )
 }

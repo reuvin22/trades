@@ -37,6 +37,7 @@ export type StoredTrade = {
   emotionBefore: string
   emotionDuring: string
   mistakes: string[]
+  notes: string
   createdAt: Date | null
 }
 
@@ -92,6 +93,7 @@ function toStored(wire: TradeWire): StoredTrade {
     emotionBefore: String(wire.emotion_before ?? ''),
     emotionDuring: String(wire.emotion_during ?? ''),
     mistakes: Array.isArray(wire.mistakes) ? wire.mistakes.map(String) : [],
+    notes: String(wire.notes ?? ''),
     createdAt: date(wire.created_at),
   }
 }
@@ -126,6 +128,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     emotion_before: trade.emotionBefore,
     emotion_during: trade.emotionDuring,
     mistakes: trade.mistakes,
+    notes: trade.notes.trim(),
   }
 }
 

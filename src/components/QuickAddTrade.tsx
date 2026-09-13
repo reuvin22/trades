@@ -453,6 +453,22 @@ export function QuickAddTrade({ open, onClose, onSave }: QuickAddTradeProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Last, and deliberately so: the catch-all comes after every
+                  question that has its own box, not in competition with them. */}
+              <label className={`${FIELD} col-span-full`}>
+                <span className={FIELD_LABEL}>Additional notes</span>
+                <textarea
+                  rows={4}
+                  value={trade.notes}
+                  onChange={(event) => update('notes', event.target.value)}
+                  placeholder="Anything else worth remembering about this trade — what the market was doing, what you were thinking, what you would do differently."
+                />
+                <span className={FIELD_HINT}>
+                  Optional, and for you to read back. The coach works from your
+                  numbers, not your prose.
+                </span>
+              </label>
             </div>
           </fieldset>
 

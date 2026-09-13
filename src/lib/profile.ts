@@ -43,8 +43,10 @@ export type Profile = {
   strategies?: string[]
   /** The non-negotiables, in their own words. */
   tradingRules?: string
-  /** How often the behavioural leak is re-analysed. */
+  /** How often the behavioural reading is re-analysed. */
   leakCadence?: LeakCadence
+  /** How far back "what is working" looks. */
+  edgeWindow?: Period
 
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
@@ -108,7 +110,30 @@ export const FUNDING_TYPES: {
  * every dashboard load. It also decides what the finding is about: a daily
  * read speaks to yesterday's session, a monthly one to a pattern.
  */
-export type LeakCadence = 'daily' | 'weekly' | 'monthly'
+export type Period = 'daily' | 'weekly' | 'monthly'
+
+/** The old name for the same three spans, kept where it reads better. */
+export type LeakCadence = Period
+
+/** How far back the "what is working" card reads. A window, not a schedule:
+ *  that card is worked out in the browser the moment it renders. */
+export const EDGE_WINDOWS: { value: Period; label: string; blurb: string }[] = [
+  {
+    value: 'daily',
+    label: 'Today only',
+    blurb: 'Just today. Thin unless you trade a lot in a session.',
+  },
+  {
+    value: 'weekly',
+    label: 'The last week',
+    blurb: 'Recent enough to act on, long enough to mean something.',
+  },
+  {
+    value: 'monthly',
+    label: 'The last month',
+    blurb: 'Enough trades per setup for the ranking to be worth reading.',
+  },
+]
 
 export const LEAK_CADENCES: {
   value: LeakCadence
@@ -225,6 +250,7 @@ function toProfile(wire: ProfileWire): Profile {
     strategies: Array.isArray(wire.strategies) ? wire.strategies.map(String) : [],
     tradingRules: String(wire.trading_rules ?? ''),
     leakCadence: (wire.leak_cadence as LeakCadence) ?? 'daily',
+    edgeWindow: (wire.edge_window as Period) ?? 'monthly',
     plan: String(wire.plan ?? 'individual'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),
@@ -266,6 +292,7 @@ export type TradingSetup = {
   strategies: string[]
   tradingRules: string
   leakCadence: LeakCadence
+  edgeWindow: Period
 }
 
 export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
@@ -285,6 +312,7 @@ export async function saveTradingSetup(setup: TradingSetup): Promise<Profile> {
       strategies: setup.strategies,
       trading_rules: setup.tradingRules,
       leak_cadence: setup.leakCadence,
+      edge_window: setup.edgeWindow,
     },
   })
   return toProfile(wire)

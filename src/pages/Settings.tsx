@@ -3,13 +3,14 @@ import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import {
   COMMON_STRATEGIES,
+  EDGE_WINDOWS,
   FUNDING_TYPES,
   LEAK_CADENCES,
   MARKET_TYPES,
   saveTradingSetup,
   type FundingType,
-  type LeakCadence,
   type MarketType,
+  type Period,
   type Profile as ProfileRecord,
   type TradingSetup,
 } from '../lib/profile'
@@ -64,7 +65,8 @@ type Draft = {
   maxTradesPerDay: string
   strategies: string[]
   tradingRules: string
-  leakCadence: LeakCadence
+  leakCadence: Period
+  edgeWindow: Period
 }
 
 function toDraft(record: ProfileRecord | null): Draft {
@@ -83,6 +85,7 @@ function toDraft(record: ProfileRecord | null): Draft {
     strategies: record?.strategies ?? [],
     tradingRules: record?.tradingRules ?? '',
     leakCadence: record?.leakCadence ?? 'daily',
+    edgeWindow: record?.edgeWindow ?? 'monthly',
   }
 }
 
@@ -107,6 +110,7 @@ function toSetup(draft: Draft): TradingSetup {
     strategies: draft.strategies,
     tradingRules: draft.tradingRules.trim(),
     leakCadence: draft.leakCadence,
+    edgeWindow: draft.edgeWindow,
   }
 }
 
@@ -118,6 +122,25 @@ export function Settings({ profile }: SettingsProps) {
 
   function update<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  /**
+   * Pick the behavioural cadence, moving the other span out of the way.
+   *
+   * The two must differ, and the select below simply hides whatever is chosen
+   * here. Hiding the selected option without changing it would leave a select
+   * showing a value that is not in its own list — so when they collide, the
+   * second one moves to the first span still free.
+   */
+  function chooseCadence(value: Period) {
+    setDraft((current) => ({
+      ...current,
+      leakCadence: value,
+      edgeWindow:
+        current.edgeWindow === value
+          ? (EDGE_WINDOWS.find((window) => window.value !== value)?.value ?? 'monthly')
+          : current.edgeWindow,
+    }))
   }
 
   function toggleStrategy(name: string) {
@@ -337,9 +360,7 @@ export function Settings({ profile }: SettingsProps) {
             <span className={FIELD_LABEL}>Read how I&apos;m trading</span>
             <Select
               value={draft.leakCadence}
-              onChange={(event) =>
-                update('leakCadence', event.target.value as LeakCadence)
-              }
+              onChange={(event) => chooseCadence(event.target.value as Period)}
             >
               {LEAK_CADENCES.map((cadence) => (
                 <option key={cadence.value} value={cadence.value}>
@@ -351,6 +372,30 @@ export function Settings({ profile }: SettingsProps) {
               {LEAK_CADENCES.find((entry) => entry.value === draft.leakCadence)?.blurb}{' '}
               The card keeps the last reading in between, and its refresh button
               re-runs it whenever you want.
+            </span>
+          </label>
+
+          <label className={`${FIELD} col-span-2`}>
+            <span className={FIELD_LABEL}>Read what&apos;s working over</span>
+            <Select
+              value={draft.edgeWindow}
+              onChange={(event) => update('edgeWindow', event.target.value as Period)}
+            >
+              {/* The span already given to the behavioural reading is not
+                  offered here. Two cards over the same window tell you the
+                  same thing twice. */}
+              {EDGE_WINDOWS.filter((window) => window.value !== draft.leakCadence).map(
+                (window) => (
+                  <option key={window.value} value={window.value}>
+                    {window.label}
+                  </option>
+                ),
+              )}
+            </Select>
+            <span className={FIELD_HINT}>
+              {EDGE_WINDOWS.find((entry) => entry.value === draft.edgeWindow)?.blurb}{' '}
+              Worked out in the browser as you look, so this one is a window
+              rather than a schedule.
             </span>
           </label>
 
