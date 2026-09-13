@@ -503,6 +503,18 @@ export function ImageIcon({ size = 17, className }: IconProps) {
   )
 }
 
+/** Collapsing the sidebar: a panel edge with an arrow folding into it. The
+ *  button rotates 180° to mean the opposite, so one glyph covers both. */
+export function CollapseIcon({ size = 17, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M20 4.5v15" />
+      <path d="M14.5 12H4" />
+      <path d="m8.5 7.5-4.2 4.5 4.2 4.5" />
+    </svg>
+  )
+}
+
 export function CheckIcon({ size = 15, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} strokeWidth={2.2}>

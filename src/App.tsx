@@ -6,8 +6,9 @@ import { accountIsNew, markTourSeen, tourSeen } from './lib/tourState'
 import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
-import { APP_SHELL, CONTENT, WORKSPACE } from './components/layout'
+import { appShell, CONTENT, WORKSPACE } from './components/layout'
 import { useNavDrawer } from './lib/useNavDrawer'
+import { useCollapsedNav } from './lib/useCollapsedNav'
 import { navigate, useHashRoute } from './lib/useHashRoute'
 import { useAuth } from './lib/useAuth'
 import {
@@ -84,6 +85,7 @@ function App() {
   const { profile, isNewAccount } = useProfile(user)
   const [logging, setLogging] = useState(false)
   const nav = useNavDrawer(route)
+  const rail = useCollapsedNav()
   const [tourDone, setTourDone] = useState<string | null>(null)
   // Escape hatch for browsing the UI without an account, or while the API is
   // unreachable.
@@ -166,13 +168,15 @@ function App() {
   }
 
   return (
-    <div className={APP_SHELL}>
+    <div className={appShell(rail.collapsed)}>
       <Sidebar
         route={route}
         accountLabel={accountTypeLabel(profile?.accountType)}
         onQuickAdd={() => setLogging(true)}
         open={nav.open}
         onClose={nav.close}
+        collapsed={rail.collapsed}
+        onToggleCollapse={rail.toggle}
       />
 
       <div className={WORKSPACE}>
