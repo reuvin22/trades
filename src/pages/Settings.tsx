@@ -241,7 +241,8 @@ export function Settings({ uid, profile, onSaved }: SettingsProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <>
+      <form onSubmit={handleSubmit}>
       <div className={PAGE_HEAD}>
         <div>
           <h2 className={PAGE_TITLE}>Settings</h2>
@@ -532,13 +533,6 @@ export function Settings({ uid, profile, onSaved }: SettingsProps) {
         </div>
       </section>
 
-      {/* Last, and outside the settings form: it has its own submit, and a
-          broker password must not ride along with "Save settings". */}
-      <section className={`${CARD} ${FORM_SECTION}`}>
-        <h3 className={SECTION_TITLE}>Broker accounts</h3>
-        <BrokerConnections uid={uid} />
-      </section>
-
       {saveError && (
         <p className={SAVE_ERROR} role="alert">
           {saveError}
@@ -551,6 +545,21 @@ export function Settings({ uid, profile, onSaved }: SettingsProps) {
           {saving ? 'Saving…' : 'Save settings'}
         </button>
       </div>
-    </form>
+      </form>
+
+      {/*
+        A sibling of the settings form, never a child. Its own submit button
+        belongs to its own form, and nesting the two is invalid HTML: the
+        browser stops treating the inner one as a form, so its onSubmit never
+        fires, nothing calls preventDefault, and pressing Connect reloads the
+        page instead of doing anything.
+
+        It also keeps a broker password from riding along with "Save settings".
+      */}
+      <section className={`${CARD} ${FORM_SECTION}`}>
+        <h3 className={SECTION_TITLE}>Broker accounts</h3>
+        <BrokerConnections uid={uid} />
+      </section>
+    </>
   )
 }
