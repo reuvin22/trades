@@ -89,7 +89,7 @@ function TraderView({
     case 'billing':
       return <Billing user={user} profile={profile} />
     case 'settings':
-      return <Settings uid={uid} profile={profile} onSaved={reloadProfile} />
+      return <Settings profile={profile} onSaved={reloadProfile} />
     default:
       return <Placeholder title={labelForRoute(route)} />
   }

@@ -1,278 +1,52 @@
-import { useState, type FormEvent } from 'react'
-import {
-  connectAccount,
-  disconnectAccount,
-  pauseConnection,
-  syncNow,
-  useConnections,
-  type Connection,
-  type Platform,
-} from '../lib/connections'
-import { readableApiError } from '../lib/api'
-import { useToast } from '../lib/toast'
 import { Select } from './Select'
-import { SpinnerIcon } from './Icons'
 import {
-  CONNECT_ACTION,
-  CONNECT_ACTIONS,
-  CONNECT_BAD,
-  CONNECT_DANGER,
-  CONNECT_LIST,
-  CONNECT_META,
-  CONNECT_NAME,
   CONNECT_NOTE,
-  CONNECT_OFF,
-  CONNECT_OK,
-  CONNECT_ROW,
-  CONNECT_STATE,
-  CONNECT_WAIT,
-  CONNECT_WHY,
   FIELD,
   FIELD_GRID,
   FIELD_HINT,
   FIELD_LABEL,
   PILL,
   PILL_ACCENT,
-  SAVE_ERROR,
-  SECTION_EMPTY,
 } from './ui'
 
-const STATE_STYLE: Record<Connection['state'], string> = {
-  connected: CONNECT_OK,
-  pending: CONNECT_WAIT,
-  failed: CONNECT_BAD,
-  disconnected: CONNECT_OFF,
-}
-
-const STATE_WORD: Record<Connection['state'], string> = {
-  connected: 'Connected',
-  pending: 'Connecting…',
-  failed: 'Failed',
-  disconnected: 'Disconnected',
-}
-
-const ago = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
-
-function lastSync(when: Date | null): string {
-  if (when === null) return 'never synced'
-
-  const minutes = Math.round((when.getTime() - Date.now()) / 60_000)
-  if (minutes > -60) return `synced ${ago.format(minutes, 'minute')}`
-
-  const hours = Math.round(minutes / 60)
-  return hours > -24 ? `synced ${ago.format(hours, 'hour')}` : `synced ${ago.format(Math.round(hours / 24), 'day')}`
-}
-
 /**
- * Connecting a MetaTrader account, with no download.
+ * Connecting a MetaTrader account — the screen, without the plumbing.
  *
- * The form asks for the **investor password** and says so twice — once in the
- * note above it and once under the field. That repetition is deliberate: this
- * is the only place in the app that asks for a credential belonging to another
- * company, and the difference between the investor password and the real one
- * is the entire reason it is reasonable to ask. A trader who does not know
- * that distinction should not be handing anything over, and one who does can
- * see immediately that this cannot trade or withdraw.
+ * Deliberately inert: there is no API behind it, nothing is stored, and
+ * nothing is sent anywhere. It exists so the shape of the feature is settled —
+ * what is asked for, in what order, with what explanation — before any of it
+ * is built. Every field is disabled and uncontrolled, so it cannot collect
+ * anything even by accident.
+ *
+ * Two things about it are worth keeping whenever it is wired up.
+ *
+ * It asks for the **investor password**, and says so plainly. That password is
+ * read-only at the broker: it can see an account but cannot place trades or
+ * withdraw money. The difference is the entire reason asking is reasonable,
+ * and a trader who does not know it exists should not be handing anything
+ * over.
+ *
+ * And it must be its own element, never nested inside the settings form. A
+ * broker credential must not ride along with an unrelated "Save settings"
+ * press — and a form inside a form is invalid HTML, which silently breaks
+ * submit handling on both. That one already cost an afternoon.
  */
-export function BrokerConnections({ uid }: { uid: string | null }) {
-  const { connections, loading, error, reload } = useConnections(uid)
-  const toast = useToast()
-
-  const [platform, setPlatform] = useState<Platform>('mt5')
-  const [server, setServer] = useState('')
-  const [login, setLogin] = useState('')
-  const [password, setPassword] = useState('')
-  const [label, setLabel] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [working, setWorking] = useState<string | null>(null)
-
-  async function submit(event: FormEvent) {
-    event.preventDefault()
-    setBusy(true)
-    setFormError('')
-
-    try {
-      await connectAccount({
-        platform,
-        server,
-        login,
-        investorPassword: password,
-        label,
-      })
-
-      // Cleared immediately on success — there is no reason for a broker
-      // password to sit in a form field after it has been sent.
-      setPassword('')
-      setServer('')
-      setLogin('')
-      setLabel('')
-
-      reload()
-      toast.success(
-        'Account added',
-        'Connecting to your broker. This can take a minute.',
-      )
-    } catch (cause) {
-      const message = readableApiError(cause)
-      setFormError(message)
-      toast.error('Could not connect that account', message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  /**
-   * Sync, and say what came back in the trader's terms.
-   *
-   * Reported separately from the other actions because "nothing new" is the
-   * normal outcome here and must not read as a failure — it is what a working
-   * connection says most of the time.
-   */
-  async function runSync(id: string) {
-    setWorking(id)
-    try {
-      const report = await syncNow(id)
-      reload()
-
-      if (report.added > 0) {
-        toast.success(
-          `${report.added} ${report.added === 1 ? 'trade' : 'trades'} imported`,
-          'Open your journal to see them.',
-        )
-      } else {
-        toast.info('Up to date', 'Nothing new has closed since the last sync.')
-      }
-    } catch (cause) {
-      toast.error('Could not sync', readableApiError(cause))
-    } finally {
-      setWorking(null)
-    }
-  }
-
-  async function act(id: string, run: () => Promise<unknown>, done: string) {
-    setWorking(id)
-    try {
-      await run()
-      reload()
-      toast.success(done)
-    } catch (cause) {
-      toast.error('That did not work', readableApiError(cause))
-    } finally {
-      setWorking(null)
-    }
-  }
-
+export function BrokerConnections() {
   return (
     <>
       <p className={CONNECT_NOTE}>
-        Your trades import on their own — nothing to install. RagDex asks for
-        your broker&apos;s <strong>investor password</strong>, which is the
-        read-only one: it can see your account but{' '}
-        <strong>cannot place trades or withdraw money</strong>. You can find it
-        in the email your broker sent when you opened the account, or generate a
-        new one in their client portal. It is encrypted here and never shown
-        again — not even to you.
+        <strong>Coming soon.</strong> Your closed trades will import on their
+        own — nothing to install. RagDex will ask for your broker&apos;s{' '}
+        <strong>investor password</strong>, which is the read-only one: it can
+        see your account but{' '}
+        <strong>cannot place trades or withdraw money</strong>. Nothing on this
+        form is saved or sent anywhere yet.
       </p>
 
-      {connections.length > 0 && (
-        <div className={`${CONNECT_LIST} mb-16`}>
-          {connections.map((entry) => (
-            <div key={entry.id} className={CONNECT_ROW}>
-              <span className={CONNECT_NAME}>
-                {entry.label || `${entry.platform.toUpperCase()} ${entry.login}`}
-                <span className={CONNECT_META}>
-                  {entry.server} · {entry.login} · {entry.tradesSynced} trades ·{' '}
-                  {entry.paused ? 'paused' : lastSync(entry.lastSyncedAt)}
-                </span>
-              </span>
-
-              <span
-                className={`${CONNECT_STATE} ${
-                  entry.paused ? CONNECT_OFF : STATE_STYLE[entry.state]
-                }`}
-              >
-                {entry.paused ? 'Paused' : STATE_WORD[entry.state]}
-              </span>
-
-              <span className={CONNECT_ACTIONS}>
-                {/* First, because on a connection that is still settling it
-                    is the only thing worth pressing — and it reports why when
-                    it cannot run, rather than leaving the row on
-                    "Connecting…" with nothing to click. */}
-                <button
-                  type="button"
-                  className={CONNECT_ACTION}
-                  disabled={working === entry.id || entry.paused}
-                  onClick={() => void runSync(entry.id)}
-                >
-                  {working === entry.id ? 'Syncing…' : 'Sync now'}
-                </button>
-
-                <button
-                  type="button"
-                  className={CONNECT_ACTION}
-                  disabled={working === entry.id}
-                  onClick={() =>
-                    void act(
-                      entry.id,
-                      () => pauseConnection(entry.id, !entry.paused),
-                      entry.paused ? 'Syncing again' : 'Sync paused',
-                    )
-                  }
-                >
-                  {entry.paused ? 'Resume' : 'Pause'}
-                </button>
-
-                <button
-                  type="button"
-                  className={`${CONNECT_ACTION} ${CONNECT_DANGER}`}
-                  disabled={working === entry.id}
-                  onClick={() =>
-                    void act(
-                      entry.id,
-                      () => disconnectAccount(entry.id),
-                      'Account disconnected',
-                    )
-                  }
-                >
-                  Disconnect
-                </button>
-              </span>
-
-              {entry.state === 'failed' && entry.message && (
-                <span className={CONNECT_WHY}>{entry.message}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {connections.length === 0 && !loading && (
-        <p className={`${SECTION_EMPTY} mb-16`}>
-          No accounts connected yet. Add one below and your closed trades start
-          appearing in the journal.
-        </p>
-      )}
-
-      {error && (
-        <p className={SAVE_ERROR} role="alert">
-          {error}
-        </p>
-      )}
-
-      {/*
-        Its own form element, not part of the settings form around it. A broker
-        password must not ride along with an unrelated "Save settings" press,
-        and a nested form would be invalid HTML besides.
-      */}
-      <form className={FIELD_GRID} onSubmit={(event) => void submit(event)}>
+      <div className={FIELD_GRID} aria-describedby="broker-soon">
         <label className={FIELD}>
           <span className={FIELD_LABEL}>Platform</span>
-          <Select
-            value={platform}
-            onChange={(event) => setPlatform(event.target.value as Platform)}
-          >
+          <Select defaultValue="mt5" disabled>
             <option value="mt5">MetaTrader 5</option>
             <option value="mt4">MetaTrader 4</option>
           </Select>
@@ -280,13 +54,7 @@ export function BrokerConnections({ uid }: { uid: string | null }) {
 
         <label className={FIELD}>
           <span className={FIELD_LABEL}>Server</span>
-          <input
-            value={server}
-            onChange={(event) => setServer(event.target.value)}
-            placeholder="ICMarketsSC-MT5"
-            autoComplete="off"
-            required
-          />
+          <input disabled placeholder="ICMarketsSC-MT5" autoComplete="off" />
           <span className={FIELD_HINT}>
             Exactly as your terminal shows it, under File → Login to Trade
             Account.
@@ -295,55 +63,26 @@ export function BrokerConnections({ uid }: { uid: string | null }) {
 
         <label className={FIELD}>
           <span className={FIELD_LABEL}>Account number</span>
-          <input
-            value={login}
-            onChange={(event) => setLogin(event.target.value)}
-            placeholder="51234567"
-            autoComplete="off"
-            required
-          />
+          <input disabled placeholder="51234567" autoComplete="off" />
         </label>
 
+        {/*
+          No password field, and leaving it out beats disabling one: a control
+          that accepts a broker credential should not exist until there is
+          somewhere safe for it to go. A disabled input still invites a
+          password manager to fill it.
+        */}
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>Investor password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            // Off, deliberately: a browser offering to save this alongside the
-            // trader's other logins invites them to store the wrong one.
-            autoComplete="off"
-            required
-          />
-          <span className={FIELD_HINT}>
-            The read-only password, not your main one. If you paste your trading
-            password by mistake, change it at your broker.
-          </span>
-        </label>
-
-        <label className={`${FIELD} col-span-2`}>
           <span className={FIELD_LABEL}>Name it (optional)</span>
-          <input
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            placeholder="FTMO 100k Phase 2"
-            autoComplete="off"
-          />
+          <input disabled placeholder="FTMO 100k Phase 2" autoComplete="off" />
         </label>
-
-        {formError && (
-          <p className={`${SAVE_ERROR} col-span-2`} role="alert">
-            {formError}
-          </p>
-        )}
 
         <div className="col-span-2">
-          <button type="submit" className={`${PILL} ${PILL_ACCENT}`} disabled={busy}>
-            {busy && <SpinnerIcon size={14} />}
-            {busy ? 'Connecting…' : 'Connect account'}
+          <button type="button" className={`${PILL} ${PILL_ACCENT}`} disabled>
+            Connect account
           </button>
         </div>
-      </form>
+      </div>
     </>
   )
 }

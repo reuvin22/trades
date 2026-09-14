@@ -1840,7 +1840,7 @@ export const SECTION_EMPTY =
 /* -------------------------------------------------- broker connections */
 
 /**
- * The panel where a trader hands over a broker credential.
+ * The panel where a trader will hand over a broker credential.
  *
  * Styled to carry its own explanation rather than to look sleek. This is the
  * one place in the app that asks for something belonging to another company,
@@ -1850,28 +1850,3 @@ export const SECTION_EMPTY =
  */
 export const CONNECT_NOTE =
   'mb-16 rounded-sm border border-line bg-tint-1 px-14 py-12 text-[12.5px] leading-[1.6] text-fg-dim [&_strong]:font-medium [&_strong]:text-fg'
-
-export const CONNECT_LIST = 'flex flex-col gap-10'
-export const CONNECT_ROW =
-  'flex flex-wrap items-center gap-x-14 gap-y-8 rounded-sm border border-line bg-tint-1 px-14 py-12'
-export const CONNECT_NAME = 'min-w-0 flex-1 text-[13.5px] font-medium text-fg'
-export const CONNECT_META = 'block text-[11.5px] font-normal text-fg-muted'
-
-/** The state pill. Colour carries the meaning; the word repeats it. */
-export const CONNECT_STATE =
-  'rounded-full px-10 py-5 text-[11px] font-medium tracking-[0.04em] whitespace-nowrap'
-export const CONNECT_OK =
-  'bg-[color-mix(in_srgb,var(--color-green)_16%,transparent)] text-green'
-export const CONNECT_WAIT =
-  'bg-[color-mix(in_srgb,var(--color-amber)_18%,transparent)] text-amber'
-export const CONNECT_BAD =
-  'bg-[color-mix(in_srgb,var(--color-red)_16%,transparent)] text-red'
-export const CONNECT_OFF = 'bg-tint-2 text-fg-muted'
-
-export const CONNECT_ACTIONS = 'flex flex-none items-center gap-6'
-export const CONNECT_ACTION =
-  'rounded-full px-11 py-6 text-[11.5px] font-medium text-fg-dim transition-[color,background-color] duration-150 hover:not-disabled:bg-tint-2 hover:not-disabled:text-fg-strong disabled:cursor-not-allowed disabled:opacity-40'
-export const CONNECT_DANGER = 'hover:not-disabled:text-red'
-
-/** Why a connection failed, under the row it belongs to. */
-export const CONNECT_WHY = 'w-full text-[11.5px] leading-[1.5] text-red'

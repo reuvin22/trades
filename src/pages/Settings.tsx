@@ -41,8 +41,6 @@ import {
 } from '../components/ui'
 
 type SettingsProps = {
-  /** For the broker panel, which loads its own data. */
-  uid: string | null
   profile: ProfileRecord | null
   /**
    * Re-read the account record after a save.
@@ -130,7 +128,7 @@ function toSetup(draft: Draft): TradingSetup {
   }
 }
 
-export function Settings({ uid, profile, onSaved }: SettingsProps) {
+export function Settings({ profile, onSaved }: SettingsProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(profile))
 
   /*
@@ -558,7 +556,7 @@ export function Settings({ uid, profile, onSaved }: SettingsProps) {
       */}
       <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>Broker accounts</h3>
-        <BrokerConnections uid={uid} />
+        <BrokerConnections />
       </section>
     </>
   )
