@@ -16,6 +16,7 @@ import {
 } from '../lib/profile'
 import { Select } from '../components/Select'
 import { CloseIcon, SpinnerIcon } from '../components/Icons'
+import { BrokerConnections } from '../components/BrokerConnections'
 import {
   CARD,
   EDIT_CHIP,
@@ -40,6 +41,8 @@ import {
 } from '../components/ui'
 
 type SettingsProps = {
+  /** For the broker panel, which loads its own data. */
+  uid: string | null
   profile: ProfileRecord | null
   /**
    * Re-read the account record after a save.
@@ -127,7 +130,7 @@ function toSetup(draft: Draft): TradingSetup {
   }
 }
 
-export function Settings({ profile, onSaved }: SettingsProps) {
+export function Settings({ uid, profile, onSaved }: SettingsProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(profile))
 
   /*
@@ -527,6 +530,13 @@ export function Settings({ profile, onSaved }: SettingsProps) {
             </span>
           </label>
         </div>
+      </section>
+
+      {/* Last, and outside the settings form: it has its own submit, and a
+          broker password must not ride along with "Save settings". */}
+      <section className={`${CARD} ${FORM_SECTION}`}>
+        <h3 className={SECTION_TITLE}>Broker accounts</h3>
+        <BrokerConnections uid={uid} />
       </section>
 
       {saveError && (
