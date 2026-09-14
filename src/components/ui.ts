@@ -1860,3 +1860,70 @@ export const SECTION_EMPTY =
  */
 export const CONNECT_NOTE =
   'mb-16 rounded-sm border border-line bg-tint-1 px-14 py-12 text-[12.5px] leading-[1.6] text-fg-dim [&_strong]:font-medium [&_strong]:text-fg'
+
+/* --------------------------------------------------------- csv importer */
+
+/**
+ * What the formatter decided, shown before anything is imported.
+ *
+ * The decisions worth surfacing are the ones that ruin data quietly: whether a
+ * comma was a decimal point, and whether 03/04 was March or April. Both are
+ * settled from the whole file rather than guessed per value, and both are
+ * printed here so a person can overrule them before the journal is written to.
+ */
+export const CSV_READING = 'mb-14 flex flex-wrap gap-8'
+export const CSV_FACT =
+  'rounded-full border border-line bg-tint-1 px-11 py-6 text-[11.5px] text-fg-dim [&_strong]:font-medium [&_strong]:text-fg'
+
+/** One row per field, so a wrong guess can be corrected without leaving. */
+export const CSV_MAP = 'flex flex-col gap-8'
+export const CSV_MAP_ROW = 'flex items-center gap-10 text-[12.5px]'
+export const CSV_MAP_NAME = 'w-104 flex-none text-fg-dim'
+export const CSV_MAP_PICK = 'min-w-0 flex-1'
+/** A field nothing was found for. Not an error — most files lack several. */
+export const CSV_MAP_EMPTY = 'text-[11px] text-fg-muted'
+
+export const CSV_PREVIEW = 'mt-4 max-h-260 overflow-auto rounded-sm border border-line'
+export const CSV_TABLE = 'w-full border-collapse text-[12px]'
+export const CSV_HEAD =
+  'sticky top-0 bg-panel-solid [&>tr>th]:px-10 [&>tr>th]:py-8 [&>tr>th]:text-left [&>tr>th]:text-[10.5px] [&>tr>th]:font-medium [&>tr>th]:tracking-[0.08em] [&>tr>th]:text-fg-muted [&>tr>th]:uppercase [&>tr>th]:whitespace-nowrap'
+export const CSV_BODY =
+  '[&>tr]:border-t [&>tr]:border-line [&>tr>td]:px-10 [&>tr>td]:py-7 [&>tr>td]:whitespace-nowrap [&>tr>td]:tabular-nums'
+
+/** Rows that could not be read, listed rather than dropped in silence. */
+export const CSV_PROBLEMS =
+  'mt-12 max-h-140 overflow-y-auto rounded-sm border border-[color-mix(in_srgb,var(--color-amber)_35%,transparent)] bg-[color-mix(in_srgb,var(--color-amber)_10%,transparent)] px-12 py-10 text-[12px] leading-[1.6] text-fg-dim'
+
+export const CSV_DROP =
+  'flex cursor-pointer flex-col items-center gap-10 rounded-sm border border-dashed border-line px-16 py-28 text-center text-[13px] text-fg-muted transition-[border-color,background-color] duration-150 hover:border-line-strong hover:bg-tint-1'
+
+/* ------------------------------------------- checking an import first */
+
+/**
+ * What stands between a guessed column and a damaged journal.
+ *
+ * Import is the one place in this app where a mistake is invisible
+ * afterwards. A wrong trade is indistinguishable from a real one, and every
+ * figure built on it — win rate, expectancy, risk, the coach's reading — is
+ * quietly wrong with nothing to show for it. So the warnings here are loud,
+ * and the ones that indicate a mis-mapped column stop the import rather than
+ * decorating it.
+ */
+export const CSV_ALERT =
+  'mt-12 rounded-sm border px-13 py-11 text-[12.5px] leading-[1.6] [&_strong]:font-medium'
+export const CSV_ALERT_STOP =
+  'border-[color-mix(in_srgb,var(--color-red)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_10%,transparent)] text-fg-dim'
+export const CSV_ALERT_CHECK =
+  'border-[color-mix(in_srgb,var(--color-amber)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-amber)_10%,transparent)] text-fg-dim'
+export const CSV_ALERT_TITLE = 'mb-6 flex items-center gap-7 font-medium text-fg'
+export const CSV_ALERT_ITEM = 'mt-4 flex gap-7 before:content-["·"] before:text-fg-muted'
+
+/** The glance-check: what is about to land, in one line per fact. */
+export const CSV_SUMMARY =
+  'mt-12 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-x-16 gap-y-12 rounded-sm border border-line bg-tint-1 px-14 py-12'
+export const CSV_SUMMARY_ITEM = 'flex flex-col gap-3'
+export const CSV_SUMMARY_LABEL = 'text-[10.5px] tracking-[0.1em] text-fg-muted uppercase'
+export const CSV_SUMMARY_VALUE = 'text-[13px] text-fg break-words'
+
+/** A field the analyser is unsure about, needing a look before importing. */
+export const CSV_UNSURE = 'text-[11px] font-medium text-amber'

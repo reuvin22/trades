@@ -8,6 +8,7 @@ import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import { SearchableSelect } from '../components/SearchableSelect'
 import { type DateRange } from '../components/DateRangePicker'
+import { CsvImport } from '../components/CsvImport'
 import { RangeMenu } from '../components/RangeMenu'
 import {
   inWindow,
@@ -40,6 +41,7 @@ import {
   PAGE_SUB,
   PAGE_TITLE,
   PILL,
+  PILL_IDLE,
   PILL_ACCENT,
   ROW_STAGGER,
   SUMMARY_CARD,
@@ -237,6 +239,7 @@ export function TradeJournal({
 
   // The preset is kept even while a custom span is showing, so clearing the
   // calendar returns to whatever was chosen before rather than a default.
+  const [importing, setImporting] = useState(false)
   const [range, setRange] = useState<Preset>('30D')
   const [custom, setCustom] = useState<DateRange | null>(null)
 
@@ -295,6 +298,15 @@ export function TradeJournal({
             }}
             onCustom={setCustom}
           />
+
+          <button
+            type="button"
+            className={`${PILL} ${PILL_IDLE}`}
+            onClick={() => setImporting(true)}
+          >
+            <DownloadIcon className="rotate-180" />
+            Import
+          </button>
 
           <ExportMenu
             onCsv={() => downloadCsv(shown)}
@@ -421,6 +433,11 @@ export function TradeJournal({
           setEditing(null)
           reload()
         }}
+      />
+      <CsvImport
+        open={importing}
+        onClose={() => setImporting(false)}
+        onImported={reload}
       />
     </>
   )
