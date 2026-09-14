@@ -1927,3 +1927,63 @@ export const CSV_SUMMARY_VALUE = 'text-[13px] text-fg break-words'
 
 /** A field the analyser is unsure about, needing a look before importing. */
 export const CSV_UNSURE = 'text-[11px] font-medium text-amber'
+
+/* -------------------------------------------------------- widget layout */
+
+/**
+ * The grid a trader can rearrange.
+ *
+ * Twelve columns and a small row unit, with `dense` packing so a widget made
+ * narrow leaves a gap the next one can fill rather than a hole. Columns are
+ * set in the style attribute from the layout model; only what does not vary
+ * lives here.
+ */
+export const WIDGET_GRID = 'grid grid-flow-row-dense items-stretch'
+
+/**
+ * One widget, and the surface its handles live on.
+ *
+ * `relative` for the handles, `min-w-0` so a wide table inside cannot push the
+ * column wider than the grid gave it, and `group` so the handles can appear on
+ * hover without JavaScript deciding when.
+ */
+export const WIDGET = 'group relative min-w-0'
+
+/** The frame while it is being dragged or resized — lifted, and on top. */
+export const WIDGET_ACTIVE =
+  'z-30 [&>*]:pointer-events-none shadow-[var(--shadow-pop)] ring-1 ring-accent'
+
+/** Where a dragged widget would land. */
+export const WIDGET_TARGET =
+  'rounded-lg border-2 border-dashed border-accent bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]'
+
+/**
+ * A resize handle.
+ *
+ * Invisible until the widget is hovered, and larger than it looks: the hit
+ * area is ten pixels but the visible line is two, because a four-pixel target
+ * is a target people miss. Pointer events stay on so the handle still works
+ * before it fades in.
+ */
+export const HANDLE =
+  'absolute z-20 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 touch-none'
+export const HANDLE_N = 'top-[-5px] right-10 left-10 h-10 cursor-ns-resize'
+export const HANDLE_S = 'bottom-[-5px] right-10 left-10 h-10 cursor-ns-resize'
+export const HANDLE_E = 'top-10 right-[-5px] bottom-10 w-10 cursor-ew-resize'
+export const HANDLE_W = 'top-10 bottom-[-5px] left-[-5px] w-10 cursor-ew-resize'
+export const HANDLE_NE = 'top-[-5px] right-[-5px] size-14 cursor-nesw-resize'
+export const HANDLE_NW = 'top-[-5px] left-[-5px] size-14 cursor-nwse-resize'
+export const HANDLE_SE = 'right-[-5px] bottom-[-5px] size-14 cursor-nwse-resize'
+export const HANDLE_SW = 'bottom-[-5px] left-[-5px] size-14 cursor-nesw-resize'
+
+/** The mark inside a corner handle, so it can be seen as well as found. */
+export const HANDLE_CORNER_MARK =
+  'absolute right-4 bottom-4 size-7 rounded-[2px] border-r-2 border-b-2 border-accent'
+
+/** Picking a widget up to move it. Sits in the corner, out of the content. */
+export const WIDGET_GRIP =
+  'absolute top-7 right-7 z-20 grid size-24 cursor-grab place-items-center rounded-sm text-fg-muted opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-tint-2 hover:text-fg-strong active:cursor-grabbing touch-none'
+
+/** The one control the whole feature needs: put it back how it was. */
+export const LAYOUT_RESET =
+  'text-[11.5px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg-strong'

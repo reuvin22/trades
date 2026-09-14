@@ -629,3 +629,17 @@ export function RotateIcon({ size = 18, className }: IconProps) {
     </svg>
   )
 }
+
+/** Six dots: the universal "pick this up and move it". */
+export function GripIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={0} fill="currentColor">
+      <circle cx="9" cy="6" r="1.4" />
+      <circle cx="15" cy="6" r="1.4" />
+      <circle cx="9" cy="12" r="1.4" />
+      <circle cx="15" cy="12" r="1.4" />
+      <circle cx="9" cy="18" r="1.4" />
+      <circle cx="15" cy="18" r="1.4" />
+    </svg>
+  )
+}

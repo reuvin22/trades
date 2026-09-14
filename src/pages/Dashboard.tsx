@@ -5,6 +5,7 @@ import { DisciplineCard } from '../components/DisciplineCard'
 import { PerformanceCalendar } from '../components/PerformanceCalendar'
 import { RangeMenu } from '../components/RangeMenu'
 import { RecentActivity } from '../components/RecentActivity'
+import { WidgetGrid } from '../components/WidgetGrid'
 import { RiskHealthCard } from '../components/RiskHealth'
 import { SetupTable } from '../components/SetupTable'
 import { StatCards } from '../components/StatCards'
@@ -19,11 +20,11 @@ import {
   GREETING_SPAN,
   GREETING_SUB,
   PAGE_ACTIONS,
-  ROW_STAGGER,
 } from '../components/ui'
 import type { DateRange } from '../components/DateRangePicker'
 import type { StoredTrade } from '../lib/trades'
 import type { Period, Profile } from '../lib/profile'
+import type { WidgetSpec } from '../lib/widgets'
 
 type DashboardProps = {
   trades: StoredTrade[]
@@ -55,6 +56,25 @@ function coverage(trades: StoredTrade[]): string | null {
   const last = SPAN.format(dates[dates.length - 1])
   return first === last ? first : `${first} – ${last}`
 }
+
+/**
+ * The dashboard's widgets, at the size they start.
+ *
+ * Twelve columns, so 8/4 is the two-thirds split the page used to hard-code
+ * and 6/6 is a half. The minimums are the point where each stops being worth
+ * looking at: a table needs width for its columns, a single figure does not.
+ */
+const WIDGETS: WidgetSpec[] = [
+  { id: 'stats', title: 'Key figures', size: { w: 12, h: 5 }, min: { w: 4, h: 4 } },
+  { id: 'equity', title: 'Equity curve', size: { w: 8, h: 17 }, min: { w: 4, h: 10 } },
+  { id: 'edge', title: "What's working", size: { w: 4, h: 6 }, min: { w: 3, h: 4 } },
+  { id: 'behaviour', title: "How you're trading", size: { w: 4, h: 11 }, min: { w: 3, h: 5 } },
+  { id: 'setups', title: 'Setup performance', size: { w: 7, h: 11 }, min: { w: 5, h: 6 } },
+  { id: 'risk', title: 'Risk health', size: { w: 5, h: 6 }, min: { w: 3, h: 5 } },
+  { id: 'discipline', title: 'Discipline score', size: { w: 5, h: 8 }, min: { w: 3, h: 6 } },
+  { id: 'calendar', title: 'Performance calendar', size: { w: 4, h: 8 }, min: { w: 3, h: 6 } },
+  { id: 'recent', title: 'Recent activity', size: { w: 12, h: 14 }, min: { w: 5, h: 8 } },
+]
 
 export function Dashboard({ trades, uid, profile }: DashboardProps) {
   /*
@@ -156,52 +176,51 @@ export function Dashboard({ trades, uid, profile }: DashboardProps) {
         </div>
       </div>
 
-      <StatCards
-        stats={stats}
-        currency={money}
-        expectancyR={risk.expectancyR}
-        rSample={risk.rSample}
+      {/*
+        Every card is a widget the trader can resize and reorder. The page no
+        longer decides the arrangement — it supplies the pieces and their
+        starting sizes, and the saved layout decides the rest.
+      */}
+      <WidgetGrid
+        page="dashboard"
+        widgets={WIDGETS}
+        slots={{
+          stats: (
+            <StatCards
+              stats={stats}
+              currency={money}
+              expectancyR={risk.expectancyR}
+              rSample={risk.rSample}
+            />
+          ),
+          equity: (
+            <EquityChart equity={stats.equity} opening={opening} spanLabel={label} />
+          ),
+          edge: (
+            <BestSetupCard
+              stats={edge.stats}
+              window={profile?.edgeWindow ?? 'monthly'}
+              caption={edge.caption}
+            />
+          ),
+          /* The leak is computed server-side over its own cadence, so it is
+             the one card the page filter cannot narrow. It states its own
+             window, which is why that does not read as a contradiction. */
+          behaviour: <TradingBehaviourCard stats={stats} leak={leak} />,
+          setups: <SetupTable trades={shown} money={money} />,
+          risk: (
+            <RiskHealthCard
+              trades={shown}
+              stats={stats}
+              capital={opening}
+              limitPct={profile?.riskPerTradePct ?? null}
+            />
+          ),
+          discipline: <DisciplineCard trades={shown} />,
+          calendar: <PerformanceCalendar dailyPl={stats.dailyPl} />,
+          recent: <RecentActivity trades={shown} />,
+        }}
       />
-
-      <div className="grid gap-18 grid-cols-[minmax(0,1fr)_320px] max-[1280px]:grid-cols-[minmax(0,1fr)]">
-        <EquityChart equity={stats.equity} opening={opening} spanLabel={label} />
-
-        <div
-          data-tour="insights"
-          className={`flex flex-col gap-18 max-[1280px]:grid max-[1280px]:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] ${ROW_STAGGER}`}
-        >
-          <BestSetupCard
-            stats={edge.stats}
-            window={profile?.edgeWindow ?? 'monthly'}
-            caption={edge.caption}
-          />
-          {/* The leak is computed server-side over its own cadence, so it is
-              the one card the page filter cannot narrow. It says its own
-              window, which is why that does not read as a contradiction. */}
-          <TradingBehaviourCard stats={stats} leak={leak} />
-          <PerformanceCalendar dailyPl={stats.dailyPl} />
-        </div>
-      </div>
-
-      {/* Setup, risk and discipline: what worked, what it cost to find out,
-          and whether the plan was followed while finding out. */}
-      <div
-        className={`grid items-start gap-18 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] max-[1100px]:grid-cols-[minmax(0,1fr)] ${ROW_STAGGER}`}
-      >
-        <SetupTable trades={shown} money={money} />
-
-        <div className="flex flex-col gap-18">
-          <RiskHealthCard
-            trades={shown}
-            stats={stats}
-            capital={opening}
-            limitPct={profile?.riskPerTradePct ?? null}
-          />
-          <DisciplineCard trades={shown} />
-        </div>
-      </div>
-
-      <RecentActivity trades={shown} />
     </>
   )
 }
