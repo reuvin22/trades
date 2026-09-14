@@ -8,7 +8,7 @@ import { RecentActivity } from '../components/RecentActivity'
 import { WidgetGrid } from '../components/WidgetGrid'
 import { RiskHealthCard } from '../components/RiskHealth'
 import { SetupTable } from '../components/SetupTable'
-import { statCards } from '../components/StatCards'
+import { StatCards } from '../components/StatCards'
 import { deriveStats, startingCapital, tradeDate } from '../lib/stats'
 import { greeting, riskHealth } from '../lib/dashboardStats'
 import { moneyIn } from '../lib/journalStats'
@@ -65,14 +65,10 @@ function coverage(trades: StoredTrade[]): string | null {
  * looking at: a table needs width for its columns, a single figure does not.
  */
 const WIDGETS: WidgetSpec[] = [
-  // The five figures are five widgets, not one row of five. As a single widget
-  // a handle on any of them resized all five together, which is not what a
-  // handle on one card should do.
-  { id: 'netPl', title: 'Net P&L', size: { w: 3, h: 5 }, min: { w: 2, h: 4 } },
-  { id: 'winRate', title: 'Win rate', size: { w: 2, h: 5 }, min: { w: 2, h: 4 } },
-  { id: 'profitFactor', title: 'Profit factor', size: { w: 2, h: 5 }, min: { w: 2, h: 4 } },
-  { id: 'expectancy', title: 'Expectancy', size: { w: 3, h: 5 }, min: { w: 2, h: 4 } },
-  { id: 'drawdown', title: 'Max drawdown', size: { w: 2, h: 5 }, min: { w: 2, h: 4 } },
+  // One widget, not five. The row is the unit a trader reads, and five boxes
+  // to place separately is five decisions where nobody wanted one. It wraps to
+  // fewer columns as it is made narrower.
+  { id: 'stats', title: 'Key figures', size: { w: 12, h: 5 }, min: { w: 3, h: 4 } },
   { id: 'equity', title: 'Equity curve', size: { w: 8, h: 17 }, min: { w: 4, h: 10 } },
   { id: 'edge', title: "What's working", size: { w: 4, h: 6 }, min: { w: 3, h: 4 } },
   { id: 'behaviour', title: "How you're trading", size: { w: 4, h: 11 }, min: { w: 3, h: 5 } },
@@ -192,12 +188,14 @@ export function Dashboard({ trades, uid, profile }: DashboardProps) {
         page="dashboard"
         widgets={WIDGETS}
         slots={{
-          ...statCards({
-            stats,
-            currency: money,
-            expectancyR: risk.expectancyR,
-            rSample: risk.rSample,
-          }),
+          stats: (
+            <StatCards
+              stats={stats}
+              currency={money}
+              expectancyR={risk.expectancyR}
+              rSample={risk.rSample}
+            />
+          ),
           equity: (
             <EquityChart equity={stats.equity} opening={opening} spanLabel={label} />
           ),

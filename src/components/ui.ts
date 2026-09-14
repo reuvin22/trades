@@ -57,7 +57,16 @@ export const MONO = 'font-mono text-[13px] tracking-[-0.01em]'
 
 /* -------------------------------------------------------------- stat row */
 
-export const STAT_ROW = 'grid grid-cols-5 gap-18 max-[1280px]:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]'
+/**
+ * The five headline figures, in a row that answers to its own width.
+ *
+ * `auto-fit` at every size rather than five columns until a viewport
+ * breakpoint. The row lives inside a widget the trader can resize now, and
+ * a viewport breakpoint cannot see that: dragged narrow on a wide screen it
+ * would hold five columns and squash them to nothing.
+ */
+export const STAT_ROW =
+  'grid h-full auto-rows-fr grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-18'
 export const STAT_CARD = 'flex min-h-132 flex-col gap-8 px-22 pt-20 pb-22'
 export const STAT_LABEL =
   'text-[11px] font-medium tracking-[0.13em] text-fg-muted uppercase'
@@ -1943,17 +1952,19 @@ export const WIDGET_GRID = 'grid grid-flow-row-dense items-stretch'
 /**
  * One widget, and the surface its handles live on.
  *
- * `relative` for the handles, `min-w-0` so a wide table inside cannot push the
- * column wider than the grid gave it, and `group` so the handles can appear on
- * hover without JavaScript deciding when.
+ * A column whose card is the column, which is what makes a height drag do
+ * anything at all. `height: 100%` was the first attempt and is the fragile
+ * version — it only resolves when the parent's height is definite, so the
+ * card sat at its natural height at the top of a taller empty box, leaving a
+ * gap with a resize handle floating in it. `flex-1` needs no such thing.
+ *
+ * The handles are absolutely positioned and so take no part in the flex.
+ * `min-w-0` keeps a wide table from pushing the column wider than the grid
+ * gave it, and `group` lets the handles appear on hover without JavaScript
+ * deciding when.
  */
-/*
- * `[&>*:first-child]:h-full` is what makes a height drag do anything. A card
- * sizes itself to its content, so without this the widget grows and the card
- * inside it simply sits at the top of a taller empty box.
- */
-export const WIDGET = 'group relative min-w-0 [&>*:first-child]:h-full'
-
+export const WIDGET =
+  'group relative flex min-w-0 flex-col [&>*:first-child]:min-h-0 [&>*:first-child]:flex-1'
 /** The frame while it is being dragged or resized — lifted, and on top. */
 export const WIDGET_ACTIVE =
   'z-30 [&>*]:pointer-events-none shadow-[var(--shadow-pop)] ring-1 ring-accent'
