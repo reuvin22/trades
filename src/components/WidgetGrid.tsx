@@ -15,6 +15,7 @@ import {
   GAP,
   readLayout,
   reconcile,
+  dropTarget,
   reorder,
   resize,
   ROW_HEIGHT,
@@ -61,7 +62,7 @@ const NARROW = 900
 
 type Dragging =
   | { kind: 'resize'; id: string; edge: Edge; fromSize: Size; x: number; y: number }
-  | { kind: 'move'; id: string; over: number | null }
+  | { kind: 'move'; id: string; before: string | null; moved: boolean }
   | null
 
 /**
@@ -253,7 +254,7 @@ export function WidgetGrid({
 
   const onMoveStart = (event: ReactPointerEvent, id: string) => {
     event.preventDefault()
-    setDragging({ kind: 'move', id, over: null })
+    setDragging({ kind: 'move', id, before: null, moved: false })
   }
 
   useEffect(() => {
@@ -264,33 +265,34 @@ export function WidgetGrid({
       if (!node || dragging?.kind !== 'move') return
 
       /*
-       * The drop position is read from the DOM rather than computed from the
-       * grid, because CSS placed these — with dense packing, where a widget
+       * Boxes are read from the DOM rather than computed from the layout,
+       * because CSS placed these — with dense packing, where a widget
        * visually sits is not something the order alone can tell you.
        */
-      const frames = [...node.querySelectorAll<HTMLElement>('[data-widget]')]
-      let over: number | null = null
+      const boxes = [...node.querySelectorAll<HTMLElement>('[data-widget]')].map(
+        (frame) => {
+          const box = frame.getBoundingClientRect()
+          return {
+            id: frame.dataset.widget ?? '',
+            left: box.left,
+            top: box.top,
+            right: box.right,
+            bottom: box.bottom,
+          }
+        },
+      )
 
-      frames.forEach((frame, index) => {
-        const box = frame.getBoundingClientRect()
-        if (
-          event.clientX >= box.left &&
-          event.clientX <= box.right &&
-          event.clientY >= box.top &&
-          event.clientY <= box.bottom
-        ) {
-          over = index
-        }
-      })
+      const before = dropTarget(boxes, event.clientX, event.clientY, dragging.id)
 
       setDragging((current) =>
-        current?.kind === 'move' && current.over !== over ? { ...current, over } : current,
+        current?.kind === 'move' && current.before !== before
+          ? { ...current, before, moved: true }
+          : current,
       )
     }
-
     function onUp() {
-      if (dragging?.kind === 'move' && dragging.over !== null) {
-        save({ ...layout, order: reorder(layout.order, dragging.id, dragging.over) })
+      if (dragging?.kind === 'move' && dragging.moved) {
+        save({ ...layout, order: reorder(layout.order, dragging.id, dragging.before) })
       }
       setDragging(null)
     }
@@ -308,6 +310,8 @@ export function WidgetGrid({
 
   /* ------------------------------------------------------------- render */
 
+  const visible = layout.order.filter((id) => !layout.hidden.includes(id))
+
   const style: CSSProperties = {
     gridTemplateColumns: `repeat(${COLUMNS}, minmax(0, 1fr))`,
     gridAutoRows: `${ROW_HEIGHT}px`,
@@ -317,13 +321,26 @@ export function WidgetGrid({
   return (
     <>
       <div ref={track} className={WIDGET_GRID} style={wide ? style : { gap: `${GAP}px` }}>
-        {layout.order.map((id, index) => {
+        {/*
+          Hidden widgets are filtered out here rather than removed from the
+          order, so switching one back on in Templates puts it where it was
+          at the size it was — not at the end at a default size.
+        */}
+        {visible.map((id, index) => {
           const spec = widgets.find((widget) => widget.id === id)
           const size = layout.sizes[id]
           if (!spec || !size || !slots[id]) return null
 
           const moving = dragging?.kind === 'move' && dragging.id === id
-          const target = dragging?.kind === 'move' && dragging.over === index && !moving
+          // Marked on the widget the dragged one would land in front of, and
+          // on the last widget when it would land at the end.
+          const target =
+            dragging?.kind === 'move' &&
+            !moving &&
+            (dragging.before === id ||
+              (dragging.before === null &&
+                dragging.moved &&
+                index === visible.length - 1))
 
           return (
             <div

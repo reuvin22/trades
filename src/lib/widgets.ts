@@ -37,6 +37,14 @@ export type Layout = {
   order: string[]
   /** Size per widget id. A widget with no entry uses its default. */
   sizes: Record<string, Size>
+  /**
+   * Ids the trader has switched off.
+   *
+   * Hidden rather than removed, so the order and size of a widget survive
+   * being turned off and on again — switching something back on should put it
+   * where it was, not at the end at a default size.
+   */
+  hidden: string[]
 }
 
 /** What a widget asks for before the trader has said otherwise. */
@@ -104,17 +112,91 @@ export function resize(
   return clampSize({ w: from.w + horizontal, h: from.h + vertical }, min)
 }
 
-/** Move one widget to another position in the order. */
-export function reorder(order: string[], id: string, toIndex: number): string[] {
-  const from = order.indexOf(id)
-  if (from < 0) return order
+/**
+ * Move one widget so it sits before another.
+ *
+ * Addressed by id rather than by index, deliberately. An index is measured
+ * against the array *before* the widget is taken out of it, so inserting at
+ * that index afterwards lands one place short whenever the move is rightwards
+ * — an off-by-one that only shows up in one direction and reads as "dragging
+ * right does not quite work".
+ *
+ * `beforeId` of null means the end.
+ */
+export function reorder(order: string[], id: string, beforeId: string | null): string[] {
+  if (!order.includes(id) || id === beforeId) return order
 
-  const next = [...order]
-  next.splice(from, 1)
-  // Clamped so a drop past either end lands at the end rather than nowhere.
-  next.splice(Math.max(0, Math.min(next.length, toIndex)), 0, id)
+  const without = order.filter((entry) => entry !== id)
 
-  return next
+  if (beforeId === null) return [...without, id]
+
+  const at = without.indexOf(beforeId)
+  if (at < 0) return order
+
+  return [...without.slice(0, at), id, ...without.slice(at)]
+}
+
+/**
+ * Which widget a drop should land before, given where the pointer is.
+ *
+ * The nearest one, never an exact hit. Requiring the pointer to be inside
+ * another widget's box meant dropping into the empty space a dense grid leaves
+ * — which on a dashboard is most of the lower right — found nothing and did
+ * nothing at all. A drag that ends with no visible result reads as broken
+ * rather than as "you missed".
+ *
+ * Before or after is decided by which side of that widget's middle the pointer
+ * fell on, so dragging past something moves it past it.
+ */
+export function dropTarget(
+  boxes: { id: string; left: number; top: number; right: number; bottom: number }[],
+  x: number,
+  y: number,
+  dragging: string,
+): string | null {
+  const others = boxes.filter((box) => box.id !== dragging)
+  if (others.length === 0) return null
+
+  /*
+   * Below everything means the end, before any nearest-centre reasoning runs.
+   * Without this, a drop in the space under a short left-hand column picks
+   * that column as nearest and lands the widget in the middle of the page —
+   * which is not where the pointer was, and is the kind of result that makes
+   * a drag feel unpredictable.
+   */
+  if (others.every((box) => y > box.bottom)) return null
+
+  let closest: { id: string; after: boolean; distance: number } | null = null
+
+  for (const box of others) {
+
+    const midX = (box.left + box.right) / 2
+    const midY = (box.top + box.bottom) / 2
+    const distance = Math.hypot(x - midX, y - midY)
+
+    if (closest === null || distance < closest.distance) {
+      /*
+       * Rows first: a pointer well below a widget belongs after it whichever
+       * side of its middle it is on, because the next row is what it is
+       * heading for. Only within the same band does left and right decide.
+       */
+      const below = y > box.bottom
+      const above = y < box.top
+      const after = below || (!above && x > midX)
+
+      closest = { id: box.id, after, distance }
+    }
+  }
+
+  if (closest === null) return null
+
+  if (!closest.after) return closest.id
+
+  // After the closest means before whatever follows it — or the end.
+  const order = boxes.map((box) => box.id).filter((id) => id !== dragging)
+  const at = order.indexOf(closest.id)
+
+  return at >= 0 && at + 1 < order.length ? order[at + 1] : null
 }
 
 /**
@@ -138,7 +220,13 @@ export function reconcile(stored: Layout | null, specs: WidgetSpec[]): Layout {
     sizes[spec.id] = saved ? clampSize(saved, spec.min) : spec.size
   }
 
-  return { order: [...kept, ...missing], sizes }
+  return {
+    order: [...kept, ...missing],
+    sizes,
+    // Ids for widgets the app no longer ships are dropped here too, or a
+    // widget removed and later reintroduced would come back invisible.
+    hidden: (stored?.hidden ?? []).filter((id) => known.has(id)),
+  }
 }
 
 /* ---------------------------------------------------------- persistence */
@@ -162,10 +250,15 @@ export function readLayout(page: string): Layout | null {
     const parsed: unknown = JSON.parse(raw)
     if (typeof parsed !== 'object' || parsed === null) return null
 
-    const { order, sizes } = parsed as Partial<Layout>
+    const { order, sizes, hidden } = parsed as Partial<Layout>
     if (!Array.isArray(order) || typeof sizes !== 'object' || sizes === null) return null
 
-    return { order: order.filter((id) => typeof id === 'string'), sizes }
+    return {
+      order: order.filter((id) => typeof id === 'string'),
+      sizes,
+      // Absent in layouts written before widgets could be hidden.
+      hidden: Array.isArray(hidden) ? hidden.filter((id) => typeof id === 'string') : [],
+    }
   } catch {
     // Private mode, blocked storage, or something written by an older build.
     return null
@@ -187,4 +280,17 @@ export function forgetLayout(page: string): void {
   } catch {
     // Nothing to do, and nothing depends on it having worked.
   }
+}
+
+/** Switch a widget off, or back on where it was. */
+export function toggleHidden(layout: Layout, id: string): Layout {
+  const hidden = layout.hidden.includes(id)
+    ? layout.hidden.filter((entry) => entry !== id)
+    : [...layout.hidden, id]
+
+  return { ...layout, hidden }
+}
+
+export function isHidden(layout: Layout, id: string): boolean {
+  return layout.hidden.includes(id)
 }

@@ -10,6 +10,7 @@ import {
   OrgIcon,
   PlugIcon,
   SettingsIcon,
+  TemplateIcon,
   SubscriptionIcon,
   UsersIcon,
   WalletIcon,
@@ -36,6 +37,9 @@ export const TRADER_NAV: NavItem[] = [
   { route: 'calendar', label: 'Calendar', icon: CalendarIcon },
   { route: 'analytics', label: 'Analytics', icon: AnalyticsIcon },
   { route: 'coach', label: 'AI Coach', icon: CoachIcon },
+  // Next to Settings, because it is one: what a page shows, rather than what
+  // the account is.
+  { route: 'templates', label: 'Templates', icon: TemplateIcon },
   { route: 'settings', label: 'Settings', icon: SettingsIcon },
 ]
 

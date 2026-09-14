@@ -30,6 +30,7 @@ import { Login } from './pages/Login'
 import { Placeholder } from './pages/Placeholder'
 import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
+import { Templates } from './pages/Templates'
 import { TradeJournal } from './pages/TradeJournal'
 import { VerifyEmail } from './pages/VerifyEmail'
 import { AdminShell } from './pages/admin/AdminShell'
@@ -88,6 +89,8 @@ function TraderView({
       return <Profile user={user} profile={profile} onSaved={reloadProfile} />
     case 'billing':
       return <Billing user={user} profile={profile} />
+    case 'templates':
+      return <Templates />
     case 'settings':
       return <Settings profile={profile} onSaved={reloadProfile} />
     default:

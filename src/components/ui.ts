@@ -2003,3 +2003,37 @@ export const WIDGET_GRIP =
 /** The one control the whole feature needs: put it back how it was. */
 export const LAYOUT_RESET =
   'text-[11.5px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg-strong'
+
+/* ------------------------------------------------------------ templates */
+
+/** One page's widgets, as a block on the Templates screen. */
+export const TPL_PAGE = 'mb-24'
+export const TPL_PAGE_HEAD = 'mb-12 flex flex-wrap items-baseline justify-between gap-10'
+export const TPL_PAGE_NAME = 'text-[15px] font-medium text-fg-strong'
+export const TPL_PAGE_COUNT = 'text-[12px] text-fg-muted tabular-nums'
+
+export const TPL_LIST = 'grid gap-12 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'
+
+/**
+ * One widget, with its switch.
+ *
+ * The whole row is the control rather than a toggle at the end of it: a
+ * 20-pixel switch beside 280 pixels of card is a target people miss, and there
+ * is nothing else on the row to click by mistake.
+ */
+export const TPL_ITEM =
+  'flex w-full cursor-pointer items-start gap-12 rounded-sm border border-line bg-tint-1 px-14 py-12 text-left transition-[border-color,background-color,opacity] duration-150 hover:border-line-strong'
+/** Switched off: dimmed, so the list still reads as one set. */
+export const TPL_ITEM_OFF = 'opacity-45'
+
+export const TPL_ITEM_BODY = 'min-w-0 flex-1'
+export const TPL_ITEM_NAME = 'text-[13.5px] font-medium text-fg'
+export const TPL_ITEM_ABOUT = 'mt-3 text-[11.5px] leading-[1.5] text-fg-muted'
+
+/** The switch. A span, because the row around it is the button. */
+export const TPL_SWITCH =
+  'relative mt-2 h-18 w-32 flex-none rounded-full transition-colors duration-150'
+export const TPL_SWITCH_ON = 'bg-accent'
+export const TPL_SWITCH_OFF = 'bg-tint-2'
+export const TPL_KNOB =
+  'absolute top-3 size-12 rounded-full bg-white transition-[left] duration-150'

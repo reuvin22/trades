@@ -643,3 +643,13 @@ export function GripIcon({ size = 14, className }: IconProps) {
     </svg>
   )
 }
+
+/** A page split into panels: the arrangement itself. */
+export function TemplateIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="2.5" />
+      <path d="M3 9h18M10 9v12" />
+    </svg>
+  )
+}

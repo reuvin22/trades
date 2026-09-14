@@ -24,7 +24,7 @@ import {
 import type { DateRange } from '../components/DateRangePicker'
 import type { StoredTrade } from '../lib/trades'
 import type { Period, Profile } from '../lib/profile'
-import type { WidgetSpec } from '../lib/widgets'
+import { DASHBOARD_WIDGETS } from '../lib/widgetCatalogue'
 
 type DashboardProps = {
   trades: StoredTrade[]
@@ -56,28 +56,6 @@ function coverage(trades: StoredTrade[]): string | null {
   const last = SPAN.format(dates[dates.length - 1])
   return first === last ? first : `${first} – ${last}`
 }
-
-/**
- * The dashboard's widgets, at the size they start.
- *
- * Twelve columns, so 8/4 is the two-thirds split the page used to hard-code
- * and 6/6 is a half. The minimums are the point where each stops being worth
- * looking at: a table needs width for its columns, a single figure does not.
- */
-const WIDGETS: WidgetSpec[] = [
-  // One widget, not five. The row is the unit a trader reads, and five boxes
-  // to place separately is five decisions where nobody wanted one. It wraps to
-  // fewer columns as it is made narrower.
-  { id: 'stats', title: 'Key figures', size: { w: 12, h: 5 }, min: { w: 3, h: 4 } },
-  { id: 'equity', title: 'Equity curve', size: { w: 8, h: 17 }, min: { w: 4, h: 10 } },
-  { id: 'edge', title: "What's working", size: { w: 4, h: 6 }, min: { w: 3, h: 4 } },
-  { id: 'behaviour', title: "How you're trading", size: { w: 4, h: 11 }, min: { w: 3, h: 5 } },
-  { id: 'setups', title: 'Setup performance', size: { w: 7, h: 11 }, min: { w: 5, h: 6 } },
-  { id: 'risk', title: 'Risk health', size: { w: 5, h: 6 }, min: { w: 3, h: 5 } },
-  { id: 'discipline', title: 'Discipline score', size: { w: 5, h: 8 }, min: { w: 3, h: 6 } },
-  { id: 'calendar', title: 'Performance calendar', size: { w: 4, h: 8 }, min: { w: 3, h: 6 } },
-  { id: 'recent', title: 'Recent activity', size: { w: 12, h: 14 }, min: { w: 5, h: 8 } },
-]
 
 export function Dashboard({ trades, uid, profile }: DashboardProps) {
   /*
@@ -186,7 +164,7 @@ export function Dashboard({ trades, uid, profile }: DashboardProps) {
       */}
       <WidgetGrid
         page="dashboard"
-        widgets={WIDGETS}
+        widgets={DASHBOARD_WIDGETS}
         slots={{
           stats: (
             <StatCards
