@@ -36,6 +36,7 @@ import {
   SAVE_ERROR,
   SAVE_BAR,
   SECTION_TITLE,
+  SOON_BADGE,
   TAG_CLOUD,
   TAG_TOGGLE,
 } from '../components/ui'
@@ -555,7 +556,10 @@ export function Settings({ profile, onSaved }: SettingsProps) {
         It also keeps a broker password from riding along with "Save settings".
       */}
       <section className={`${CARD} ${FORM_SECTION}`}>
-        <h3 className={SECTION_TITLE}>Broker accounts</h3>
+        <h3 className={SECTION_TITLE}>
+          Broker accounts
+          <span className={SOON_BADGE}>Coming soon</span>
+        </h3>
         <BrokerConnections />
       </section>
     </>

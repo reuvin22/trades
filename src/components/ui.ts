@@ -526,6 +526,16 @@ export const FORM_SECTION = 'px-24 pt-22 pb-24'
 
 export const SECTION_TITLE =
   'mb-18 flex items-center gap-8 text-[11px] font-semibold tracking-[0.14em] text-fg-muted uppercase'
+/**
+ * Marks a section that is built but not yet connected to anything.
+ *
+ * Outlined rather than filled: a solid accent pill reads as a feature being
+ * promoted, and this is the opposite — a heading that has to say "not yet"
+ * before anyone fills the form underneath it in.
+ */
+export const SOON_BADGE =
+  'rounded-full border border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] px-9 py-2 text-[9.5px] font-semibold tracking-[0.1em] text-accent-strong uppercase'
+
 export const IDENTITY = 'mb-20 flex items-center gap-18'
 export const IDENTITY_AVATAR =
   'block size-68 flex-none overflow-hidden rounded-full border border-line-strong [&_img]:block [&_img]:size-full [&_img]:object-cover [&_span]:text-[26px]'
