@@ -1947,7 +1947,12 @@ export const WIDGET_GRID = 'grid grid-flow-row-dense items-stretch'
  * column wider than the grid gave it, and `group` so the handles can appear on
  * hover without JavaScript deciding when.
  */
-export const WIDGET = 'group relative min-w-0'
+/*
+ * `[&>*:first-child]:h-full` is what makes a height drag do anything. A card
+ * sizes itself to its content, so without this the widget grows and the card
+ * inside it simply sits at the top of a taller empty box.
+ */
+export const WIDGET = 'group relative min-w-0 [&>*:first-child]:h-full'
 
 /** The frame while it is being dragged or resized — lifted, and on top. */
 export const WIDGET_ACTIVE =

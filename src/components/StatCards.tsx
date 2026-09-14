@@ -2,43 +2,20 @@ import type { ReactNode } from 'react'
 import { AnimatedNumber } from './AnimatedNumber'
 import { formatFactor, type DerivedStats } from '../lib/stats'
 import { TrendIcon } from './Icons'
+import { StatCard } from './StatCard'
 import {
-  CARD,
-  CARD_HOVER,
   DELTA,
   METER,
   METER_FILL,
-  ROW_STAGGER,
-  STAT_CARD,
-  STAT_FOOT,
-  STAT_LABEL,
-  STAT_ROW,
-  STAT_VALUE,
-  TABULAR,
 } from './ui'
 
-type StatCardProps = {
-  label: string
-  value: ReactNode
-  tone?: 'default' | 'positive' | 'negative'
-  children: ReactNode
-}
-
-function StatCard({ label, value, tone = 'default', children }: StatCardProps) {
-  const toneClass =
-    tone === 'positive' ? 'text-green' : tone === 'negative' ? 'text-red' : ''
-
-  return (
-    <article className={`${CARD} ${CARD_HOVER} ${STAT_CARD}`}>
-      <p className={STAT_LABEL}>{label}</p>
-      <p className={`${STAT_VALUE} ${TABULAR} ${toneClass}`}>{value}</p>
-      <div className={STAT_FOOT}>{children}</div>
-    </article>
-  )
-}
-
 /**
- * The five figures at the top of the dashboard.
+ * The five figures, each one its own widget.
+ *
+ * Returned as separate nodes rather than a row, because they are laid out by
+ * the widget grid now. As one component rendering its own five-column grid,
+ * resizing moved all five together — the group, not the card, which is not
+ * what a handle on one card should do.
  *
  * These five and not others, because between them they answer the only
  * questions worth asking first: am I up, how often am I right, how much do I
@@ -50,10 +27,10 @@ function StatCard({ label, value, tone = 'default', children }: StatCardProps) {
  * measured from the stop, so it reads the trades that logged one; the card
  * says how many that was rather than quietly averaging a handful.
  *
- * Today's P&L used to sit here. It was moved out for Expectancy: on a day with
- * no trades it reads +$0.00, which is not a fact about your trading.
+ * Today's P&L used to sit here. It was moved out for Expectancy: on a day
+ * with no trades it reads +$0.00, which is not a fact about your trading.
  */
-export function StatCards({
+export function statCards({
   stats,
   currency,
   expectancyR,
@@ -64,13 +41,13 @@ export function StatCards({
   /** Mean realised R. Null when no trade recorded a stop. */
   expectancyR: number | null
   rSample: number
-}) {
+}): Record<string, ReactNode> {
   const down = 'text-red [&>svg]:-scale-y-100'
   // The meter only needs a width; the figure beside it keeps its decimal.
   const winRate = stats.winRate
 
-  return (
-    <div data-tour="stats" className={`${STAT_ROW} ${ROW_STAGGER}`}>
+  return {
+    netPl: (
       <StatCard
         label="Net P&L"
         tone={stats.netPl >= 0 ? 'positive' : 'negative'}
@@ -82,7 +59,9 @@ export function StatCards({
           {stats.monthPct.toFixed(1)}% this month
         </span>
       </StatCard>
+    ),
 
+    winRate: (
       <StatCard
         label="Win Rate"
         value={<AnimatedNumber value={stats.winRate} format={(n) => `${n.toFixed(1)}%`} />}
@@ -98,13 +77,17 @@ export function StatCards({
           />
         </div>
       </StatCard>
+    ),
 
+    profitFactor: (
       <StatCard label="Profit Factor" value={formatFactor(stats.profitFactor)}>
         <span>
           {stats.closedCount} closed {stats.closedCount === 1 ? 'trade' : 'trades'}
         </span>
       </StatCard>
+    ),
 
+    expectancy: (
       <StatCard
         label="Expectancy"
         tone={
@@ -125,7 +108,9 @@ export function StatCards({
           {rSample === 0 ? 'Needs a stop-loss logged' : `Per trade, over ${rSample}`}
         </span>
       </StatCard>
+    ),
 
+    drawdown: (
       <StatCard
         label="Max Drawdown"
         tone={stats.maxDrawdownPct > 0 ? 'negative' : 'default'}
@@ -144,6 +129,6 @@ export function StatCards({
           {stats.maxDrawdownPct === 0 ? 'No drawdown yet' : 'Peak to trough'}
         </span>
       </StatCard>
-    </div>
-  )
+    ),
+  }
 }
