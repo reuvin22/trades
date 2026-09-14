@@ -3,6 +3,7 @@ import {
   connectAccount,
   disconnectAccount,
   pauseConnection,
+  syncNow,
   useConnections,
   type Connection,
   type Platform,
@@ -121,6 +122,34 @@ export function BrokerConnections({ uid }: { uid: string | null }) {
     }
   }
 
+  /**
+   * Sync, and say what came back in the trader's terms.
+   *
+   * Reported separately from the other actions because "nothing new" is the
+   * normal outcome here and must not read as a failure — it is what a working
+   * connection says most of the time.
+   */
+  async function runSync(id: string) {
+    setWorking(id)
+    try {
+      const report = await syncNow(id)
+      reload()
+
+      if (report.added > 0) {
+        toast.success(
+          `${report.added} ${report.added === 1 ? 'trade' : 'trades'} imported`,
+          'Open your journal to see them.',
+        )
+      } else {
+        toast.info('Up to date', 'Nothing new has closed since the last sync.')
+      }
+    } catch (cause) {
+      toast.error('Could not sync', readableApiError(cause))
+    } finally {
+      setWorking(null)
+    }
+  }
+
   async function act(id: string, run: () => Promise<unknown>, done: string) {
     setWorking(id)
     try {
@@ -167,6 +196,19 @@ export function BrokerConnections({ uid }: { uid: string | null }) {
               </span>
 
               <span className={CONNECT_ACTIONS}>
+                {/* First, because on a connection that is still settling it
+                    is the only thing worth pressing — and it reports why when
+                    it cannot run, rather than leaving the row on
+                    "Connecting…" with nothing to click. */}
+                <button
+                  type="button"
+                  className={CONNECT_ACTION}
+                  disabled={working === entry.id || entry.paused}
+                  onClick={() => void runSync(entry.id)}
+                >
+                  {working === entry.id ? 'Syncing…' : 'Sync now'}
+                </button>
+
                 <button
                   type="button"
                   className={CONNECT_ACTION}

@@ -86,6 +86,28 @@ export async function pauseConnection(id: string, paused: boolean): Promise<Conn
   return toConnection(wire)
 }
 
+export type SyncReport = {
+  added: number
+  seen: number
+}
+
+/**
+ * Pull whatever has closed since the last pass.
+ *
+ * Idempotent, so pressing it twice is free — which is the point of having
+ * a button at all. A trader who has just closed a trade should not have to
+ * wait on a schedule they cannot see.
+ */
+export async function syncNow(id: string): Promise<SyncReport> {
+  const wire = await apiFetch<Wire>(`/api/v1/connections/${id}/sync`, {
+    method: 'POST',
+  })
+  return {
+    added: Number(wire.added ?? 0),
+    seen: Number(wire.seen ?? 0),
+  }
+}
+
 export async function disconnectAccount(id: string): Promise<void> {
   await apiFetch<null>(`/api/v1/connections/${id}`, { method: 'DELETE' })
 }

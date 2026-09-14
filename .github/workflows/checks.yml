@@ -1,0 +1,47 @@
+# The same gate as the API, for the client.
+#
+# Vercel builds and deploys this on every push to main. `npm run build` already
+# runs the type check, the environment scan and the SEO audit — but it runs
+# them *on Vercel*, after the deploy has been decided. A failure there is a
+# broken deployment you find out about; a failure here is a push you fix.
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `ci`, not `install`: it installs exactly what the lockfile says and
+      # fails if package.json and the lock have drifted, which is the whole
+      # point of running this somewhere other than the machine that wrote them.
+      - name: Install
+        run: npm ci
+
+      # Separate from the build even though `tsc -b` runs inside it, because
+      # the hook rules live here and they catch real bugs the type checker
+      # cannot see — a stale dependency array is valid TypeScript.
+      - name: Lint
+        run: npm run lint
+
+      # Runs check:env before and after, and the SEO audit after — so a
+      # missing canonical or a stray key fails here rather than shipping.
+      - name: Build
+        run: npm run build
