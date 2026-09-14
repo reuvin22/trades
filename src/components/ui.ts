@@ -2037,3 +2037,16 @@ export const TPL_SWITCH_ON = 'bg-accent'
 export const TPL_SWITCH_OFF = 'bg-tint-2'
 export const TPL_KNOB =
   'absolute top-3 size-12 rounded-full bg-white transition-[left] duration-150'
+
+/**
+ * Waiting for a page's code to arrive.
+ *
+ * Deliberately quiet — a bar, not a spinner, and no text. Most of these
+ * resolve in under a hundred milliseconds on a warm connection, and a message
+ * that appears and vanishes in that time is noticed only as a flicker. It has
+ * a delay before it fades in for the same reason.
+ */
+export const PAGE_PENDING =
+  'mx-auto mt-80 h-2 w-160 overflow-hidden rounded-full bg-tint-2 opacity-0 [animation:fade_0.3s_0.25s_ease_forwards]'
+export const PAGE_PENDING_BAR =
+  'block h-full w-1/4 rounded-full bg-accent [animation:slide-through_1.1s_ease-in-out_infinite]'

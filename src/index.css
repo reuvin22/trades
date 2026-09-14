@@ -230,6 +230,23 @@
     }
   }
 
+  /*
+   * The indeterminate bar shown while a page's code arrives.
+   *
+   * A slide rather than a fill, because there is no progress to report: the
+   * browser does not know how much of a chunk has landed, and a bar that
+   * appears to fill and then waits is worse than one that plainly says
+   * "working".
+   */
+  @keyframes slide-through {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(400%);
+    }
+  }
+
   /* Same reasoning as drop-in: the menu moves, its contents do not fade. */
   @keyframes menu-in {
     from {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { ChatDock } from './components/ChatDock'
 import { SplashScreen } from './components/SplashScreen'
 import { Tour } from './components/Tour'
@@ -7,6 +7,7 @@ import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
 import { appShell, CONTENT, WORKSPACE } from './components/layout'
+import { PAGE_PENDING, PAGE_PENDING_BAR } from './components/ui'
 import { useNavDrawer } from './lib/useNavDrawer'
 import { useCollapsedNav } from './lib/useCollapsedNav'
 import { navigate, useHashRoute, PUBLIC_ROUTES } from './lib/useHashRoute'
@@ -20,22 +21,66 @@ import { saveTrade, useTrades } from './lib/trades'
 import { useTheme } from './lib/useTheme'
 import { useWarmup } from './lib/useWarmup'
 import { labelForRoute } from './navigation'
-import { AiCoach } from './pages/AiCoach'
-import { Analytics } from './pages/Analytics'
-import { Calendar } from './pages/Calendar'
-import { Billing } from './pages/Billing'
 import { Dashboard } from './pages/Dashboard'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { Placeholder } from './pages/Placeholder'
-import { Profile } from './pages/Profile'
-import { Settings } from './pages/Settings'
-import { Templates } from './pages/Templates'
-import { TradeJournal } from './pages/TradeJournal'
 import { VerifyEmail } from './pages/VerifyEmail'
-import { AdminShell } from './pages/admin/AdminShell'
 import type { StoredTrade } from './lib/trades'
 import type { AuthUser } from './lib/useAuth'
+
+/**
+ * Shown while a page's code is on its way.
+ *
+ * A quiet bar rather than a spinner or a message. Most of these resolve in
+ * well under a second on a warm connection, and something that appears and
+ * vanishes in that time reads as a flicker rather than as progress — so it
+ * fades in only if the wait is long enough to be worth acknowledging.
+ */
+function PagePending() {
+  return (
+    <div className={PAGE_PENDING} role="status" aria-label="Loading">
+      <span className={PAGE_PENDING_BAR} />
+    </div>
+  )
+}
+
+/*
+ * Every page but the dashboard is fetched when it is first opened.
+ *
+ * The dashboard stays eager because every sign-in lands there — making it
+ * a second round trip would put a spinner in front of the one screen that
+ * should already be on screen. The rest are weight most sessions never
+ * touch: the coach, the admin shell, a settings page opened twice a month.
+ */
+const Analytics = lazy(() =>
+  import('./pages/Analytics').then((module) => ({ default: module.Analytics })),
+)
+const Billing = lazy(() =>
+  import('./pages/Billing').then((module) => ({ default: module.Billing })),
+)
+const Calendar = lazy(() =>
+  import('./pages/Calendar').then((module) => ({ default: module.Calendar })),
+)
+const AiCoach = lazy(() =>
+  import('./pages/AiCoach').then((module) => ({ default: module.AiCoach })),
+)
+const Profile = lazy(() =>
+  import('./pages/Profile').then((module) => ({ default: module.Profile })),
+)
+const Settings = lazy(() =>
+  import('./pages/Settings').then((module) => ({ default: module.Settings })),
+)
+const Templates = lazy(() =>
+  import('./pages/Templates').then((module) => ({ default: module.Templates })),
+)
+const TradeJournal = lazy(() =>
+  import('./pages/TradeJournal').then((module) => ({ default: module.TradeJournal })),
+)
+const AdminShell = lazy(() =>
+  import('./pages/admin/AdminShell').then((module) => ({ default: module.AdminShell })),
+)
+
 
 /** Where a signed-in session lands, and where sign-out returns from. */
 const HOME_ROUTE = 'dashboard'
@@ -202,7 +247,11 @@ function App() {
   if (PUBLIC_ROUTES.has(route)) return null
 
   if (route === 'admin' || route.startsWith('admin/')) {
-    return <AdminShell route={route} theme={theme} onToggleTheme={toggle} />
+    return (
+      <Suspense fallback={<PagePending />}>
+        <AdminShell route={route} theme={theme} onToggleTheme={toggle} />
+      </Suspense>
+    )
   }
 
   return (
@@ -226,6 +275,12 @@ function App() {
           photoURL={profile?.photoURL}
         />
         <main className={CONTENT} key={route}>
+          {/*
+            One boundary around the whole page rather than one per page. The
+            route key above already remounts on navigation, so a single
+            Suspense here covers every lazy page without repeating itself.
+          */}
+          <Suspense fallback={<PagePending />}>
           <TraderView
             route={route}
             uid={uid}
@@ -237,6 +292,7 @@ function App() {
             reload={reload}
             reloadProfile={reloadProfile}
           />
+          </Suspense>
         </main>
       </div>
 

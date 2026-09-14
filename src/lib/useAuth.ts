@@ -5,6 +5,7 @@ import { auth } from './firebase'
 import { goOffline } from './chat'
 import { forgetKeys } from './messagecrypto'
 import { forgetCache } from './cache'
+import { invalidate } from './apiCache'
 import { forgetImageUrls } from './uploads'
 
 /**
@@ -240,6 +241,9 @@ export async function signOutOfApp() {
   // for the minutes left on them.
   forgetCache()
   forgetImageUrls()
+  // Anything still remembered in front of the API belongs to somebody who is
+  // no longer here.
+  invalidate()
 
   return apiFetch<{ message: string }>('/api/v1/auth/logout', { method: 'POST' })
 }

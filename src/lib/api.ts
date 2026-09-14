@@ -14,6 +14,7 @@
  * check in the service decorative.
  */
 
+import { DEFAULT_TTL_MS, invalidate, through } from './apiCache'
 /**
  * Same-origin by default, which is what the rewrite in vercel.json arranges.
  *
@@ -54,6 +55,14 @@ type Options = {
   body?: unknown
   query?: Record<string, string | number | undefined>
   signal?: AbortSignal
+  /**
+   * Skip the short-lived GET cache.
+   *
+   * For the few reads that must hit the server every time — a signed upload
+   * URL that expires, a poll whose whole job is to see a change. Writes are
+   * never cached and do not need this.
+   */
+  fresh?: boolean
 }
 
 /**
@@ -63,16 +72,61 @@ type Options = {
  * that expects no content should not have to special-case an empty parse.
  */
 export async function apiFetch<T>(path: string, options: Options = {}): Promise<T> {
-  const { method = 'GET', body, query, signal } = options
+  const { method = 'GET', body, query, signal, fresh } = options
 
   const url = new URL(`${API_BASE}${path}`, window.location.origin)
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) url.searchParams.set(key, String(value))
   }
 
+  /*
+   * Reads go through the cache; writes clear it.
+   *
+   * Cleared by path prefix rather than by exact URL, because one write
+   * invalidates a family — saving a trade changes the journal list, every page
+   * of it, and everything derived from it. The prefix is the first two
+   * segments, so POST /api/v1/trades/123 clears /api/v1/trades and its pages
+   * without touching /api/v1/me.
+   */
+  if (method !== 'GET') {
+    // Built through URL, exactly as the cache key is. Composing the prefix by
+    // hand worked only while API_BASE was empty: set to a local origin it
+    // becomes part of the string but not of `pathname`, and every
+    // invalidation would silently match nothing.
+    const family = new URL(
+      `${API_BASE}${path.split('/').slice(0, 4).join('/')}`,
+      window.location.origin,
+    )
+    invalidate(`GET ${family.pathname}`)
+  }
+
+  if (method === 'GET' && !fresh) {
+    return through(cacheKey(url), DEFAULT_TTL_MS, () =>
+      send<T>(url, method, body, headersFor(body), signal),
+    )
+  }
+
+  return send<T>(url, method, body, headersFor(body), signal)
+}
+
+/** What identifies a response: the path and the query, never the origin. */
+function cacheKey(url: URL): string {
+  return `GET ${url.pathname}${url.search}`
+}
+
+function headersFor(body: unknown): Record<string, string> {
   const headers: Record<string, string> = {}
   if (body !== undefined) headers['content-type'] = 'application/json'
+  return headers
+}
 
+async function send<T>(
+  url: URL,
+  method: string,
+  body: unknown,
+  headers: Record<string, string>,
+  signal: AbortSignal | undefined,
+): Promise<T> {
   let response: Response
   try {
     response = await fetch(url, {
