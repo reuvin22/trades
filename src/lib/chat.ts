@@ -16,6 +16,7 @@ import { auth, rtdb } from './firebase'
 import { decryptMessage, encryptMessage } from './messagecrypto'
 import type { AuthUser } from './useAuth'
 
+import { hasFeature } from './entitlements'
 /**
  * Chat, on the Realtime Database, read straight from the browser.
  *
@@ -137,7 +138,9 @@ function isOnline(raw: unknown): boolean {
  * claiming they are still here.
  */
 export async function goOffline(uid: string): Promise<void> {
-  if (!rtdb) return
+  // Runs on every sign-out. Without the plan check, a Free account signing out
+  // would open the chat websocket just to mark itself offline.
+  if (!rtdb || !hasFeature('messages')) return
   await set(ref(rtdb, `status/${uid}`), {
     online: false,
     at: serverTimestamp(),
@@ -154,6 +157,7 @@ export async function goOffline(uid: string): Promise<void> {
  */
 async function connect(user: AuthUser): Promise<void> {
   if (!auth || !rtdb) throw new Error('Live chat is not configured in this build.')
+  if (!hasFeature('messages')) throw new Error('Messages are not included in your plan.')
 
   if (auth.currentUser?.uid !== user.uid) {
     const { token } = await apiFetch<{ token: string }>('/api/v1/chat/token')

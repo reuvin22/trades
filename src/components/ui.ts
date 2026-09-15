@@ -1628,112 +1628,6 @@ export const SHOT_TILE_IMAGE = 'size-full object-cover'
 export const SHOT_TILE_EMPTY =
   'grid size-full place-items-center text-fg-muted [&_svg]:opacity-60'
 
-/* ---------------------------------------------------------- landing page */
-
-export const LANDING_SHELL =
-  'relative min-h-screen overflow-x-clip ' +
-  'bg-[radial-gradient(1100px_700px_at_12%_-10%,var(--color-glow-a),transparent_62%),radial-gradient(900px_620px_at_96%_108%,var(--color-glow-b),transparent_60%),linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]'
-
-/** Everything above the backdrop, and never wider than a readable measure. */
-export const LANDING_MAIN = 'relative z-10 mx-auto w-full max-w-1120 px-28 max-shell:px-20'
-
-export const LANDING_NAV =
-  'flex items-center gap-16 py-24 [&>*]:animate-fade'
-export const LANDING_BRAND =
-  'text-[22px] font-semibold tracking-[-0.02em] text-fg-strong'
-export const LANDING_NAV_ACTIONS = 'ml-auto flex items-center gap-10'
-
-export const LANDING_HERO = 'flex flex-col items-center pt-70 pb-90 text-center max-shell:pt-48'
-
-/** The eyebrow. Small, bordered, and the first thing to arrive. */
-export const LANDING_EYEBROW =
-  'inline-flex animate-rise items-center gap-8 rounded-full border border-line-strong bg-tint-1 px-14 py-6 text-[11.5px] font-medium tracking-[0.08em] text-fg-dim uppercase'
-
-export const LANDING_TITLE =
-  'mt-22 max-w-[16ch] animate-rise text-[64px] leading-[1.04] font-semibold tracking-[-0.035em] text-fg-strong [animation-delay:80ms] ' +
-  'max-shell:text-[44px] max-[520px]:text-[36px]'
-/** The half of the headline that carries the colour. */
-export const LANDING_TITLE_ACCENT =
-  'bg-[linear-gradient(100deg,var(--color-accent-strong),var(--color-cyan))] bg-clip-text text-transparent'
-
-export const LANDING_LEAD =
-  'mt-20 max-w-[56ch] animate-rise text-[16.5px] leading-[1.6] text-fg-dim [animation-delay:160ms] max-shell:text-[15px]'
-
-export const LANDING_CTAS =
-  'mt-30 flex animate-rise flex-wrap items-center justify-center gap-12 [animation-delay:240ms]'
-export const LANDING_CTA_LARGE = 'px-22 py-12 text-[14px]'
-
-export const LANDING_TRUST =
-  'mt-24 animate-fade text-[12px] tracking-[0.02em] text-fg-muted [animation-delay:340ms]'
-
-/* The sections below the fold arrive as they are scrolled to, rather than all
-   at once on load — a card that animated while off screen has already finished
-   by the time it is read, which is the same as not animating at all. */
-export const SCROLL_REVEAL = 'translate-y-14 opacity-0 transition-[opacity,transform] duration-[600ms] ease-out'
-export const SCROLL_REVEAL_SHOWN = 'translate-y-0 opacity-100'
-
-export const LANDING_SECTION = 'py-70 max-shell:py-52'
-export const LANDING_KICKER =
-  'text-[11px] font-semibold tracking-[0.16em] text-accent-strong uppercase'
-export const LANDING_HEADING =
-  'mt-10 max-w-[22ch] text-[34px] leading-[1.14] font-semibold tracking-[-0.025em] text-fg-strong max-shell:text-[27px]'
-export const LANDING_SUB = 'mt-12 max-w-[62ch] text-[14.5px] leading-[1.6] text-fg-muted'
-
-export const LANDING_GRID =
-  'mt-38 grid grid-cols-[repeat(auto-fit,minmax(248px,1fr))] gap-18'
-
-export const LANDING_CARD =
-  'group relative flex flex-col overflow-hidden rounded-lg border border-line bg-panel p-24 backdrop-blur-[14px] ' +
-  'transition-[border-color,transform,box-shadow] duration-300 ease-out hover:-translate-y-3 hover:border-line-strong hover:shadow-[var(--shadow-pop)]'
-export const LANDING_CARD_GLYPH =
-  'grid size-40 place-items-center rounded-[12px] bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)] text-accent-strong ' +
-  'transition-transform duration-300 ease-spring group-hover:scale-110'
-export const LANDING_CARD_TITLE = 'mt-18 text-[16px] font-semibold text-fg-strong'
-export const LANDING_CARD_BODY = 'mt-8 text-[13.5px] leading-[1.6] text-fg-muted'
-
-export const LANDING_STATS =
-  'grid grid-cols-3 gap-18 rounded-lg border border-line bg-panel p-30 backdrop-blur-[14px] max-[620px]:grid-cols-1'
-export const LANDING_STAT_VALUE =
-  'text-[38px] leading-none font-semibold tracking-[-0.03em] text-fg-strong tabular-nums max-shell:text-[30px]'
-export const LANDING_STAT_LABEL = 'mt-10 text-[12.5px] text-fg-muted'
-
-export const LANDING_CLOSER =
-  'relative overflow-hidden rounded-lg border border-line-strong p-46 text-center max-shell:p-30 ' +
-  'bg-[linear-gradient(140deg,color-mix(in_srgb,var(--color-accent)_22%,transparent),color-mix(in_srgb,var(--color-cyan)_10%,transparent))]'
-
-export const LANDING_FOOT =
-  'flex flex-wrap items-center gap-12 border-t border-line py-26 text-[12px] text-fg-muted'
-
-/* ------------------------------------------------------- landing pricing */
-
-export const PRICE_GRID =
-  'mt-38 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-18'
-
-export const PRICE_CARD =
-  'relative flex flex-col rounded-lg border border-line bg-panel p-28 backdrop-blur-[14px] ' +
-  'transition-[border-color,transform] duration-300 ease-out hover:-translate-y-3 hover:border-line-strong'
-/** The recommended plan carries the accent, so the eye lands on it first. */
-export const PRICE_CARD_FEATURED =
-  'border-transparent shadow-[var(--shadow-pop)] ' +
-  'bg-[linear-gradient(160deg,color-mix(in_srgb,var(--color-accent)_16%,var(--color-panel-solid)),var(--color-panel-solid))] ' +
-  'ring-1 ring-[color-mix(in_srgb,var(--color-accent)_45%,transparent)]'
-
-export const PRICE_FLAG =
-  'absolute -top-10 right-24 rounded-full bg-accent px-12 py-4 text-[10.5px] font-semibold tracking-[0.08em] text-accent-ink uppercase'
-
-export const PRICE_NAME = 'text-[15px] font-semibold text-fg-strong'
-export const PRICE_BLURB = 'mt-6 text-[13px] leading-[1.55] text-fg-muted'
-export const PRICE_AMOUNT =
-  'mt-20 flex items-baseline gap-6 text-[40px] leading-none font-semibold tracking-[-0.03em] text-fg-strong tabular-nums'
-export const PRICE_PER = 'text-[13px] font-normal tracking-normal text-fg-muted'
-
-export const PRICE_FEATURES =
-  'mt-22 flex flex-1 list-none flex-col gap-11 p-0 text-[13.5px] leading-[1.5] text-fg-dim ' +
-  '[&>li]:flex [&>li]:items-start [&>li]:gap-9 [&>li>svg]:mt-2 [&>li>svg]:flex-none [&>li>svg]:text-accent-strong'
-
-export const PRICE_ACTION = 'mt-26 w-full justify-center'
-export const PRICE_NOTE = 'mt-20 text-center text-[12px] text-fg-muted'
-
 /* ------------------------------------------------------- dashboard panels */
 
 /**
@@ -2050,3 +1944,282 @@ export const PAGE_PENDING =
   'mx-auto mt-80 h-2 w-160 overflow-hidden rounded-full bg-tint-2 opacity-0 [animation:fade_0.3s_0.25s_ease_forwards]'
 export const PAGE_PENDING_BAR =
   'block h-full w-1/4 rounded-full bg-accent [animation:slide-through_1.1s_ease-in-out_infinite]'
+
+/* ---------------------------------------------------------- landing page */
+
+/*
+ * The landing page has one look, whatever theme the app itself is set to.
+ *
+ * It is the first thing a visitor sees, before they have any preference to
+ * remember, so it is designed as a single deep-indigo surface rather than a
+ * pair of themes. The colours are the app's own dark palette written out
+ * literally — accent #7c6cf6 / #8f83ff, cyan #3fd8ee — so it cannot flip when
+ * a returning trader's saved light theme is applied to the document.
+ */
+export const LAND_PAGE =
+  'relative min-h-screen overflow-x-clip bg-[#05041a] text-white [color-scheme:dark]'
+
+/*
+ * The moving background: fixed behind everything, so it stays put while the
+ * page scrolls over it and the motion reads as atmosphere rather than as
+ * content. Every piece moves by transform alone — the blobs reuse the drift
+ * keyframes the login screen already runs, and the grid pans by translating an
+ * oversized sheet — so the compositor animates it without repainting a
+ * full-screen layer on every frame.
+ */
+export const LAND_BG =
+  'pointer-events-none fixed inset-0 overflow-hidden bg-[linear-gradient(180deg,#0b0929_0%,#05041a_100%)]'
+/* No filter: blur. The blobs are radial gradients and already soft at the edge,
+   and a 90px blur on three screen-sized layers measured at a 400ms median
+   frame — the blur was being recomputed as they moved. */
+export const LAND_BG_BLOB = 'absolute rounded-full will-change-transform'
+export const LAND_BG_BLOB_A =
+  'animate-orb-a -top-[22%] -left-[14%] size-[64vmax] bg-[radial-gradient(circle,rgba(99,78,240,0.55),transparent_70%)]'
+export const LAND_BG_BLOB_B =
+  'animate-orb-b top-[18%] -right-[20%] size-[58vmax] bg-[radial-gradient(circle,rgba(63,106,255,0.4),transparent_70%)]'
+export const LAND_BG_BLOB_C =
+  'animate-orb-c -bottom-[30%] left-[18%] size-[68vmax] bg-[radial-gradient(circle,rgba(160,46,203,0.34),transparent_70%)]'
+/** One tile larger than the screen on every side, so the loop has no seam. */
+export const LAND_BG_GRID =
+  'absolute -inset-64 [animation:land-grid-pan_18s_linear_infinite] ' +
+  'bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:64px_64px] ' +
+  '[mask-image:radial-gradient(ellipse_at_50%_35%,#000_0%,transparent_72%)]'
+
+/*
+ * The hero's container. Deliberately invisible: no border, no background, no
+ * shadow and no clipping. A boxed frame put a hard edge between the hero and
+ * the moving background; without one, the sphere and the drifting colour run
+ * together, and overflow-x-clip on the page stops the sphere widening it.
+ */
+export const LAND_FRAME = 'relative mx-auto max-w-1240'
+
+/*
+ * The sphere. A radial gradient rather than an image, so it scales cleanly and
+ * costs nothing to load; it breathes on transform and opacity only, which the
+ * compositor animates without touching layout.
+ */
+export const LAND_ORB =
+  'pointer-events-none absolute top-[11%] left-[47%] size-560 rounded-full opacity-90 ' +
+  'bg-[radial-gradient(circle_at_34%_30%,#e2dbff_0%,#a391ff_16%,#6c52ea_40%,#2d1d88_66%,transparent_71%)] ' +
+  '[animation:land-breathe_9s_ease-in-out_infinite] max-shell:left-[16%] max-shell:size-460 max-[620px]:top-[40%] max-[620px]:left-[-18%] max-[620px]:size-380'
+export const LAND_HALO =
+  'pointer-events-none absolute -top-120 left-[26%] size-800 rounded-full bg-[radial-gradient(circle,rgba(124,108,246,0.34),transparent_70%)] blur-[40px]'
+
+export const LAND_NAV =
+  'relative z-10 flex animate-fade items-center gap-20 px-40 pt-28 max-shell:px-24 max-[620px]:px-18 max-[620px]:pt-20'
+export const LAND_BRAND = 'flex items-center gap-10 text-[17px] font-semibold tracking-[0.04em] text-white'
+export const LAND_BRAND_MARK =
+  'grid size-30 place-items-center rounded-[9px] bg-[linear-gradient(140deg,#a99dff,#3fd8ee)] text-[14px] font-bold text-[#0b0930]'
+export const LAND_LINKS =
+  'mx-auto flex items-center gap-32 text-[13px] text-white/65 max-shell:hidden [&>button]:transition-colors [&>button]:duration-150 [&>button:hover]:text-white'
+export const LAND_LOGIN =
+  'rounded-full bg-white px-18 py-8 text-[13px] font-semibold text-[#0b0930] transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97] max-shell:ml-auto'
+
+export const LAND_HERO =
+  'relative z-10 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-24 px-40 pt-60 pb-36 ' +
+  'max-shell:grid-cols-1 max-shell:gap-40 max-shell:px-24 max-shell:pt-44 max-[620px]:px-18'
+
+export const LAND_HEADLINE =
+  'animate-rise text-[62px] leading-[1.02] font-semibold tracking-[-0.035em] text-white max-shell:text-[48px] max-[520px]:text-[37px]'
+/** The second line fades toward the accent, so the promise reads as the payoff. */
+export const LAND_HEADLINE_SOFT =
+  'block bg-[linear-gradient(95deg,#ffffff_10%,#ddd6ff_55%,#b3a8ff)] bg-clip-text text-transparent'
+export const LAND_LEAD =
+  'mt-18 max-w-[42ch] animate-rise text-[16px] leading-[1.6] text-white/68 [animation-delay:120ms] max-[520px]:text-[14.5px]'
+export const LAND_ACTIONS =
+  'mt-28 flex animate-rise flex-wrap items-center gap-18 [animation-delay:220ms]'
+
+/** White pill with a round accent button inside it — the one thing to press. */
+export const LAND_CTA =
+  'group inline-flex items-center gap-12 rounded-full bg-white py-5 pr-5 pl-20 text-[14px] font-semibold text-[#0b0930] ' +
+  'shadow-[0_12px_40px_-12px_rgba(143,131,255,0.9)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]'
+export const LAND_CTA_DOT =
+  'grid size-34 place-items-center rounded-full bg-[linear-gradient(140deg,#9a8cff,#5b46e8)] text-white transition-transform duration-300 ease-out group-hover:-rotate-45'
+export const LAND_TEXT_LINK =
+  'text-[13.5px] font-medium text-white/70 underline-offset-4 transition-colors duration-150 hover:text-white hover:underline'
+
+/* ------------------------------------------------ landing: floating cards */
+
+/** A fixed-height stage the cards are placed on by percentage, so the whole
+ *  arrangement scales with the column instead of reflowing card by card. */
+export const LAND_STAGE =
+  'relative h-460 max-shell:mx-auto max-shell:w-full max-shell:max-w-540 max-[620px]:h-420'
+
+/*
+ * Each card is two elements: the slot plays the entrance once, the glass
+ * inside floats forever. Both animate `transform`, and one element can only
+ * run one of them — stacking them on the same node would cancel the float the
+ * moment the entrance finished.
+ */
+export const LAND_SLOT = 'absolute animate-pop'
+export const LAND_SLOT_EQUITY = 'top-[1%] left-[14%] w-[56%] [animation-delay:260ms]'
+export const LAND_SLOT_TAGS = 'top-[13%] right-0 w-[40%] [animation-delay:420ms] max-[620px]:top-[3%]'
+export const LAND_SLOT_LIMIT = 'top-[43%] left-[3%] w-[64%] [animation-delay:560ms]'
+export const LAND_SLOT_BARS = 'bottom-[1%] left-0 w-[47%] [animation-delay:700ms]'
+export const LAND_SLOT_SETUP = 'right-[1%] bottom-[7%] w-[47%] [animation-delay:840ms]'
+
+export const LAND_FLOAT_A = '[animation:land-float_7s_ease-in-out_infinite]'
+export const LAND_FLOAT_B = '[animation:land-float_8.5s_ease-in-out_-2.5s_infinite]'
+export const LAND_FLOAT_C = '[animation:land-float_6.5s_ease-in-out_-4s_infinite]'
+
+/*
+ * Glass without backdrop-filter. A backdrop blur is cached while what sits
+ * behind it is still, but the background now moves, so every card would
+ * re-blur it on every frame — measured, dropping it took the desktop hero from
+ * a 50ms to a 33ms median frame. A darker tinted fill with a faint top-lit
+ * gradient carries the glass look instead.
+ */
+export const LAND_GLASS =
+  'rounded-[18px] border border-white/12 p-14 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)] max-[520px]:p-11 ' +
+  'bg-[linear-gradient(160deg,rgba(255,255,255,0.13),rgba(255,255,255,0.04))] bg-[rgba(20,16,56,0.55)]'
+export const LAND_GLASS_TOP = 'flex items-center gap-10'
+export const LAND_GLASS_ICON =
+  'grid size-28 flex-none place-items-center rounded-[9px] bg-white/10 text-white max-[520px]:size-24'
+export const LAND_GLASS_FIGURE = 'text-[14px] leading-tight font-semibold text-white tabular-nums max-[520px]:text-[12px]'
+/** The figure as a card's title line, on a row of its own. */
+export const LAND_GLASS_NAME = `${LAND_GLASS_FIGURE} block`
+export const LAND_GLASS_CAPTION = 'text-[10.5px] text-white/55 max-[520px]:text-[9.5px]'
+export const LAND_GLASS_MORE = 'ml-auto self-start text-[12px] leading-none tracking-[0.12em] text-white/40'
+
+export const LAND_SPARK = 'mt-8 block h-70 w-full overflow-visible max-[520px]:h-54'
+/** pathLength=1 on the path makes the draw keyframe's one dash span the curve. */
+export const LAND_SPARK_LINE =
+  'animate-draw fill-none stroke-[#b8acff] [stroke-width:2.4] [stroke-linecap:round] [animation-delay:520ms] [filter:drop-shadow(0_0_6px_rgba(143,131,255,0.9))]'
+export const LAND_SPARK_AREA = 'animate-fade [animation-delay:900ms]'
+
+export const LAND_TAG =
+  'flex w-max max-w-full items-center gap-8 rounded-[10px] border border-white/12 bg-white/[0.09] px-10 py-7 text-[10.5px] whitespace-nowrap text-white/85 max-[520px]:text-[9.5px] [&+&]:mt-7'
+export const LAND_TAG_SHIFT = 'ml-18'
+export const LAND_DOT = 'size-6 flex-none rounded-full'
+export const LAND_DOT_RED = 'bg-[#f2555a] shadow-[0_0_8px_#f2555a]'
+export const LAND_DOT_GREEN = 'bg-[#4ade80] shadow-[0_0_8px_#4ade80]'
+export const LAND_DOT_VIOLET = 'bg-[#a99dff] shadow-[0_0_8px_#a99dff]'
+
+export const LAND_LIMIT_ROW = 'flex items-center justify-between gap-10 text-[12px] text-white/85 max-[520px]:text-[10.5px]'
+export const LAND_TRACK = 'mt-11 h-6 overflow-hidden rounded-full bg-white/10'
+export const LAND_TRACK_FILL =
+  'h-full origin-left rounded-full bg-[linear-gradient(90deg,#8f83ff,#3fd8ee)] [animation:land-fill_1.4s_1s_cubic-bezier(0.22,0.8,0.3,1)_backwards]'
+
+export const LAND_BARS = 'mt-10 flex h-74 items-end gap-3 max-[520px]:h-56'
+export const LAND_BAR = 'flex-1 origin-bottom animate-grow-up rounded-t-[2px]'
+export const LAND_BAR_WIN = 'bg-[linear-gradient(180deg,#a99dff,#4b3bd6)]'
+export const LAND_BAR_LOSS = 'bg-[linear-gradient(180deg,#8a7fb8,#3b3466)]'
+export const LAND_AXIS = 'mt-6 flex justify-between text-[9.5px] text-white/45'
+
+export const LAND_CANDLES = 'mt-10 flex h-66 items-center justify-between px-2 max-[520px]:h-50'
+export const LAND_CANDLE = 'flex animate-grow-up flex-col items-center'
+export const LAND_WICK = 'w-px bg-white/35'
+export const LAND_BODY_UP = 'w-6 rounded-full bg-white/90'
+export const LAND_BODY_DOWN = 'w-6 rounded-full bg-[#8f83ff]'
+export const LAND_SETUP_FOOT = 'mt-8 flex items-baseline gap-6'
+export const LAND_UP = 'text-[10.5px] font-medium text-[#4ade80]'
+
+/* The three figures along the bottom of the frame, divided like a spec sheet. */
+export const LAND_STATS =
+  'relative z-10 mx-40 grid grid-cols-3 border-t border-white/10 py-30 max-shell:mx-24 max-[620px]:mx-18 max-[620px]:py-22 ' +
+  '[&>*]:px-32 [&>*:first-child]:pl-0 [&>*+*]:border-l [&>*+*]:border-white/12 max-[620px]:[&>*]:px-12'
+export const LAND_STAT_VALUE =
+  'text-[40px] leading-none font-semibold tracking-[-0.03em] text-white tabular-nums max-shell:text-[32px] max-[520px]:text-[23px]'
+export const LAND_STAT_LABEL = 'mt-9 text-[13px] text-white/58 max-[520px]:text-[10.5px]'
+
+/* ----------------------------------------------- landing: below the frame */
+
+export const LAND_BODY = 'relative mx-auto max-w-1240 px-24 max-[620px]:px-6'
+export const LAND_SECTION = 'pt-110 max-shell:pt-80 max-[620px]:pt-64'
+export const LAND_HEAD_CENTER = 'flex flex-col items-center text-center'
+
+export const LAND_EYEBROW =
+  'inline-flex items-center gap-8 rounded-full border border-white/12 bg-white/[0.05] px-12 py-5 text-[11px] font-medium tracking-[0.12em] text-[#cfc6ff] uppercase'
+export const LAND_H2 =
+  'mt-16 max-w-[22ch] text-[42px] leading-[1.08] text-balance font-semibold tracking-[-0.03em] text-white max-shell:text-[34px] max-[520px]:text-[28px]'
+export const LAND_P = 'mt-14 max-w-[58ch] text-[15px] leading-[1.65] text-white/60'
+
+export const LAND_BENTO = 'mt-44 grid grid-cols-3 gap-16 max-shell:grid-cols-2 max-[620px]:grid-cols-1'
+/** A wide tile spans two columns; on one column there is nothing to span. */
+export const LAND_SPAN_2 = 'col-span-2 max-[620px]:col-span-1'
+
+export const LAND_FEATURE =
+  'group relative h-full overflow-hidden rounded-[22px] border border-white/10 p-26 transition-[border-color,translate] duration-300 hover:-translate-y-3 hover:border-white/22 ' +
+  'bg-[linear-gradient(160deg,rgba(255,255,255,0.075),rgba(255,255,255,0.015))] ' +
+  "before:pointer-events-none before:absolute before:-top-70 before:-right-70 before:size-220 before:rounded-full before:bg-[radial-gradient(circle,rgba(143,131,255,0.4),transparent_70%)] before:opacity-0 before:transition-opacity before:duration-500 before:content-[''] hover:before:opacity-100"
+export const LAND_FEATURE_ICON =
+  'relative grid size-44 place-items-center rounded-[13px] border border-white/12 text-white transition-transform duration-300 ease-spring group-hover:scale-110 ' +
+  'bg-[linear-gradient(140deg,rgba(143,131,255,0.38),rgba(63,216,238,0.12))]'
+export const LAND_FEATURE_TITLE = 'relative mt-20 text-[17px] font-semibold text-white'
+export const LAND_FEATURE_BODY = 'relative mt-8 text-[14px] leading-[1.6] text-white/60'
+
+export const LAND_STEPS = 'mt-44 grid grid-cols-3 gap-16 max-shell:grid-cols-1'
+export const LAND_STEP = 'relative h-full rounded-[22px] border border-white/10 bg-white/[0.03] p-26'
+export const LAND_STEP_NUM =
+  'grid size-34 place-items-center rounded-full border border-[rgba(143,131,255,0.5)] text-[13px] font-semibold text-[#cfc6ff] tabular-nums'
+
+/* ---------------------------------------------------- landing: pricing */
+
+export const LAND_PLANS =
+  'mt-50 grid grid-cols-4 items-stretch gap-14 max-[1180px]:grid-cols-2 max-[620px]:grid-cols-1'
+
+/*
+ * Shape only. Border and background are in exactly one of the two state
+ * classes below, never both: the same stylesheet-order trap that once turned
+ * every primary button grey would otherwise decide which card looks chosen.
+ */
+export const LAND_PLAN =
+  'relative flex h-full flex-col rounded-[22px] border p-24 transition-[border-color,translate] duration-300 hover:-translate-y-3'
+export const LAND_PLAN_IDLE = 'border-white/10 bg-white/[0.04] hover:border-white/22'
+export const LAND_PLAN_FEATURED =
+  'border-[rgba(169,157,255,0.6)] shadow-[0_30px_80px_-30px_rgba(124,108,246,0.95)] ' +
+  'bg-[linear-gradient(165deg,rgba(143,131,255,0.32),rgba(40,28,120,0.38))]'
+export const LAND_PLAN_BADGE =
+  'absolute -top-11 left-24 rounded-full bg-[linear-gradient(90deg,#a99dff,#3fd8ee)] px-11 py-4 text-[10px] font-semibold tracking-[0.1em] text-[#0b0930] uppercase'
+export const LAND_PLAN_NAME = 'text-[15px] font-semibold text-white'
+export const LAND_PLAN_BLURB = 'mt-6 min-h-40 text-[13px] leading-[1.5] text-white/55'
+export const LAND_PLAN_PRICE =
+  'mt-18 flex min-h-38 items-baseline gap-4 text-[38px] leading-none font-semibold tracking-[-0.03em] text-white tabular-nums'
+export const LAND_PLAN_PER = 'text-[13px] font-normal tracking-normal text-white/50'
+/*
+ * A tier whose features are still being built: the list's place on the card,
+ * with blurred placeholder lines and a label over them. The blur is only the
+ * look — the lines are empty shapes, so there is nothing underneath to read.
+ */
+export const LAND_PLAN_LOCKED = 'relative mt-20 flex flex-1 flex-col border-t border-white/10 pt-20'
+export const LAND_PLAN_BLURRED = 'pointer-events-none flex flex-col gap-17 opacity-75 blur-[2.5px] select-none'
+export const LAND_PLAN_SKELETON_ROW = 'flex items-center gap-9'
+/** Stands in for the price: about the width of "$25/month", blurred the same way. */
+export const LAND_PLAN_PRICE_HIDDEN =
+  'h-34 w-128 rounded-[10px] bg-white/45 opacity-80 blur-[5px] select-none'
+export const LAND_PLAN_SKELETON_DOT = 'size-9 flex-none rounded-full bg-[rgba(169,157,255,0.7)]'
+export const LAND_PLAN_SKELETON_BAR = 'h-8 rounded-full bg-white/40'
+export const LAND_PLAN_LOCK_BADGE =
+  'absolute top-[calc(50%+10px)] left-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-7 rounded-full border border-white/15 bg-[rgba(12,10,40,0.85)] px-12 py-6 text-[11px] font-semibold tracking-[0.06em] whitespace-nowrap text-white uppercase shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)]'
+
+/** Tags a tier line that is promised but not built yet. */
+export const LAND_PLAN_SOON =
+  'ml-7 inline-block rounded-full border border-[rgba(169,157,255,0.45)] bg-[rgba(143,131,255,0.14)] px-6 py-1 align-[1px] text-[9px] leading-[1.4] font-semibold tracking-[0.08em] text-[#cfc6ff] uppercase'
+export const LAND_PLAN_FEATURES =
+  'mt-20 flex flex-1 list-none flex-col gap-10 border-t border-white/10 p-0 pt-20 text-[13px] leading-[1.45] text-white/75 ' +
+  '[&>li]:flex [&>li]:gap-9 [&>li>svg]:mt-2 [&>li>svg]:flex-none [&>li>svg]:text-[#a99dff]'
+export const LAND_PLAN_CTA =
+  'mt-24 inline-flex w-full items-center justify-center rounded-full py-11 text-[13.5px] font-semibold transition-[background-color,scale] duration-200 active:scale-[0.98]'
+export const LAND_PLAN_CTA_IDLE = 'bg-white/10 text-white hover:bg-white/16'
+export const LAND_PLAN_CTA_FEATURED = 'bg-white text-[#0b0930] hover:bg-[#ece9ff]'
+export const LAND_PLAN_NOTE = 'mt-24 text-center text-[12.5px] text-white/45'
+
+/* ------------------------------------------------- landing: closing band */
+
+export const LAND_CLOSER =
+  'relative mt-110 overflow-hidden rounded-[30px] border border-white/10 px-40 py-68 text-center max-shell:mt-80 max-[620px]:px-22 max-[620px]:py-46 ' +
+  'bg-[linear-gradient(135deg,#1d1454,#0d0a2e)]'
+export const LAND_CLOSER_ORB =
+  'pointer-events-none absolute -bottom-220 left-[calc(50%-240px)] size-480 rounded-full bg-[radial-gradient(circle,rgba(143,131,255,0.6),transparent_68%)] blur-[18px] [animation:land-breathe_9s_ease-in-out_infinite]'
+export const LAND_CLOSER_INNER = 'relative flex flex-col items-center'
+export const LAND_CLOSER_ACTIONS = 'mt-28 flex justify-center'
+
+export const LAND_FOOT =
+  'mt-60 flex flex-wrap items-center gap-x-22 gap-y-10 border-t border-white/10 py-28 text-[12.5px] text-white/45 [&_button]:transition-colors [&_button:hover]:text-white'
+export const LAND_FOOT_END = 'ml-auto'
+
+/* The sections below the fold arrive as they are scrolled to — a card that
+   animated while off screen has already finished by the time it is read. */
+export const SCROLL_REVEAL =
+  'translate-y-18 opacity-0 transition-[opacity,translate] duration-[650ms] ease-out'
+export const SCROLL_REVEAL_SHOWN = 'translate-y-0 opacity-100'

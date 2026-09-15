@@ -1,5 +1,6 @@
 import type { WidgetSpec } from './widgets'
 
+import { hasFeature, type Feature } from './entitlements'
 /**
  * Every widget the app has, and which page it belongs to.
  *
@@ -30,7 +31,7 @@ export type PageWidgets = {
  * and 6/6 is a half. The minimums are the point where each stops being worth
  * looking at: a table needs width for its columns, a single figure does not.
  */
-export const DASHBOARD_WIDGETS: WidgetSpec[] = [
+const ALL_DASHBOARD_WIDGETS: WidgetSpec[] = [
   // One widget, not five. The row is the unit a trader reads, and five boxes
   // to place separately is five decisions where nobody wanted one. It wraps to
   // fewer columns as it is made narrower.
@@ -44,6 +45,23 @@ export const DASHBOARD_WIDGETS: WidgetSpec[] = [
   { id: 'calendar', title: 'Performance calendar', size: { w: 4, h: 8 }, min: { w: 3, h: 6 } },
   { id: 'recent', title: 'Recent activity', size: { w: 12, h: 14 }, min: { w: 5, h: 8 } },
 ]
+
+/** Widgets that belong to a feature, and so leave the dashboard with it. */
+const WIDGET_FEATURE: Record<string, Feature> = {
+  edge: 'setupRanking',
+  setups: 'setupRanking',
+  behaviour: 'leakDetection',
+  discipline: 'ruleTracking',
+}
+
+/**
+ * The widgets the active plan includes. A saved layout can still name a locked
+ * one; the grid skips any id it cannot find, and Templates only offers these.
+ */
+export const DASHBOARD_WIDGETS = ALL_DASHBOARD_WIDGETS.filter((widget) => {
+  const feature = WIDGET_FEATURE[widget.id]
+  return feature === undefined || hasFeature(feature)
+})
 
 /**
  * The catalogue, page by page.

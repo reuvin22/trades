@@ -41,6 +41,7 @@ import {
   TAG_TOGGLE,
 } from '../components/ui'
 
+import { hasFeature } from '../lib/entitlements'
 type SettingsProps = {
   profile: ProfileRecord | null
   /**
@@ -555,6 +556,7 @@ export function Settings({ profile, onSaved }: SettingsProps) {
 
         It also keeps a broker password from riding along with "Save settings".
       */}
+      {hasFeature('brokerImport') && (
       <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>
           Broker accounts
@@ -562,6 +564,7 @@ export function Settings({ profile, onSaved }: SettingsProps) {
         </h3>
         <BrokerConnections />
       </section>
+      )}
     </>
   )
 }

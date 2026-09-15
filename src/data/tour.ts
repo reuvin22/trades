@@ -1,3 +1,5 @@
+import { hasFeature, routeAllowed } from '../lib/entitlements'
+
 export type TourStep = {
   id: string
   /** Route to be on before the step is shown. */
@@ -19,7 +21,7 @@ export type TourStep = {
  * Steps whose target is hidden at the current screen size (the sidebar behind
  * the drawer, say) still run; they just lose the spotlight and centre instead.
  */
-export const TOUR: TourStep[] = [
+const ALL_STEPS: TourStep[] = [
   {
     id: 'welcome',
     route: 'dashboard',
@@ -145,3 +147,18 @@ export const TOUR: TourStep[] = [
     body: 'Log your first trade whenever you are ready. The more you log, the more the coach has to work with.',
   },
 ]
+
+/** Spotlights on things the active plan hides. */
+const LOCKED_TARGETS = new Set([
+  ...(hasFeature('coach') ? [] : ['coach']),
+  ...(hasFeature('messages') ? [] : ['messages']),
+  ...(hasFeature('leakDetection') ? [] : ['insights']),
+  ...(hasFeature('analytics') ? [] : ['metrics', 'edge']),
+])
+
+/** The tour, without stops for screens and widgets the plan does not have. */
+export const TOUR = ALL_STEPS.filter(
+  (step) =>
+    (step.route === undefined || routeAllowed(step.route)) &&
+    (step.target === undefined || !LOCKED_TARGETS.has(step.target)),
+)

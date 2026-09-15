@@ -1,6 +1,7 @@
 import { apiFetch } from './api'
 import { prepareImage } from './chartImage'
 
+import { uploadAllowed } from './entitlements'
 /**
  * Putting an image in storage, from the browser.
  *
@@ -73,6 +74,7 @@ export async function uploadImage(
   kind: UploadKind,
   onProgress?: (stage: 'preparing' | 'uploading') => void,
 ): Promise<string> {
+  if (!uploadAllowed(kind)) throw new Error('Your plan does not include this upload.')
   onProgress?.('preparing')
   const shrunk = await prepareImage(file, BUDGETS[kind])
   const blob = toBlob(shrunk)
@@ -112,6 +114,9 @@ const signed = new Map<string, { url: string; until: number }>()
 export async function imageUrl(key: string): Promise<string> {
   // A pasted http(s) link is already a URL and was never ours to sign.
   if (/^https?:\/\//i.test(key)) return key
+  // Charts, coach images and chat attachments belong to features a plan may
+  // not include; reading one is as much a request as uploading it.
+  if (!uploadAllowed(key.split('/')[0])) throw new Error('Your plan does not include this image.')
 
   const cached = signed.get(key)
   if (cached && cached.until > Date.now()) return cached.url

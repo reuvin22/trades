@@ -15,6 +15,7 @@
  */
 
 import { DEFAULT_TTL_MS, invalidate, through } from './apiCache'
+import { pathAllowed } from './entitlements'
 /**
  * Same-origin by default, which is what the rewrite in vercel.json arranges.
  *
@@ -73,6 +74,11 @@ type Options = {
  */
 export async function apiFetch<T>(path: string, options: Options = {}): Promise<T> {
   const { method = 'GET', body, query, signal, fresh } = options
+
+  // A feature the active plan does not include makes no request at all.
+  if (!pathAllowed(path)) {
+    throw new ApiError(403, 'plan', 'Your plan does not include this feature.', null)
+  }
 
   const url = new URL(`${API_BASE}${path}`, window.location.origin)
   for (const [key, value] of Object.entries(query ?? {})) {

@@ -26,6 +26,7 @@ import type { StoredTrade } from '../lib/trades'
 import type { Period, Profile } from '../lib/profile'
 import { DASHBOARD_WIDGETS } from '../lib/widgetCatalogue'
 
+import { hasFeature } from '../lib/entitlements'
 type DashboardProps = {
   trades: StoredTrade[]
   uid: string | null
@@ -118,7 +119,8 @@ export function Dashboard({ trades, uid, profile }: DashboardProps) {
     }
   }, [filtered, label, shown, stats, opening, profile?.edgeWindow])
 
-  const leak = useBehavioralLeak(uid, trades.length)
+  // No uid, no request: the leak read is a model call Free does not include.
+  const leak = useBehavioralLeak(hasFeature('leakDetection') ? uid : null, trades.length)
 
   const name = profile?.displayName?.trim().split(' ')[0] ?? ''
   const covered = coverage(shown)

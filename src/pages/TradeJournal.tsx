@@ -52,6 +52,7 @@ import {
   SUMMARY_WATERMARK,
 } from '../components/ui'
 
+import { hasFeature } from '../lib/entitlements'
 const ANY_SETUP = 'All setups'
 const ANY_SESSION = 'All sessions'
 const ANY_RESULT = 'All results'
@@ -187,16 +188,18 @@ function ExportMenu({ onCsv, onPdf }: { onCsv: () => void; onPdf: () => void }) 
 
       {open && (
         <div className={ACTION_MENU} role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              onPdf()
-            }}
-          >
-            PDF
-          </button>
+          {hasFeature('pdfExport') && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                onPdf()
+              }}
+            >
+              PDF
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

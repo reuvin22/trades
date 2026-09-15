@@ -27,6 +27,7 @@ import {
   SIDE_SHORT,
 } from './ui'
 
+import { hasFeature } from '../lib/entitlements'
 const stamp = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -179,7 +180,7 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
           )}
           {/* Last, and full width: it is the tallest thing here, and a row of
               thumbnails between two text fields breaks the reading order. */}
-          {trade.screenshots.length > 0 && (
+          {hasFeature('chartScreenshots') && trade.screenshots.length > 0 && (
             <div className="col-span-full">
               <dt>{trade.screenshots.length === 1 ? 'Chart' : 'Charts'}</dt>
               <dd>

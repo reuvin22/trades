@@ -29,6 +29,7 @@ import { VerifyEmail } from './pages/VerifyEmail'
 import type { StoredTrade } from './lib/trades'
 import type { AuthUser } from './lib/useAuth'
 
+import { hasFeature, routeAllowed } from './lib/entitlements'
 /**
  * Shown while a page's code is on its way.
  *
@@ -110,6 +111,10 @@ function TraderView({
   reload,
   reloadProfile,
 }: TraderViewProps) {
+  // A screen the plan does not include never mounts, so nothing on it fetches
+  // in the moment before the redirect lands.
+  if (!routeAllowed(route)) return null
+
   switch (route) {
     case 'dashboard':
       return <Dashboard trades={trades} uid={uid} profile={profile} />
@@ -210,6 +215,11 @@ function App() {
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])
 
+  // A deep link to a locked screen lands on the dashboard instead.
+  useEffect(() => {
+    if (signedIn && !routeAllowed(route)) navigate(HOME_ROUTE)
+  }, [signedIn, route])
+
   /*
    * Held until there is something to show, not merely until the session is
    * known. With a cache from this tab there is nothing to wait for and the
@@ -230,7 +240,7 @@ function App() {
   }
 
   if (!signedIn && route !== 'login') {
-    return <Landing theme={theme} onToggleTheme={toggle} />
+    return <Landing />
   }
 
   if (!signedIn) {
@@ -305,7 +315,7 @@ function App() {
         />
       )}
 
-      <ChatDock user={user} />
+      {hasFeature('messages') && <ChatDock user={user} />}
 
       <QuickAddTrade
         open={logging}

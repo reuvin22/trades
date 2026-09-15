@@ -65,6 +65,7 @@ import {
   YES_NO,
 } from './ui'
 
+import { hasFeature } from '../lib/entitlements'
 type QuickAddTradeProps = {
   open: boolean
   onClose: () => void
@@ -510,6 +511,7 @@ export function QuickAddTrade({
                 <span className={FIELD_HINT}>{sessionHint(trade.sessions)}</span>
               </div>
 
+              {hasFeature('chartScreenshots') && (
               <div className={`${FIELD} col-span-2`}>
                 <span className={FIELD_LABEL}>Chart screenshots</span>
 
@@ -596,6 +598,7 @@ export function QuickAddTrade({
                             : 'Paste a link and press Enter.'}
                 </span>
               </div>
+              )}
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Stop-loss</span>
