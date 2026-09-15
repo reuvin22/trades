@@ -25,8 +25,8 @@ import type { DateRange } from '../components/DateRangePicker'
 import type { StoredTrade } from '../lib/trades'
 import type { Period, Profile } from '../lib/profile'
 import { DASHBOARD_WIDGETS } from '../lib/widgetCatalogue'
-
 import { hasFeature } from '../lib/entitlements'
+
 type DashboardProps = {
   trades: StoredTrade[]
   uid: string | null

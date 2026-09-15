@@ -2202,6 +2202,8 @@ export const LAND_PLAN_CTA =
   'mt-24 inline-flex w-full items-center justify-center rounded-full py-11 text-[13.5px] font-semibold transition-[background-color,scale] duration-200 active:scale-[0.98]'
 export const LAND_PLAN_CTA_IDLE = 'bg-white/10 text-white hover:bg-white/16'
 export const LAND_PLAN_CTA_FEATURED = 'bg-white text-[#0b0930] hover:bg-[#ece9ff]'
+/** A tier that cannot be chosen yet. Its own colours, never layered on the others. */
+export const LAND_PLAN_CTA_DISABLED = 'cursor-not-allowed bg-white/[0.06] text-white/40 active:scale-100'
 export const LAND_PLAN_NOTE = 'mt-24 text-center text-[12.5px] text-white/45'
 
 /* ------------------------------------------------- landing: closing band */

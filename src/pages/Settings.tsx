@@ -40,8 +40,8 @@ import {
   TAG_CLOUD,
   TAG_TOGGLE,
 } from '../components/ui'
-
 import { hasFeature } from '../lib/entitlements'
+
 type SettingsProps = {
   profile: ProfileRecord | null
   /**

@@ -51,8 +51,8 @@ import {
   SUMMARY_VALUE,
   SUMMARY_WATERMARK,
 } from '../components/ui'
-
 import { hasFeature } from '../lib/entitlements'
+
 const ANY_SETUP = 'All setups'
 const ANY_SESSION = 'All sessions'
 const ANY_RESULT = 'All results'

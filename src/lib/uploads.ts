@@ -1,7 +1,7 @@
 import { apiFetch } from './api'
 import { prepareImage } from './chartImage'
-
 import { uploadAllowed } from './entitlements'
+
 /**
  * Putting an image in storage, from the browser.
  *

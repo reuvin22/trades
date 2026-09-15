@@ -3,8 +3,8 @@ import { DateRangePicker, type DateRange } from './DateRangePicker'
 import { DateRangeIcon } from './Icons'
 import { RANGE_LABEL, rangeLabel, type Preset } from '../lib/dateWindow'
 import { ACTION_MENU, ACTION_MENU_LEFT, PILL, PILL_IDLE } from './ui'
-
 import { hasFeature } from '../lib/entitlements'
+
 /**
  * The range control: a preset, or a span off the calendar.
  *

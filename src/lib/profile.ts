@@ -257,7 +257,7 @@ function toProfile(wire: ProfileWire): Profile {
     tradingRules: String(wire.trading_rules ?? ''),
     leakCadence: (wire.leak_cadence as LeakCadence) ?? 'daily',
     edgeWindow: (wire.edge_window as Period) ?? 'monthly',
-    plan: String(wire.plan ?? 'individual'),
+    plan: String(wire.plan ?? 'free'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),
     lastSeenAt: date(wire.last_seen_at),

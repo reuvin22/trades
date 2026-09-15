@@ -15,8 +15,8 @@ import { apiFetch, readableApiError } from './api'
 import { auth, rtdb } from './firebase'
 import { decryptMessage, encryptMessage } from './messagecrypto'
 import type { AuthUser } from './useAuth'
-
 import { hasFeature } from './entitlements'
+
 /**
  * Chat, on the Realtime Database, read straight from the browser.
  *

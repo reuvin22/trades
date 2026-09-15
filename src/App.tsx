@@ -28,8 +28,8 @@ import { Placeholder } from './pages/Placeholder'
 import { VerifyEmail } from './pages/VerifyEmail'
 import type { StoredTrade } from './lib/trades'
 import type { AuthUser } from './lib/useAuth'
-
 import { hasFeature, routeAllowed } from './lib/entitlements'
+
 /**
  * Shown while a page's code is on its way.
  *

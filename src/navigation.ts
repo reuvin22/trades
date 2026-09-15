@@ -15,8 +15,8 @@ import {
   UsersIcon,
   WalletIcon,
 } from './components/Icons'
-
 import { hasFeature, type Feature } from './lib/entitlements'
+
 export type IconComponent = ComponentType<{ size?: number; className?: string }>
 
 export type NavItem = {

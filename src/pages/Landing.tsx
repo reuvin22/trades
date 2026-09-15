@@ -83,6 +83,7 @@ import {
   LAND_PLAN_BADGE,
   LAND_PLAN_BLURB,
   LAND_PLAN_CTA,
+  LAND_PLAN_CTA_DISABLED,
   LAND_PLAN_CTA_FEATURED,
   LAND_PLAN_CTA_IDLE,
   LAND_PLAN_FEATURED,
@@ -633,11 +634,17 @@ export function Landing() {
                   <button
                     type="button"
                     className={`${LAND_PLAN_CTA} ${
-                      tier.featured ? LAND_PLAN_CTA_FEATURED : LAND_PLAN_CTA_IDLE
+                      tier.inDevelopment
+                        ? LAND_PLAN_CTA_DISABLED
+                        : tier.featured
+                          ? LAND_PLAN_CTA_FEATURED
+                          : LAND_PLAN_CTA_IDLE
                     }`}
-                    onClick={signIn}
+                    // A tier still being built cannot be chosen yet.
+                    disabled={tier.inDevelopment}
+                    onClick={tier.inDevelopment ? undefined : signIn}
                   >
-                    {tier.cta}
+                    {tier.inDevelopment ? 'Coming soon' : tier.cta}
                   </button>
                 </article>
               </Reveal>

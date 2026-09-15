@@ -26,8 +26,8 @@ import {
   SIDE_LONG,
   SIDE_SHORT,
 } from './ui'
-
 import { hasFeature } from '../lib/entitlements'
+
 const stamp = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',

@@ -1,6 +1,6 @@
 import type { WidgetSpec } from './widgets'
-
 import { hasFeature, type Feature } from './entitlements'
+
 /**
  * Every widget the app has, and which page it belongs to.
  *

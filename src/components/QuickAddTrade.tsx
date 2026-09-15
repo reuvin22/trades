@@ -64,8 +64,8 @@ import {
   TOGGLE_SHORT,
   YES_NO,
 } from './ui'
-
 import { hasFeature } from '../lib/entitlements'
+
 type QuickAddTradeProps = {
   open: boolean
   onClose: () => void
