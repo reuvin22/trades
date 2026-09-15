@@ -24,7 +24,7 @@ export const PLANS: Plan[] = [
     id: 'individual',
     name: 'Individual',
     monthly: 19,
-    blurb: 'For a trader working their own capital, on their own.',
+    blurb: 'Everything you need to understand and improve your own trading.',
     features: [
       'Unlimited journal entries and history',
       'Analytics, and a regular read on how you actually trade',
@@ -36,7 +36,7 @@ export const PLANS: Plan[] = [
     id: 'coach',
     name: 'Coach',
     monthly: 49,
-    blurb: 'For mentors reviewing other traders as well as themselves.',
+    blurb: 'Guide your students and review their trading alongside your own.',
     features: [
       'Everything in Individual',
       'Up to 25 linked student journals',
@@ -85,7 +85,7 @@ export const PRICING_TIERS: Tier[] = [
     id: 'free',
     name: 'Free',
     monthly: 0,
-    blurb: 'Your trading journal, free for as long as you keep it.',
+    blurb: 'Start journaling your trades and see what they tell you.',
     features: [
       'Permanent, unlimited journal',
       'Net P&L, win rate, average R and profit factor',
@@ -101,7 +101,7 @@ export const PRICING_TIERS: Tier[] = [
     inDevelopment: true,
     name: 'Pro',
     monthly: 13,
-    blurb: 'For a trader working their own capital, every day.',
+    blurb: 'Dig deeper into your results and find what is really working.',
     features: [
       'Everything in Free',
       'Full analytics, setup ranking and custom date ranges',
@@ -120,7 +120,7 @@ export const PRICING_TIERS: Tier[] = [
     inDevelopment: true,
     name: 'Expert',
     monthly: 25,
-    blurb: 'For traders who want the coach on every trade.',
+    blurb: 'Master your results and turn what works into your everyday edge.',
     features: [
       'Everything in Pro',
       'Unlimited AI coach, including chart images',
@@ -136,7 +136,7 @@ export const PRICING_TIERS: Tier[] = [
     inDevelopment: true,
     name: 'Coach',
     monthly: null,
-    blurb: 'For mentors reviewing other traders as well as themselves.',
+    blurb: 'Guide your students and review their trading alongside your own.',
     features: [
       'Everything in Expert',
       { label: 'Linked student journals', soon: true },

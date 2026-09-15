@@ -645,8 +645,8 @@ export function Landing() {
           </div>
 
           <p className={LAND_PLAN_NOTE}>
-            Prices in USD. Free needs no card, and nothing is charged while billing is
-            still being connected.
+            Prices in USD. No card needed to start, and you won't be charged while
+            paid plans are still being set up.
           </p>
         </section>
 
