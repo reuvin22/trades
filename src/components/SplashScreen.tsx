@@ -89,7 +89,6 @@ export function SplashScreen() {
         </p>
       </div>
 
-      <p className={SPLASH_STATUS}>Restoring your session</p>
     </div>
   )
 }
