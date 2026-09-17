@@ -1,447 +1,80 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatedNumber } from '../components/AnimatedNumber'
-import { JournalTable } from '../components/JournalTable'
+import { useMemo, useState } from 'react'
+import { ChartStrip } from '../components/ChartStrip'
+import { CsvImport } from '../components/CsvImport'
 import { QuickAddTrade } from '../components/QuickAddTrade'
+import { RangeMenu } from '../components/RangeMenu'
 import { TradeActions } from '../components/TradeActions'
-import { deleteTrade, toEntry, updateTrade } from '../lib/trades'
+import { deleteTrade, toEntry, updateTrade, type StoredTrade } from '../lib/trades'
+import { inWindow, windowFor, type Preset } from '../lib/dateWindow'
+import { downloadCsv } from '../lib/exportJournal'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
-import { SearchableSelect } from '../components/SearchableSelect'
-import { type DateRange } from '../components/DateRangePicker'
-import { CsvImport } from '../components/CsvImport'
-import { RangeMenu } from '../components/RangeMenu'
-import {
-  inWindow,
-  rangeLabel as spanLabel,
-  windowFor,
-  type Preset,
-} from '../lib/dateWindow'
-import { downloadCsv, downloadPdf } from '../lib/exportJournal'
-import type { StoredTrade } from '../lib/trades'
-import { SESSIONS, SESSION_LABELS } from '../data/tradeForm'
+import type { DateRange } from '../components/DateRangePicker'
 import type { Profile as ProfileRecord } from '../lib/profile'
-import { moneyIn, summarise, volumeLabel } from '../lib/journalStats'
-import {
-  ChartBarsIcon,
-  DownloadIcon,
-  ScalesIcon,
-  SmileIcon,
-} from '../components/Icons'
-import {
-  ACTION_MENU,
-  CARD,
-  CARD_HOVER,
-  DATA_ERROR,
-  FILTER_CARD,
-  FILTER_FIGURE,
-  FILTER_LABEL,
-  FILTER_ROW,
-  PAGE_ACTIONS,
-  PAGE_HEAD,
-  PAGE_SUB,
-  PAGE_TITLE,
-  PILL,
-  PILL_IDLE,
-  PILL_ACCENT,
-  ROW_STAGGER,
-  SUMMARY_CARD,
-  SUMMARY_FOOT,
-  SUMMARY_LABEL,
-  SUMMARY_ROW,
-  SUMMARY_VALUE,
-  SUMMARY_WATERMARK,
-} from '../components/ui'
-import { hasFeature } from '../lib/entitlements'
 
-const ANY_SETUP = 'All setups'
-const ANY_SESSION = 'All sessions'
-const ANY_RESULT = 'All results'
+type TradeJournalProps = { uid: string | null; trades: StoredTrade[]; loading: boolean; error: string | null; reload: () => void; profile: ProfileRecord | null }
+const dateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-const RESULTS = [ANY_RESULT, 'Winner', 'Loser']
-
-/**
- * Whether a trade falls inside the chosen window.
- *
- * Dated by entry, falling back to when it was written — the same rule the
- * statistics use, so the table and the figures never disagree about which day
- * a trade belongs to.
- */
-/*
- * The same rule the table labels a row with, deliberately.
- *
- * An unpriced entry used to come back as "Still open", which was never one of
- * the options in RESULTS — so those rows matched no filter but "All results",
- * while the table beside them was already calling them winners. Two names for
- * one row is worse than treating a missing P&L as flat.
- */
-function resultOf(trade: StoredTrade): string {
-  return (trade.netPl ?? 0) >= 0 ? 'Winner' : 'Loser'
+function stamp(trade: StoredTrade) {
+  const date = new Date(trade.entryAt || trade.createdAt?.toISOString() || '')
+  return Number.isNaN(date.getTime()) ? 'Undated trade' : dateFormat.format(date)
 }
 
-type Filters = { setup: string; session: string; result: string }
+function followed(value: string) { return /yes|true|followed/i.test(value) }
 
-const NO_FILTERS: Filters = {
-  setup: ANY_SETUP,
-  session: ANY_SESSION,
-  result: ANY_RESULT,
+function ReviewCard({ label, value }: { label: string; value: string }) {
+  const good = followed(value)
+  return <article className="journal-review-card">
+    <div><span>{label}</span><i className={good ? 'journal-switch on' : 'journal-switch'} /></div>
+    <strong>{good ? 'Followed' : value || 'Not graded'}</strong>
+    <div className="journal-rule-line"><span className={good ? 'good' : ''} style={{ width: good ? '82%' : '38%' }} /></div>
+  </article>
 }
 
-/**
- * One card per filter.
- *
- * The options used to be three invented names — VWAP Bounce, Bull Flag,
- * Overextended — which belonged to no trade anyone had logged, so the filter
- * offered choices that could only ever return nothing. They now come from the
- * trader: their setups from Settings, and the three sessions.
- */
-function FilterSelects({
-  trades,
-  setups: configured,
-  filters,
-  onChange,
-}: {
-  trades: StoredTrade[]
-  /** The setups named in Settings. The list this filter is meant to reflect. */
-  setups: string[]
-  filters: Filters
-  onChange: (next: Filters) => void
-}) {
-  const setups = useMemo(() => {
-    // Settings first, in the order they chose. Then anything logged against a
-    // setup no longer on that list — removing a setup should not make the
-    // trades taken with it unfindable.
-    const known = new Set(configured.map((name) => name.toLowerCase()))
-    const orphaned = trades
-      .map((trade) => trade.setup.trim())
-      .filter((name) => name !== '' && !known.has(name.toLowerCase()))
+function JournalWorkspace({ trades, loading, onOpen }: { trades: StoredTrade[]; loading: boolean; onOpen: (trade: StoredTrade) => void }) {
+  const [query, setQuery] = useState('')
+  const [current, setCurrent] = useState<StoredTrade | null>(trades[0] ?? null)
+  const visible = useMemo(() => trades.filter((trade) => `${trade.ticker} ${trade.setup}`.toLowerCase().includes(query.toLowerCase())), [trades, query])
+  const selected = current && visible.some((trade) => trade.id === current.id) ? current : visible[0] ?? null
 
-    return [
-      ANY_SETUP,
-      ...configured,
-      ...[...new Set(orphaned)].sort((a, b) => a.localeCompare(b)),
-    ]
-  }, [configured, trades])
-
-  // All three, always. A session with no trades in it yet is still a question
-  // worth asking — and the answer, "none", is information.
-  const sessions = [ANY_SESSION, ...SESSIONS.map((entry) => entry.label)]
-
-  const fields: { label: string; key: keyof Filters; options: string[] }[] = [
-    { label: 'Setup', key: 'setup', options: setups },
-    { label: 'Session', key: 'session', options: sessions },
-    { label: 'Result', key: 'result', options: RESULTS },
-  ]
-
-  return (
-    <div className="terminal-page terminal-journal">
-      {fields.map((field) => (
-        <SearchableSelect
-          key={field.key}
-          className={`${CARD} ${CARD_HOVER}`}
-          heading={field.label}
-          label={field.label}
-          value={filters[field.key]}
-          options={field.options}
-          onChange={(value) => onChange({ ...filters, [field.key]: value })}
-        />
-      ))}
-    </div>
-  )
+  return <section className="journal-workspace">
+    <aside className="journal-log-panel">
+      <div className="journal-log-head"><h3>Logs</h3><button type="button">Add Mood⌄</button></div>
+      <label className="journal-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
+      <div className="journal-log-list">
+        {visible.map((trade) => <button type="button" key={trade.id} onClick={() => setCurrent(trade)} className={`journal-log-item ${selected?.id === trade.id ? 'active' : ''}`}>
+          <span>{stamp(trade)}</span><strong>{trade.ticker || 'Untitled'} · {trade.netPl === null ? 'Open' : `$${trade.netPl.toFixed(2)}`}</strong><small>{trade.setup || 'No setup'} · {trade.direction}</small><em className={trade.netPl !== null && trade.netPl < 0 ? 'loss' : ''}>{trade.netPl === null ? 'OPEN' : `${trade.netPl >= 0 ? '+' : ''}${trade.netPl.toFixed(2)}`}</em>
+          <footer><b>Calm</b><b>Fear</b><b>FOMO</b></footer>
+        </button>)}
+        {!visible.length && <p className="journal-empty">{loading ? 'Loading your logs…' : 'No matching trades.'}</p>}
+      </div>
+    </aside>
+    <main className="journal-detail-panel">
+      <div className="journal-detail-head"><div><h2>Journal</h2><span>{selected ? stamp(selected) : 'Select a trade'}</span></div><div><span>1 - {visible.length}</span><strong>★★★★★</strong></div></div>
+      {selected ? <>
+        <div className="journal-notes"><article><h3>Pre-market Plan</h3><p>{selected.rationale || 'Add your pre-market thesis, risk, and execution plan when logging a trade.'}</p></article><article><h3>Post-market Reflection</h3><p>{selected.notes || 'Record what happened, what you learned, and what to repeat next time.'}</p></article></div>
+        <div className="journal-reviews"><ReviewCard label="Entry Rule" value={selected.compliedEntry} /><ReviewCard label="Exit Rule" value={selected.compliedExit} /><ReviewCard label="Management" value={selected.compliedManagement} /></div>
+        <div className="journal-linked"><div><h3>Linked Trades</h3><button type="button" onClick={() => onOpen(selected)}>Open full trade</button></div>{selected.screenshots.length ? <ChartStrip keys={selected.screenshots} /> : <p>No chart screenshots attached to this trade.</p>}</div>
+      </> : <p className="journal-empty">Select a log to review it.</p>}
+    </main>
+  </section>
 }
 
-/**
- * What a card shows when the journal cannot answer it.
- *
- * An em dash rather than a zero: nothing recorded and a genuine zero are
- * different facts, and only one of them is worth acting on.
- */
-const EMPTY_FIGURE = '—'
-
-/** Export, then which kind. */
-function ExportMenu({ onCsv, onPdf }: { onCsv: () => void; onPdf: () => void }) {
-  const [open, setOpen] = useState(false)
-  const wrapper = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    function onPointerDown(event: PointerEvent) {
-      if (!wrapper.current?.contains(event.target as Node)) setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [open])
-
-  return (
-    <div ref={wrapper} className="relative">
-      <button
-        type="button"
-        className={`${PILL} ${PILL_ACCENT}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <DownloadIcon />
-        Export
-      </button>
-
-      {open && (
-        <div className={ACTION_MENU} role="menu">
-          {hasFeature('pdfExport') && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onPdf()
-              }}
-            >
-              PDF
-            </button>
-          )}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              onCsv()
-            }}
-          >
-            CSV
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-type TradeJournalProps = {
-  uid: string | null
-  trades: StoredTrade[]
-  loading: boolean
-  error: string | null
-  reload: () => void
-  /** For the setups this trader has named in Settings. */
-  profile: ProfileRecord | null
-}
-
-export function TradeJournal({
-  uid,
-  profile,
-  trades,
-  loading,
-  error,
-  reload,
-}: TradeJournalProps) {
-  // A signed-in session is the only precondition now: the API is the single
-  // thing this page talks to, and it either answers or reports why.
-  const live = uid !== null
-
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
-
-  // The preset is kept even while a custom span is showing, so clearing the
-  // calendar returns to whatever was chosen before rather than a default.
-  const [importing, setImporting] = useState(false)
+export function TradeJournal({ profile, trades, loading, error, reload }: TradeJournalProps) {
   const [range, setRange] = useState<Preset>('30D')
   const [custom, setCustom] = useState<DateRange | null>(null)
-
-  const rangeLabel = spanLabel(range, custom)
-
-  const window = useMemo(() => windowFor(range, custom), [range, custom])
-
-  // The entry a row opened, and the one being edited. Two pieces of state
-  // rather than one mode flag: editing opens on top of the detail view, and
-  // cancelling the edit should land back on it rather than on nothing.
-  const [selected, setSelected] = useState<StoredTrade | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [active, setActive] = useState<StoredTrade | null>(null)
   const [editing, setEditing] = useState<StoredTrade | null>(null)
   const toast = useToast()
+  const shown = useMemo(() => trades.filter((trade) => inWindow(trade, windowFor(range, custom))), [trades, range, custom])
 
-  // The filters were decorative until now — the table was handed every trade
-  // whatever they said.
-  const shown = useMemo(
-    () =>
-      trades.filter(
-        (trade) =>
-          inWindow(trade, window) &&
-          (filters.setup === ANY_SETUP || trade.setup.trim() === filters.setup) &&
-          (filters.session === ANY_SESSION ||
-            trade.sessions.some(
-              (entry) => SESSION_LABELS[entry] === filters.session,
-            )) &&
-          (filters.result === ANY_RESULT || resultOf(trade) === filters.result),
-      ),
-    [trades, filters, window],
-  )
-
-  // Over the filtered rows, not the whole journal: these cards sit directly
-  // under the filters, and a figure that ignored them would be answering a
-  // question nobody asked.
-  const summary = useMemo(() => summarise(shown), [shown])
-  const money = useMemo(() => moneyIn(profile?.currency ?? "USD"), [profile?.currency])
-
-  return (
-    <>
-      <div className={PAGE_HEAD}>
-        <div>
-          <h2 className={PAGE_TITLE}>Trade Journal</h2>
-          <p className={PAGE_SUB}>
-            Detailed record of your market execution and psychological state.
-          </p>
-        </div>
-
-        <div className={PAGE_ACTIONS}>
-          <RangeMenu
-            presets={['7D', '30D', '90D']}
-            range={range}
-            custom={custom}
-            onPreset={(next) => {
-              setRange(next)
-              setCustom(null)
-            }}
-            onCustom={setCustom}
-          />
-
-          <button
-            type="button"
-            className={`${PILL} ${PILL_IDLE}`}
-            onClick={() => setImporting(true)}
-          >
-            <DownloadIcon className="rotate-180" />
-            Import
-          </button>
-
-          <ExportMenu
-            onCsv={() => downloadCsv(shown)}
-            onPdf={async () => {
-              try {
-                await downloadPdf(shown, rangeLabel)
-              } catch (cause) {
-                toast.error('Could not build the PDF', readableApiError(cause))
-              }
-            }}
-          />
-        </div>
-      </div>
-
-      <div data-tour="filters" className={`${FILTER_ROW} ${ROW_STAGGER}`}>
-        <FilterSelects
-          trades={trades}
-          setups={profile?.strategies ?? []}
-          filters={filters}
-          onChange={setFilters}
-        />
-
-        <div className={`${CARD} ${CARD_HOVER} ${FILTER_CARD} cursor-default gap-8`}>
-          <span className={FILTER_LABEL}>Total Volume</span>
-          <strong className={FILTER_FIGURE}>{volumeLabel(summary.volume)}</strong>
-        </div>
-      </div>
-
-      {error && (
-        <p className={DATA_ERROR} role="alert">
-          {error}
-        </p>
-      )}
-
-      <div className={`${SUMMARY_ROW} ${ROW_STAGGER}`}>
-        <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
-          <p className={SUMMARY_LABEL}>Win Rate</p>
-          <p className={SUMMARY_VALUE}>
-            {summary.winRate === null ? (
-              EMPTY_FIGURE
-            ) : (
-              <>
-                <AnimatedNumber value={summary.winRate} format={(n) => n.toFixed(1)} />{' '}
-                <span className="text-[17px] font-normal text-fg-muted">%</span>
-              </>
-            )}
-          </p>
-          <p className={SUMMARY_FOOT}>
-            {summary.winRate === null
-              ? 'No closed trades in this range.'
-              : `${summary.wins} won, ${summary.losses} lost`}
-          </p>
-          <ChartBarsIcon className={SUMMARY_WATERMARK} size={72} />
-        </article>
-
-        <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
-          <p className={SUMMARY_LABEL}>Profit Factor</p>
-          <p className={SUMMARY_VALUE}>
-            {summary.profitFactor !== null ? (
-              <AnimatedNumber value={summary.profitFactor} format={(n) => n.toFixed(2)} />
-            ) : summary.unbeaten ? (
-              '∞'
-            ) : (
-              EMPTY_FIGURE
-            )}
-          </p>
-          <p className={SUMMARY_FOOT}>
-            {summary.profitFactor !== null
-              ? `${money(summary.grossProfit)} won against ${money(summary.grossLoss)} lost`
-              : summary.unbeaten
-                ? 'No losing trades in this range.'
-                : 'Nothing closed at a profit or a loss yet.'}
-          </p>
-          <ScalesIcon className={SUMMARY_WATERMARK} size={72} />
-        </article>
-
-        <article className={`${CARD} ${CARD_HOVER} ${SUMMARY_CARD}`}>
-          <p className={SUMMARY_LABEL}>Most Common Emotion</p>
-          <p className={SUMMARY_VALUE}>{summary.topEmotion ?? EMPTY_FIGURE}</p>
-          <p className={SUMMARY_FOOT}>
-            {summary.topEmotion === null
-              ? 'No emotions recorded in this range.'
-              : `${summary.emotionCount} of ${summary.emotionTotal} entries`}
-          </p>
-          <SmileIcon className={SUMMARY_WATERMARK} size={72} />
-        </article>
-      </div>
-
-      <JournalTable
-        trades={shown}
-        loading={loading}
-        live={live}
-        onSelect={setSelected}
-      />
-
-      <TradeActions
-        trade={selected}
-        onClose={() => setSelected(null)}
-        onEdit={(trade) => {
-          setSelected(null)
-          setEditing(trade)
-        }}
-        onDelete={async (trade) => {
-          try {
-            await deleteTrade(trade.id)
-            setSelected(null)
-            reload()
-            toast.success('Trade deleted', `${trade.ticker || 'The entry'} is gone from your journal.`)
-          } catch (cause) {
-            const message = readableApiError(cause)
-            toast.error('Could not delete the trade', message)
-          }
-        }}
-      />
-
-      <QuickAddTrade
-        open={editing !== null}
-        initial={editing ? toEntry(editing) : null}
-        setups={profile?.strategies ?? []}
-        onClose={() => setEditing(null)}
-        onSave={async (entry) => {
-          if (!editing) return
-          await updateTrade(editing.id, entry)
-          setEditing(null)
-          reload()
-        }}
-      />
-      <CsvImport
-        open={importing}
-        onClose={() => setImporting(false)}
-        onImported={reload}
-      />
-    </>
-  )
+  return <div className="terminal-page terminal-journal journal-page">
+    <header className="journal-page-head"><div><h1>Journal</h1><p>Review your preparation, execution, and lessons from every trade.</p></div><div><RangeMenu presets={['7D', '30D', '90D']} range={range} custom={custom} onPreset={(next) => { setRange(next); setCustom(null) }} onCustom={setCustom} /><button type="button" onClick={() => setImporting(true)}>Import</button><button type="button" onClick={() => downloadCsv(shown)}>Export</button></div></header>
+    {error && <p className="journal-error" role="alert">{error}</p>}
+    <JournalWorkspace trades={shown} loading={loading} onOpen={setActive} />
+    <TradeActions trade={active} onClose={() => setActive(null)} onEdit={(trade) => { setActive(null); setEditing(trade) }} onDelete={async (trade) => { try { await deleteTrade(trade.id); setActive(null); reload(); toast.success('Trade deleted', `${trade.ticker || 'Trade'} removed.`) } catch (cause) { toast.error('Could not delete trade', readableApiError(cause)) } }} />
+    <QuickAddTrade open={editing !== null} initial={editing ? toEntry(editing) : null} setups={profile?.strategies ?? []} onClose={() => setEditing(null)} onSave={async (entry) => { if (!editing) return; await updateTrade(editing.id, entry); setEditing(null); reload() }} />
+    <CsvImport open={importing} onClose={() => setImporting(false)} onImported={reload} />
+  </div>
 }
