@@ -11,14 +11,14 @@
 /* ------------------------------------------------------------------ cards */
 
 export const CARD =
-  'rounded-lg border border-line bg-panel shadow-[var(--shadow-card)] backdrop-blur-[14px]'
+  'rounded-md border border-line bg-panel shadow-[var(--shadow-card)] backdrop-blur-[14px]'
 
 /* Wraps rather than overflows: a title beside a segmented control has no room
    for both on a 320px phone, and without wrapping the control pushed the page
    23px wider than the screen. The row gap only applies once it has wrapped. */
 export const CARD_HEAD =
   'flex flex-wrap items-start justify-between gap-x-20 gap-y-12'
-export const CARD_TITLE = 'text-[22px] font-semibold tracking-[-0.01em] text-fg-strong'
+export const CARD_TITLE = 'text-[16px] font-medium tracking-[-0.01em] text-fg-strong'
 export const CARD_SUB = 'mt-4 text-[13px] text-fg-muted'
 
 export const LINK =
@@ -66,12 +66,12 @@ export const MONO = 'font-mono text-[13px] tracking-[-0.01em]'
  * would hold five columns and squash them to nothing.
  */
 export const STAT_ROW =
-  'grid h-full auto-rows-fr grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-18'
-export const STAT_CARD = 'flex min-h-132 flex-col gap-8 px-22 pt-20 pb-22'
+  'grid h-full auto-rows-fr grid-cols-[repeat(auto-fit,minmax(142px,1fr))] gap-8'
+export const STAT_CARD = 'flex min-h-118 flex-col gap-6 px-16 pt-15 pb-15'
 export const STAT_LABEL =
   'text-[11px] font-medium tracking-[0.13em] text-fg-muted uppercase'
 export const STAT_VALUE =
-  'text-[30px] font-semibold leading-[1.15] tracking-[-0.025em] text-fg-strong'
+  'text-[24px] font-semibold leading-[1.15] tracking-[-0.025em] text-fg-strong'
 export const STAT_FOOT = 'mt-auto text-[12.5px] text-fg-muted'
 export const DELTA = 'inline-flex items-center gap-6 text-green'
 
@@ -191,7 +191,7 @@ export const SHIMMER =
  * not follow left a dead rectangle underneath it on exactly the days the
  * coach had most to say.
  */
-export const CHART_CARD = 'relative z-20 flex h-full flex-col px-26 pt-24 pb-20'
+export const CHART_CARD = 'relative z-20 flex h-full flex-col px-18 pt-17 pb-14'
 
 
 /** The plot body. touch-action keeps vertical scrolling alive over the chart. */
@@ -218,7 +218,7 @@ export const PLOT_BASE = 'relative mt-4 touch-pan-y pl-46 pr-10'
  * written — so an override like that works until a rebuild reorders it.
  */
 export const PLOT =
-  `${PLOT_BASE} min-h-340 flex-1 max-shell:min-h-300`
+  `${PLOT_BASE} min-h-270 flex-1 max-shell:min-h-250`
 
 /*
  * The drawing area, and the containing block for everything positioned against

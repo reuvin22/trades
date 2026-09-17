@@ -17,7 +17,7 @@ type TopBarProps = {
 /** Space-between so the burger sits left once it appears; with it hidden the
  *  action cluster still lands hard right. */
 export const TOPBAR =
-  'flex items-center justify-between gap-26 px-30 py-18 max-shell:px-18 ' +
+  'flex items-center justify-between gap-26 px-26 py-15 max-shell:px-18 ' +
   '[&>*]:animate-fade [&>*:nth-child(2)]:[animation-delay:60ms] [&>*:nth-child(3)]:[animation-delay:120ms]'
 
 /** Round 34px target used by every bare glyph in the bar. */

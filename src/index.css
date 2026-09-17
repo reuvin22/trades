@@ -23,16 +23,16 @@
   --spacing: 1px;
 
   /* Surfaces */
-  --color-bg-deep: #06050f;
-  --color-bg-top: #0b0a1b;
-  --color-glow-a: rgba(93, 63, 168, 0.42);
-  --color-glow-b: rgba(58, 40, 122, 0.28);
-  --color-panel: rgba(21, 20, 43, 0.72);
-  --color-panel-solid: #15142b;
-  --color-panel-inset: rgba(10, 9, 24, 0.6);
-  --color-sidebar-top: #1d1252;
-  --color-sidebar-mid: #150e3b;
-  --color-sidebar-bottom: #0c0926;
+  --color-bg-deep: #080f19;
+  --color-bg-top: #111d2d;
+  --color-glow-a: rgba(49, 93, 129, 0.22);
+  --color-glow-b: rgba(28, 176, 139, 0.08);
+  --color-panel: rgba(20, 31, 46, 0.84);
+  --color-panel-solid: #152235;
+  --color-panel-inset: rgba(9, 17, 29, 0.76);
+  --color-sidebar-top: #17273b;
+  --color-sidebar-mid: #112033;
+  --color-sidebar-bottom: #0d1725;
 
   /* Neutral overlays — the tint that separates one layer from the next. */
   --color-tint-1: rgba(255, 255, 255, 0.045);
@@ -45,30 +45,30 @@
   --color-grid: rgba(255, 255, 255, 0.09);
 
   /* Type */
-  --color-fg: #eceaf8;
+  --color-fg: #dce6ed;
   --color-fg-strong: #ffffff;
-  --color-fg-dim: #a9a7c4;
-  --color-fg-muted: #7b799a;
+  --color-fg-dim: #a7b5c3;
+  --color-fg-muted: #718397;
 
   /* Accents */
-  --color-accent: #7c6cf6;
-  --color-accent-strong: #8f83ff;
-  --color-accent-ink: #ffffff;
-  --color-green: #4ade80;
-  --color-red: #f2555a;
-  --color-amber: #f6c66c;
-  --color-cyan: #3fd8ee;
+  --color-accent: #20c99a;
+  --color-accent-strong: #35dfb1;
+  --color-accent-ink: #062019;
+  --color-green: #29ca94;
+  --color-red: #ed6a70;
+  --color-amber: #e5b96c;
+  --color-cyan: #45cce2;
 
   /* Charts — referenced by SVG gradient stops as well as utilities. */
-  --color-chart-line: #f3f1ff;
-  --color-chart-glow: rgba(180, 170, 255, 0.4);
-  --color-chart-fill-top: rgba(201, 198, 255, 0.85);
-  --color-chart-fill-mid: rgba(143, 134, 239, 0.35);
-  --color-chart-fill-bottom: rgba(91, 79, 214, 0.04);
+  --color-chart-line: #2dd5a1;
+  --color-chart-glow: rgba(45, 213, 161, 0.38);
+  --color-chart-fill-top: rgba(45, 213, 161, 0.43);
+  --color-chart-fill-mid: rgba(35, 172, 134, 0.18);
+  --color-chart-fill-bottom: rgba(35, 172, 134, 0.015);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
 
   --font-sans: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
@@ -446,11 +446,11 @@
  * they resolve on the element and follow the theme like everything else.
  */
 :root {
-  --shadow-card: 0 18px 44px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 14px 34px rgba(0, 0, 0, 0.22);
   --shadow-pop: 0 14px 34px rgba(0, 0, 0, 0.5);
   /* What a card rises to on hover. Separate from --shadow-pop so a card being
      pointed at does not borrow the depth of a dialog floating over the page. */
-  --shadow-lift: 0 16px 38px rgba(0, 0, 0, 0.42);
+  --shadow-lift: 0 16px 38px rgba(0, 0, 0, 0.36);
 }
 
 /* Light theme. Only the tokens change; no utility anywhere knows about it. */

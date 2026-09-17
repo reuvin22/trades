@@ -191,7 +191,14 @@ export function Sidebar({
             (collapsed ? 'shell:flex-col shell:items-center shell:gap-12 px-10' : 'px-10')
           }
         >
-          <a className="block min-w-0 animate-fade" href="#/dashboard">
+          <a className="flex min-w-0 items-center gap-9 animate-fade" href="#/dashboard">
+            <span
+              aria-hidden="true"
+              className="grid size-25 flex-none place-items-center rounded-full border-2 border-accent shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_14%,transparent)]"
+            >
+              <span className="size-11 rounded-full bg-accent" />
+            </span>
+            <div className="min-w-0">
             <h1
               className={
                 'font-semibold tracking-[-0.02em] text-fg-strong ' +
@@ -222,6 +229,7 @@ export function Sidebar({
             >
               {accountLabel}
             </p>
+            </div>
           </a>
         </div>
 

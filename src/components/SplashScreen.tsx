@@ -5,7 +5,6 @@ import {
   SPLASH_CHART,
   SPLASH_LINE,
   SPLASH_MARKER,
-  SPLASH_STATUS,
   SPLASH_TAGLINE,
 } from './ui'
 

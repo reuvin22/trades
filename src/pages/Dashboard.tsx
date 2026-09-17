@@ -133,7 +133,7 @@ export function Dashboard({ trades, uid, profile }: DashboardProps) {
             {greeting()}
             {name && `, ${name}`}
           </h2>
-          <p className={GREETING_SUB}>Here is how your trading is performing.</p>
+          <p className={GREETING_SUB}>Your trading command center for today.</p>
         </div>
 
         <div className={PAGE_ACTIONS}>

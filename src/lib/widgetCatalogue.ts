@@ -35,15 +35,15 @@ const ALL_DASHBOARD_WIDGETS: WidgetSpec[] = [
   // One widget, not five. The row is the unit a trader reads, and five boxes
   // to place separately is five decisions where nobody wanted one. It wraps to
   // fewer columns as it is made narrower.
-  { id: 'stats', title: 'Key figures', size: { w: 12, h: 5 }, min: { w: 3, h: 4 } },
-  { id: 'equity', title: 'Equity curve', size: { w: 8, h: 17 }, min: { w: 4, h: 10 } },
-  { id: 'edge', title: "What's working", size: { w: 4, h: 6 }, min: { w: 3, h: 4 } },
-  { id: 'behaviour', title: "How you're trading", size: { w: 4, h: 11 }, min: { w: 3, h: 5 } },
-  { id: 'setups', title: 'Setup performance', size: { w: 7, h: 11 }, min: { w: 5, h: 6 } },
+  { id: 'equity', title: 'Equity curve', size: { w: 6, h: 14 }, min: { w: 4, h: 10 } },
+  { id: 'stats', title: 'Key figures', size: { w: 3, h: 14 }, min: { w: 3, h: 4 } },
+  { id: 'discipline', title: 'Discipline score', size: { w: 3, h: 7 }, min: { w: 3, h: 6 } },
+  { id: 'calendar', title: 'Performance calendar', size: { w: 3, h: 7 }, min: { w: 3, h: 6 } },
+  { id: 'recent', title: 'Recent activity', size: { w: 12, h: 11 }, min: { w: 5, h: 8 } },
+  { id: 'edge', title: "What's working", size: { w: 4, h: 7 }, min: { w: 3, h: 4 } },
+  { id: 'behaviour', title: "How you're trading", size: { w: 4, h: 7 }, min: { w: 3, h: 5 } },
+  { id: 'setups', title: 'Setup performance', size: { w: 4, h: 7 }, min: { w: 4, h: 6 } },
   { id: 'risk', title: 'Risk health', size: { w: 5, h: 6 }, min: { w: 3, h: 5 } },
-  { id: 'discipline', title: 'Discipline score', size: { w: 5, h: 8 }, min: { w: 3, h: 6 } },
-  { id: 'calendar', title: 'Performance calendar', size: { w: 4, h: 8 }, min: { w: 3, h: 6 } },
-  { id: 'recent', title: 'Recent activity', size: { w: 12, h: 14 }, min: { w: 5, h: 8 } },
 ]
 
 /** Widgets that belong to a feature, and so leave the dashboard with it. */

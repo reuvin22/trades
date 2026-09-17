@@ -14,7 +14,7 @@ const SHELL_WASH =
 /** Two columns above the breakpoint; below it the sidebar leaves the grid and
  *  becomes a drawer, so the content takes the whole width. */
 export const APP_SHELL =
-  `grid min-h-screen grid-cols-[300px_1fr] max-shell:grid-cols-[1fr] ${SHELL_WASH}`
+  `grid min-h-screen grid-cols-[180px_1fr] max-shell:grid-cols-[1fr] ${SHELL_WASH}`
 
 /*
  * The rail is 76px: wide enough for a centred icon and its focus ring.
@@ -50,7 +50,7 @@ export const APP_SHELL =
 export function appShell(collapsed: boolean): string {
   return (
     'grid min-h-screen max-shell:grid-cols-[1fr] ' +
-    (collapsed ? 'grid-cols-[76px_1fr] ' : 'grid-cols-[300px_1fr] ') +
+    (collapsed ? 'grid-cols-[76px_1fr] ' : 'grid-cols-[180px_1fr] ') +
     SHELL_WASH
   )
 }
@@ -65,10 +65,10 @@ export const ADMIN_SHELL = APP_SHELL.replace(
 export const WORKSPACE = 'flex min-w-0 flex-col'
 
 export const CONTENT =
-  'flex flex-col gap-22 px-30 pt-4 pb-40 max-shell:px-18 ' + CONTENT_STAGGER
+  'mx-auto flex w-full max-w-[1400px] flex-col gap-18 px-26 pt-8 pb-40 max-shell:px-18 ' + CONTENT_STAGGER
 
 const PANEL =
-  'sticky top-0 flex h-screen flex-col border-r border-line px-22 pt-30 pb-28 ' +
+  'sticky top-0 flex h-screen flex-col border-r border-line px-14 pt-28 pb-22 ' +
   'bg-[linear-gradient(170deg,var(--color-sidebar-top)_0%,var(--color-sidebar-mid)_45%,var(--color-sidebar-bottom)_100%)]'
 
 /*
@@ -81,7 +81,7 @@ const PANEL =
  */
 const DRAWER =
   'max-shell:fixed max-shell:inset-y-0 max-shell:left-0 max-shell:z-[70] max-shell:h-dvh ' +
-  'max-shell:w-[min(300px,84vw)] max-shell:overflow-y-auto max-shell:shadow-[var(--shadow-pop)] ' +
+  'max-shell:w-[min(260px,84vw)] max-shell:overflow-y-auto max-shell:shadow-[var(--shadow-pop)] ' +
   'max-shell:transition-[transform,visibility,background-color,border-color,color] ' +
   'max-shell:duration-300 max-shell:ease-out'
 
