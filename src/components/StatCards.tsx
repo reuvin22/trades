@@ -1,125 +1,22 @@
 import { AnimatedNumber } from './AnimatedNumber'
 import { formatFactor, type DerivedStats } from '../lib/stats'
-import { TrendIcon } from './Icons'
-import { StatCard } from './StatCard'
-import {
-  DELTA,
-  METER,
-  METER_FILL,
-  STAT_ROW,
-} from './ui'
 
-/**
- * The five figures at the top of the dashboard, as one widget.
- *
- * One rather than five, because they are read as a set: the row is the
- * unit a trader thinks about, and five separate boxes to size and place is
- * five decisions where nobody wanted one.
- *
- * These five and not others, because between them they answer the only
- * questions worth asking first: am I up, how often am I right, how much do
- * I make when I am right against what I lose when I am wrong, what is one
- * trade worth on average, and how bad has it got.
- *
- * Expectancy is in **R** rather than money — a figure in dollars says
- * nothing without knowing the account behind it, while "+0.34R" travels.
- * It is measured from the stop, so it reads the trades that logged one;
- * the card says how many that was rather than quietly averaging a handful.
- *
- * Today's P&L used to sit here. It was moved out for Expectancy: on a day
- * with no trades it reads +$0.00, which is not a fact about your trading.
- */
-export function StatCards({
-  stats,
-  currency,
-  expectancyR,
-  rSample,
-}: {
-  stats: DerivedStats
-  currency: (value: number) => string
-  /** Mean realised R. Null when no trade recorded a stop. */
-  expectancyR: number | null
-  rSample: number
-}) {
-  const down = 'text-red [&>svg]:-scale-y-100'
-  // The meter only needs a width; the figure beside it keeps its decimal.
-  const winRate = stats.winRate
+/** Dense metric tiles modelled after a trading terminal's account summary. */
+export function StatCards({ stats, currency, opening }: { stats: DerivedStats; currency: (value: number) => string; opening: number }) {
+  const metrics = [
+    { label: 'Account Balance', value: <AnimatedNumber value={opening + stats.netPl} format={currency} />, note: `${stats.monthPct >= 0 ? '+' : ''}${stats.monthPct.toFixed(1)}% this month`, positive: stats.monthPct >= 0 },
+    { label: 'Total P&L', value: <AnimatedNumber value={stats.netPl} format={currency} />, note: `${stats.closedCount} closed trades`, positive: stats.netPl >= 0, featured: true },
+    { label: 'Win Rate', value: <AnimatedNumber value={stats.winRate} format={(n) => `${n.toFixed(0)}%`} />, note: `${stats.wins} wins / ${stats.closedCount} trades`, positive: true },
+    { label: 'Profit Factor', value: formatFactor(stats.profitFactor), note: 'Gross profit / loss', positive: stats.profitFactor !== null && stats.profitFactor >= 1 },
+    { label: 'Max Drawdown', value: stats.maxDrawdownPct ? `-${stats.maxDrawdownPct.toFixed(1)}%` : '—', note: 'Peak to trough', positive: false },
+    { label: 'Average Trade', value: stats.closedCount ? currency(stats.netPl / stats.closedCount) : '—', note: 'Realized average', positive: stats.netPl >= 0 },
+  ]
 
-  return (
-    <div data-tour="stats" className={STAT_ROW}>
-      <StatCard
-        label="Net P&L"
-        tone={stats.netPl >= 0 ? 'positive' : 'negative'}
-        value={<AnimatedNumber value={stats.netPl} format={(n) => currency(n)} />}
-      >
-        <span className={`${DELTA} ${stats.monthPct >= 0 ? '' : down}`}>
-          <TrendIcon />
-          {stats.monthPct >= 0 ? '+' : ''}
-          {stats.monthPct.toFixed(1)}% this month
-        </span>
-      </StatCard>
-
-      <StatCard
-        label="Win Rate"
-        value={<AnimatedNumber value={stats.winRate} format={(n) => `${n.toFixed(1)}%`} />}
-      >
-        <div
-          className={METER}
-          role="img"
-          aria-label={`${winRate.toFixed(1)} percent win rate`}
-        >
-          <span
-            className={`${METER_FILL} animate-meter origin-left`}
-            style={{ width: `${winRate}%` }}
-          />
-        </div>
-      </StatCard>
-
-      <StatCard label="Profit Factor" value={formatFactor(stats.profitFactor)}>
-        <span>
-          {stats.closedCount} closed {stats.closedCount === 1 ? 'trade' : 'trades'}
-        </span>
-      </StatCard>
-
-      <StatCard
-        label="Expectancy"
-        tone={
-          expectancyR === null ? 'default' : expectancyR >= 0 ? 'positive' : 'negative'
-        }
-        value={
-          expectancyR === null ? (
-            '—'
-          ) : (
-            <AnimatedNumber
-              value={expectancyR}
-              format={(n) => `${n > 0 ? '+' : ''}${n.toFixed(2)}R`}
-            />
-          )
-        }
-      >
-        <span>
-          {rSample === 0 ? 'Needs a stop-loss logged' : `Per trade, over ${rSample}`}
-        </span>
-      </StatCard>
-
-      <StatCard
-        label="Max Drawdown"
-        tone={stats.maxDrawdownPct > 0 ? 'negative' : 'default'}
-        value={
-          stats.maxDrawdownPct === 0 ? (
-            '—'
-          ) : (
-            <AnimatedNumber
-              value={stats.maxDrawdownPct}
-              format={(n) => `-${n.toFixed(1)}%`}
-            />
-          )
-        }
-      >
-        <span>
-          {stats.maxDrawdownPct === 0 ? 'No drawdown yet' : 'Peak to trough'}
-        </span>
-      </StatCard>
-    </div>
-  )
+  return <section className="terminal-stat-grid" aria-label="Account performance">
+    {metrics.map((metric) => <article key={metric.label} className={`terminal-stat ${metric.featured ? 'terminal-stat-featured' : ''}`}>
+      <p>{metric.label}</p>
+      <strong className={metric.positive ? 'text-green' : metric.label === 'Max Drawdown' ? 'text-red' : ''}>{metric.value}</strong>
+      <span className={metric.positive ? 'text-green' : ''}>{metric.note}</span>
+    </article>)}
+  </section>
 }

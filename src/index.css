@@ -657,6 +657,58 @@
   }
 }
 
+/* ------------------------------------------------ terminal dashboard */
+
+.dashboard-heading {
+  padding: 4px 0 2px;
+}
+
+.dashboard-heading h2 {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.dashboard-log-trade {
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  padding: 9px 22px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.dashboard-log-trade:hover { background: var(--color-accent-strong); transform: translateY(-1px); }
+
+.terminal-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(280px, 3.2fr) minmax(270px, 4fr);
+  grid-template-areas: 'equity metrics side' 'trades trades trades' 'strategies strategies strategies';
+  gap: 12px;
+  align-items: stretch;
+}
+
+.terminal-equity { grid-area: equity; min-height: 360px; }
+.terminal-metrics { grid-area: metrics; min-height: 360px; }
+.terminal-side { grid-area: side; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-height: 360px; }
+.terminal-trades { grid-area: trades; }
+.terminal-strategies { grid-area: strategies; }
+
+.terminal-dashboard .terminal-equity > section { height: 100%; }
+.terminal-dashboard .terminal-equity .text-\[16px\] { font-size: 14px; }
+.terminal-dashboard .terminal-equity .min-h-270 { min-height: 255px; }
+.terminal-dashboard .terminal-side > article { height: 100%; box-shadow: none; }
+
+.terminal-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; height: 100%; }
+.terminal-stat { display: flex; min-height: 0; flex-direction: column; justify-content: center; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: linear-gradient(145deg, rgba(30, 45, 63, .9), rgba(16, 26, 40, .96)); }
+.terminal-stat-featured { border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-line)); background: linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 16%, #152c36), rgba(13, 37, 43, .96)); }
+.terminal-stat p { margin: 0; color: var(--color-fg-dim); font-size: 10px; }
+.terminal-stat strong { margin-top: 3px; color: var(--color-fg-strong); font-size: clamp(17px, 1.5vw, 22px); font-weight: 600; letter-spacing: -.035em; line-height: 1.05; }
+.terminal-stat span { margin-top: 5px; color: var(--color-fg-muted); font-size: 10px; }
+
+@media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'trades trades' 'strategies strategies'; } }
+@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } }
+
 /* -------------------------------------------------------- landing motion */
 
 /* Transform and opacity only, so the landing page's ambient motion composites

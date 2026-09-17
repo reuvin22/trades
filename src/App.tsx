@@ -117,7 +117,7 @@ function TraderView({
 
   switch (route) {
     case 'dashboard':
-      return <Dashboard trades={trades} uid={uid} profile={profile} />
+      return <Dashboard trades={trades} profile={profile} onQuickAdd={() => setLogging(true)} />
     case 'journal':
       return (
         <TradeJournal
