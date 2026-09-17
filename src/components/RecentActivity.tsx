@@ -28,9 +28,9 @@ export function RecentActivity({ trades }: { trades: StoredTrade[] }) {
   const recent = trades.slice(0, 5)
 
   return (
-    <section data-tour="activity" className={`${CARD} px-28 pt-26 pb-20`}>
+    <section data-tour="activity" className={`${CARD} px-18 pt-14 pb-12`}>
       <div className={CARD_HEAD}>
-        <h2 className={CARD_TITLE}>Recent Activity</h2>
+        <h2 className={CARD_TITLE}>Recent Trades</h2>
         <a className={LINK} href="#/journal">
           View Journal
           <ChevronRightIcon />

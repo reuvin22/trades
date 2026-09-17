@@ -95,6 +95,7 @@ type TraderViewProps = {
   loading: boolean
   error: string | null
   reload: () => void
+  onQuickAdd: () => void
   /** Re-fetch the account record. Settings writes to it, and the journal and
    *  the trade form both read their setup list back out of it. */
   reloadProfile: () => void
@@ -109,6 +110,7 @@ function TraderView({
   loading,
   error,
   reload,
+  onQuickAdd,
   reloadProfile,
 }: TraderViewProps) {
   // A screen the plan does not include never mounts, so nothing on it fetches
@@ -117,7 +119,7 @@ function TraderView({
 
   switch (route) {
     case 'dashboard':
-      return <Dashboard trades={trades} profile={profile} onQuickAdd={() => setLogging(true)} />
+      return <Dashboard trades={trades} profile={profile} onQuickAdd={onQuickAdd} />
     case 'journal':
       return (
         <TradeJournal
@@ -301,6 +303,7 @@ function App() {
             error={error}
             reload={reload}
             reloadProfile={reloadProfile}
+            onQuickAdd={() => setLogging(true)}
           />
           </Suspense>
         </main>

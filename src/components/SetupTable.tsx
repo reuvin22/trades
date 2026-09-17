@@ -45,7 +45,7 @@ export function SetupTable({
   return (
     <article className={`${CARD} ${CARD_HOVER} ${PANEL}`}>
       <div className={PANEL_HEAD}>
-        <h3 className={PANEL_TITLE}>Setup performance</h3>
+        <h3 className={PANEL_TITLE}>Strategy Performance</h3>
         {rows.length > SHOWN && (
           <span className={PANEL_NOTE}>
             top {SHOWN} of {rows.length}
