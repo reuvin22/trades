@@ -9,6 +9,7 @@ import {
   TimeSection,
 } from '../components/AnalyticsSections'
 import { TradeLog } from '../components/TradeLog'
+import { AnalyticsBoard } from '../components/AnalyticsBoard'
 import { PAGE_HEAD, PAGE_SUB, PAGE_TITLE, ROW_STAGGER, TAB, TAB_ON, TABS } from '../components/ui'
 import { deriveStats, startingCapital } from '../lib/stats'
 import { moneyIn } from '../lib/journalStats'
@@ -80,13 +81,15 @@ export function Analytics({ trades, profile }: AnalyticsProps) {
         ))}
       </div>
 
+      {open === 'overview' && <AnalyticsBoard trades={trades} stats={stats} capital={capital} />}
+
       {/* Keyed on the section, so switching replays the entrance rather than
           swapping content under a stationary card. */}
-      <div key={open} className={`flex flex-col gap-18 ${ROW_STAGGER}`}>
+      <div key={open} className={`flex flex-col gap-18 ${ROW_STAGGER} ${open === 'overview' ? 'hidden' : ''}`}>
         <Section trades={trades} stats={stats} capital={capital} money={money} />
       </div>
 
-      <TradeLog trades={trades} />
+      {open !== 'overview' && <TradeLog trades={trades} />}
     </div>
   )
 }
