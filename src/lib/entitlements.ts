@@ -65,7 +65,7 @@ const INCLUDES: Record<PlanId, readonly Feature[]> = {
  * does and accounts carry their tier, this becomes a read of the signed-in
  * profile instead.
  */
-export const ACTIVE_PLAN: PlanId = 'free'
+export const ACTIVE_PLAN: PlanId = 'pro'
 
 export function hasFeature(feature: Feature): boolean {
   return INCLUDES[ACTIVE_PLAN].includes(feature)
