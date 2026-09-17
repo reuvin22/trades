@@ -54,7 +54,7 @@ export function Analytics({ trades, profile }: AnalyticsProps) {
   const Section = SECTIONS.find((entry) => entry.key === open)?.view ?? OverviewSection
 
   return (
-    <>
+    <div className="terminal-page terminal-analytics">
       <div className={PAGE_HEAD}>
         <div>
           <h2 className={PAGE_TITLE}>Analytics</h2>
@@ -87,6 +87,6 @@ export function Analytics({ trades, profile }: AnalyticsProps) {
       </div>
 
       <TradeLog trades={trades} />
-    </>
+    </div>
   )
 }

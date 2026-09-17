@@ -133,7 +133,7 @@ function FilterSelects({
   ]
 
   return (
-    <>
+    <div className="terminal-page terminal-journal">
       {fields.map((field) => (
         <SearchableSelect
           key={field.key}
@@ -145,7 +145,7 @@ function FilterSelects({
           onChange={(value) => onChange({ ...filters, [field.key]: value })}
         />
       ))}
-    </>
+    </div>
   )
 }
 

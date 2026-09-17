@@ -264,7 +264,7 @@ export function Calendar({ trades, profile }: CalendarProps) {
   const todayKey = dayKey(new Date())
 
   return (
-    <>
+    <div className="terminal-page terminal-calendar">
       <div className={CAL_TOOLBAR}>
         <div className={CAL_FILTERS}>
           <Dropdown
@@ -399,6 +399,6 @@ export function Calendar({ trades, profile }: CalendarProps) {
       </div>
 
       <DayDetail day={selected} onClose={() => setSelected(null)} />
-    </>
+    </div>
   )
 }

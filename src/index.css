@@ -709,6 +709,95 @@
 @media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'trades trades' 'strategies strategies'; } }
 @media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } }
 
+/* The remaining terminal screens share the dashboard's dense, framed surface
+   but retain their existing data controls and keyboard interactions. */
+.terminal-page { min-width: 0; }
+.terminal-page > :is(.flex, .grid, section, article) { min-width: 0; }
+.terminal-page .text-\[27px\] { font-size: 24px; font-weight: 600; }
+.terminal-page .rounded-lg { border-radius: 8px; }
+
+/* Journal: filters become a compact instrument bar and the summary has the
+   low-profile tiles shown above a full trading blotter in the reference. */
+.terminal-journal .grid { gap: 10px; }
+.terminal-journal [data-tour='filters'] { margin-top: 2px; border: 1px solid var(--color-line); border-radius: 8px; padding: 8px; background: rgba(11, 22, 35, .62); }
+.terminal-journal [data-tour='filters'] > * { border-radius: 6px; box-shadow: none; }
+.terminal-journal table { font-size: 12px; }
+.terminal-journal thead { background: rgba(98, 117, 145, .16); }
+.terminal-journal th { padding-top: 8px; padding-bottom: 8px; font-size: 9px; }
+.terminal-journal td { padding-top: 8px; padding-bottom: 8px; }
+
+/* Analytics: the tab row reads as the compact scope selector from the mockup;
+   the existing Overview/Setups/Risk views still supply the actual analysis. */
+.terminal-analytics [role='tablist'] { border: 1px solid var(--color-line); border-radius: 8px; padding: 4px; background: rgba(11, 22, 35, .7); }
+.terminal-analytics [role='tab'] { min-height: 32px; border-radius: 5px; }
+.terminal-analytics [role='tab'][aria-selected='true'] { background: color-mix(in srgb, var(--color-accent) 17%, transparent); color: var(--color-accent-strong); }
+.terminal-analytics > .flex > * { border-radius: 8px; }
+
+/* Calendar: removes the old report-like whitespace and makes each day a
+   terminal tile with a stronger positive/negative heat treatment. */
+.terminal-calendar { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.terminal-calendar > .flex { order: -2; }
+.terminal-calendar > .grid { order: 2; }
+.terminal-calendar [data-tour='calendar-grid'] { padding: 10px; border-radius: 9px; background: rgba(12, 23, 36, .82); box-shadow: var(--shadow-card); }
+.terminal-calendar button[data-date] { border-radius: 5px; }
+.terminal-calendar [data-pl] { font-weight: 600; }
+
+/* Phone-first terminal overrides. Desktop grids deliberately become single
+   column flows here; tables retain their columns inside their own horizontal
+   scroller instead of widening the document. */
+@media (max-width: 640px) {
+  .terminal-dashboard { gap: 10px; }
+  .dashboard-heading { align-items: stretch; gap: 12px; }
+  .dashboard-heading h2 { font-size: 23px; }
+  .dashboard-heading .flex { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .dashboard-heading .flex > * { flex: 1 1 auto; justify-content: center; text-align: center; }
+  .dashboard-heading .dashboard-log-trade { flex: 1 1 100%; min-height: 40px; }
+
+  .terminal-equity > section { min-height: 290px; }
+  .terminal-dashboard .terminal-equity .min-h-270 { min-height: 205px; }
+  .terminal-dashboard .terminal-equity [class*='pl-46'] { padding-left: 34px; }
+  .terminal-dashboard .terminal-equity [class*='w-46'] { width: 34px; }
+  .terminal-dashboard .terminal-equity [class*='ml-46'] { margin-left: 34px; }
+  .terminal-dashboard .terminal-equity [class*='text-[11px]'] { font-size: 9px; }
+  .terminal-stat-grid { gap: 7px; }
+  .terminal-stat { min-height: 102px; padding: 11px; }
+  .terminal-stat strong { font-size: 18px; }
+  .terminal-side { grid-template-rows: 200px 190px; }
+  .terminal-dashboard .terminal-side > article { overflow: hidden; }
+  .terminal-trades, .terminal-strategies { min-width: 0; }
+  .terminal-trades > section { padding: 12px; }
+  .terminal-trades [class*='overflow-x-auto'], .terminal-journal [class*='overflow-x-auto'] { margin-inline: -12px; padding-inline: 12px; -webkit-overflow-scrolling: touch; }
+
+  .terminal-page .text-\[27px\] { font-size: 22px; }
+  .terminal-page > .flex { gap: 10px; }
+  .terminal-page .flex.flex-none { width: 100%; flex-wrap: wrap; }
+  .terminal-page .flex.flex-none > * { flex: 1 1 auto; }
+  .terminal-journal [data-tour='filters'] { grid-template-columns: 1fr; padding: 7px; }
+  .terminal-journal [data-tour='filters'] > * { min-width: 0; }
+  .terminal-journal .grid.grid-cols-3 { grid-template-columns: 1fr; gap: 10px; }
+  .terminal-journal .grid.grid-cols-3 .text-\[34px\] { font-size: 28px; }
+  .terminal-journal table { min-width: 760px; font-size: 11px; }
+
+  .terminal-analytics [role='tablist'] { display: flex; width: calc(100% + 4px); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .terminal-analytics [role='tablist']::-webkit-scrollbar { display: none; }
+  .terminal-analytics [role='tab'] { flex: 0 0 auto; padding-inline: 12px; }
+  .terminal-analytics > .flex { gap: 10px; }
+  .terminal-analytics [class*='grid-cols-'] { grid-template-columns: minmax(0, 1fr); }
+
+  .terminal-calendar { gap: 10px; }
+  .terminal-calendar [class*='CAL_FILTERS'], .terminal-calendar > div:first-child > div { width: 100%; flex-wrap: wrap; }
+  .terminal-calendar [data-tour='calendar-grid'] { margin-inline: -2px; padding: 6px; }
+  .terminal-calendar [data-tour='calendar-grid'] > * { min-width: 620px; }
+  .terminal-calendar [data-tour='calendar-grid'] { -webkit-overflow-scrolling: touch; }
+  .terminal-calendar .text-\[18px\] { order: -1; width: 100%; font-size: 18px; }
+}
+
+@media (max-width: 380px) {
+  .terminal-stat-grid { grid-template-columns: 1fr; }
+  .terminal-side { grid-template-rows: 190px 180px; }
+  .dashboard-heading .flex > .rounded-full { display: none; }
+}
+
 /* -------------------------------------------------------- landing motion */
 
 /* Transform and opacity only, so the landing page's ambient motion composites
