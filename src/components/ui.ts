@@ -909,7 +909,10 @@ export const MODAL_NARROW = 'w-[min(560px,calc(100vw-32px))]'
  * own footer past the height cap and out of sight. At this width the detail
  * grid's auto-fit columns actually get to fit.
  */
-export const MODAL_DETAIL = 'w-[min(720px,calc(100vw-32px))]'
+/* Wide enough for the record and the chart drawn from it to sit side by side.
+   Below 900px the two columns stack (see MODAL_SPLIT) and the dialog simply
+   runs out of viewport before it runs out of this. */
+export const MODAL_DETAIL = 'w-[min(1120px,calc(100vw-32px))]'
 
 /** The day cell is a button, so it needs the affordances one has. */
 export const CAL_DAY_BUTTON =
@@ -2337,3 +2340,61 @@ export const NAV_SUB_ITEM =
 export const NAV_SUB_IDLE =
   'font-normal text-fg-muted before:bg-line hover:bg-tint-1 hover:text-fg'
 export const NAV_SUB_ACTIVE = 'font-medium text-fg-strong bg-tint-1 before:bg-accent'
+
+/* ------------------------------------------------------------ trade chart */
+
+/*
+ * The position chart in the trade modal, and the two-column body around it.
+ *
+ * The split collapses below 900px rather than at the shell breakpoint: this
+ * is a dialog with its own width, so what matters is whether *it* has room
+ * for two columns, not whether the page does.
+ */
+export const MODAL_SPLIT =
+  'grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] overflow-hidden ' +
+  'max-[900px]:grid-cols-1 max-[900px]:overflow-y-auto'
+
+/** The data side. Scrolls on its own so the chart beside it stays put. */
+export const MODAL_SPLIT_DATA =
+  'min-h-0 overflow-y-auto max-[900px]:overflow-visible'
+
+/* A rule between the columns that becomes a rule above the chart once they
+   stack — same separation, redrawn on the axis the layout is using. */
+export const MODAL_SPLIT_CHART =
+  'flex min-h-0 flex-col border-l border-line p-18 max-[900px]:border-t max-[900px]:border-l-0'
+
+export const TV_WRAP = 'flex min-h-0 flex-1 flex-col gap-10'
+
+/*
+ * The chart box. `relative` because the zone bands are positioned against it,
+ * and an explicit height because Lightweight Charts measures its container —
+ * given an auto-height parent it would measure zero and render nothing.
+ * Taller when the columns stack, where it has the full dialog width.
+ */
+export const TV_CANVAS =
+  'relative min-h-0 flex-1 overflow-hidden rounded-sm border border-line bg-panel-inset ' +
+  'h-[clamp(240px,42vh,380px)] max-[900px]:h-[clamp(220px,38vh,300px)]'
+
+/*
+ * The target and stop zones, as the position tool draws them: the ground
+ * between entry and each level, tinted and left behind the line. `inset-x-0`
+ * — they span the whole plot, because there is one trade on the chart and
+ * nothing either side of it to bound them.
+ */
+const TV_BAND = 'pointer-events-none absolute inset-x-0 z-[1]'
+export const TV_BAND_TARGET =
+  `${TV_BAND} bg-[color-mix(in_srgb,var(--color-green)_13%,transparent)]`
+export const TV_BAND_STOP =
+  `${TV_BAND} bg-[color-mix(in_srgb,var(--color-red)_13%,transparent)]`
+
+export const TV_KEY = 'flex flex-wrap items-center gap-x-16 gap-y-6'
+export const TV_KEY_ROW = 'inline-flex items-center gap-6 text-[11px] text-fg-muted'
+export const TV_KEY_DOT = 'inline-block size-7 flex-none rounded-full'
+
+export const TV_EMPTY =
+  'grid h-[clamp(240px,42vh,380px)] place-items-center rounded-sm border border-line bg-panel-inset px-24 text-center text-[12.5px] leading-[1.6] text-fg-muted'
+
+/** Stands in for the chart while its library loads, at the same height so
+ *  nothing below it moves when the real one arrives. */
+export const TV_PENDING =
+  'h-[clamp(240px,42vh,380px)] animate-pulse rounded-sm border border-line bg-panel-inset max-[900px]:h-[clamp(220px,38vh,300px)]'

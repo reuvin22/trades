@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { StoredTrade } from '../lib/trades'
 import { currency } from '../data/dashboard'
 import { PencilIcon, SpinnerIcon, TrashIcon, CloseIcon } from './Icons'
@@ -18,6 +18,10 @@ import {
   MODAL_FOOT,
   MODAL_HEAD,
   MODAL_SHELL,
+  MODAL_SPLIT,
+  MODAL_SPLIT_CHART,
+  MODAL_SPLIT_DATA,
+  TV_PENDING,
   PILL,
   PILL_ACCENT,
   PILL_DANGER,
@@ -27,6 +31,18 @@ import {
   SIDE_SHORT,
 } from './ui'
 import { hasFeature } from '../lib/entitlements'
+
+/*
+ * Lightweight Charts is ~175KB, and the journal is the page that pays for it.
+ *
+ * Imported statically it landed in the TradeJournal chunk, taking it from
+ * 31KB to 207KB — the whole library downloaded by everyone who opened the
+ * journal, whether or not they ever opened a record. Behind lazy() it arrives
+ * with the modal, which is the only moment it can be seen.
+ */
+const TradeChart = lazy(() =>
+  import('./TradeChart').then((module) => ({ default: module.TradeChart })),
+)
 
 const stamp = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -76,6 +92,18 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [confirming, setConfirming] = useState(false)
   const [working, setWorking] = useState(false)
+  /*
+   * Whether the dialog is actually on screen, which is not the same as having
+   * a trade to show.
+   *
+   * A closed <dialog> is display:none, and child effects run before the
+   * parent's — so a chart mounted in the same pass would measure its
+   * container before `showModal` below had given it a size, size itself to
+   * zero, and have no coordinates to place the target and stop zones against.
+   * Gating on this mounts it only once the dialog has been opened and laid
+   * out.
+   */
+  const [shown, setShown] = useState(false)
   const open = trade !== null
 
   useEffect(() => {
@@ -86,8 +114,10 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
       setConfirming(false)
       setWorking(false)
       node.showModal()
+      setShown(true)
     } else if (!open && node.open) {
       node.close()
+      setShown(false)
     }
   }, [open])
 
@@ -139,9 +169,16 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
           </button>
         </div>
 
+        {/*
+          Two columns: what was recorded on the left, the position drawn from
+          it on the right. Below 900px they stack, data first — the chart is
+          the illustration, and on a phone the reading order should be the
+          numbers and then the picture of them.
+        */}
+        <div className={MODAL_SPLIT}>
         {/* min-h-0 as well as overflow: a flex child will not shrink below its
             content without it, so the scroll would never engage. */}
-        <dl className={`${DETAIL_GRID} min-h-0 overflow-y-auto`}>
+        <dl className={`${DETAIL_GRID} ${MODAL_SPLIT_DATA}`}>
           <Row label="Setup" value={trade.setup} />
           <Row
             label="Size"
@@ -189,6 +226,15 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
             </div>
           )}
         </dl>
+
+          <div className={MODAL_SPLIT_CHART}>
+            {/* The fallback holds the chart's exact height, so the dialog does
+                not resize under the pointer when the library lands. */}
+            <Suspense fallback={<div className={TV_PENDING} />}>
+              {shown && <TradeChart trade={trade} />}
+            </Suspense>
+          </div>
+        </div>
 
         {confirming ? (
           <div className={CONFIRM_CARD} role="alertdialog" aria-labelledby="confirm-title">
