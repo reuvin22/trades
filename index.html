@@ -63,6 +63,39 @@
         }
       }
     </script>
+    <!--
+      Theme and palette, before the first paint.
+
+      React cannot do this: the bundle has to load, parse and run before any
+      effect sets these attributes, and until then the document renders with
+      the base palette's surfaces. Going from #ececed to #0a0a0a a few hundred
+      milliseconds in is a white flash on every load for anyone on a dark
+      palette — the one thing a dark theme exists to avoid.
+
+      Deliberately duplicated from useTheme.ts rather than imported: an import
+      would be a module, and a module cannot run before paint. The two storage
+      keys are the contract between them. Kept tiny and wrapped, because a
+      throw here would stop the page rendering at all, and blocked site data
+      throws on the very first line.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var t = localStorage.getItem('tradex-theme')
+          if (t !== 'light' && t !== 'dark') {
+            t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          }
+          document.documentElement.dataset.theme = t
+
+          var p = localStorage.getItem('ragdex-palette')
+          var known = ['midnight', 'violet', 'azure', 'ember', 'graphite', 'rose']
+          document.documentElement.dataset.palette =
+            known.indexOf(p) === -1 ? 'midnight' : p
+        } catch (e) {
+          /* Storage blocked. The defaults in the stylesheet still apply. */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

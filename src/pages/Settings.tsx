@@ -17,6 +17,8 @@ import {
 import { Select } from '../components/Select'
 import { CloseIcon, SpinnerIcon } from '../components/Icons'
 import { BrokerConnections } from '../components/BrokerConnections'
+import { PaletteGrid } from '../components/PalettePicker'
+import type { Origin, Palette, Theme } from '../lib/useTheme'
 import {
   CARD,
   EDIT_CHIP,
@@ -36,6 +38,10 @@ import {
   SAVE_ERROR,
   SAVE_BAR,
   SECTION_TITLE,
+  SEGMENT,
+  SEGMENT_ACTIVE,
+  SEGMENT_IDLE,
+  SEGMENTED,
   SOON_BADGE,
   TAG_CLOUD,
   TAG_TOGGLE,
@@ -53,6 +59,12 @@ type SettingsProps = {
    * nothing until a full page reload.
    */
   onSaved: () => void
+  /* Appearance. Per-device rather than part of the profile, so these are
+     passed straight through and never touch `onSaved`. */
+  theme: Theme
+  palette: Palette
+  onPickPalette: (id: Palette, origin?: Origin) => void
+  onToggleTheme: (origin?: Origin) => void
 }
 
 /**
@@ -130,7 +142,14 @@ function toSetup(draft: Draft): TradingSetup {
   }
 }
 
-export function Settings({ profile, onSaved }: SettingsProps) {
+export function Settings({
+  profile,
+  onSaved,
+  theme,
+  palette,
+  onPickPalette,
+  onToggleTheme,
+}: SettingsProps) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(profile))
 
   /*
@@ -253,6 +272,54 @@ export function Settings({ profile, onSaved }: SettingsProps) {
           </p>
         </div>
       </div>
+
+      {/*
+        Appearance sits above the trading questions because it is the one
+        section that is not about trading, and because a new trader has just
+        been asked this on the way in — this is where the picker's "you can
+        change it from Settings" has to land.
+
+        It is inside the form only for layout. Every control here is
+        type="button" and applies the moment it is pressed, so none of it
+        reaches the save bar; the hint says so, because a section that looks
+        like the ones around it would otherwise imply it needs saving.
+      */}
+      <section className={`${CARD} ${FORM_SECTION}`}>
+        <h3 className={SECTION_TITLE}>Appearance</h3>
+        <p className={`${FIELD_HINT} mt-4 mb-16`}>
+          The palette applies to this device as soon as you pick it — there is
+          nothing to save. Sign in somewhere else and that screen keeps its own
+          choice.
+        </p>
+
+        <PaletteGrid palette={palette} theme={theme} onPick={onPickPalette} />
+
+        <div className="mt-18 flex items-center gap-12">
+          <span className={FIELD_LABEL}>Mode</span>
+          <div className={SEGMENTED}>
+            {(['dark', 'light'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={`${SEGMENT} ${
+                  theme === mode ? SEGMENT_ACTIVE : SEGMENT_IDLE
+                }`}
+                aria-pressed={theme === mode}
+                onClick={(event) => {
+                  if (theme === mode) return
+                  const box = event.currentTarget.getBoundingClientRect()
+                  onToggleTheme({
+                    x: box.left + box.width / 2,
+                    y: box.top + box.height / 2,
+                  })
+                }}
+              >
+                {mode === 'dark' ? 'Dark' : 'Light'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className={`${CARD} ${FORM_SECTION}`}>
         <h3 className={SECTION_TITLE}>What you trade</h3>

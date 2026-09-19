@@ -41,7 +41,7 @@ export const PAGE_ACTIONS = 'flex flex-none gap-10'
  * trade — as a dim grey pill that read as disabled.
  */
 export const PILL =
-  'inline-flex items-center gap-8 rounded-[9px] border px-15 py-9 text-[12.5px] font-medium transition-[color,border-color,background-color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'
+  'inline-flex items-center gap-8 rounded-sm border px-15 py-9 text-[12.5px] font-medium transition-[color,border-color,background-color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100'
 
 export const PILL_IDLE =
   'border-line bg-tint-1 text-fg-dim hover:border-line-strong hover:bg-tint-2 hover:text-fg-strong'
@@ -110,7 +110,7 @@ export const STATUS_OPEN =
 /* ------------------------------------------------------------- segmented */
 
 export const SEGMENTED =
-  'relative flex gap-4 rounded-[10px] border border-line bg-tint-1 p-4'
+  'relative flex gap-4 rounded-sm border border-line bg-tint-1 p-4'
 /*
  * The colour deliberately lives in the two state classes below, never here.
  * Tailwind resolves a conflict like text-fg-muted vs text-accent-ink by their
@@ -120,8 +120,14 @@ export const SEGMENTED =
  * fill. Applying exactly one of them removes the conflict instead of
  * out-specifying it.
  */
+/*
+ * 6px, not rounded-sm, and that is nesting rather than a stray value: the
+ * track around it is rounded-sm (10px) with 4px of padding, so the segment's
+ * corner has to be 10 − 4 to sit concentrically inside it. Matching the
+ * outer radius instead leaves a visible crescent of track in each corner.
+ */
 export const SEGMENT =
-  'rounded-[7px] px-14 py-5 text-[12px] font-medium tracking-[0.04em] transition-[color,background-color] duration-150 active:scale-[0.97]'
+  'rounded-[6px] px-14 py-5 text-[12px] font-medium tracking-[0.04em] transition-[color,background-color] duration-150 active:scale-[0.97]'
 export const SEGMENT_IDLE = 'text-fg-muted hover:text-fg'
 export const SEGMENT_ACTIVE = 'bg-accent text-accent-ink'
 
@@ -619,7 +625,7 @@ export const LOGIN_POINTS =
   'mt-34 flex max-w-[42ch] list-none flex-col gap-20 p-0 [&>li]:flex [&>li]:items-start [&>li]:gap-13 [&>li]:animate-rise [&>li:nth-child(1)]:[animation-delay:160ms] [&>li:nth-child(2)]:[animation-delay:240ms] [&>li:nth-child(3)]:[animation-delay:320ms]'
 
 export const POINT_GLYPH =
-  'grid size-30 flex-none place-items-center rounded-[9px] border border-line text-accent-strong bg-[color-mix(in_srgb,var(--color-accent)_14%,transparent)]'
+  'grid size-30 flex-none place-items-center rounded-sm border border-line text-accent-strong bg-[color-mix(in_srgb,var(--color-accent)_14%,transparent)]'
 export const POINT_TITLE = 'text-[13.5px] font-medium text-fg'
 export const POINT_BODY = 'mt-2 text-[12.5px] leading-[1.5] text-fg-muted'
 
@@ -691,7 +697,7 @@ export const THREAD =
 export const TURN = 'flex items-start gap-12'
 export const TURN_TRADER = 'justify-end'
 
-export const CHAT_AVATAR = 'grid size-30 flex-none place-items-center rounded-[9px] text-white'
+export const CHAT_AVATAR = 'grid size-30 flex-none place-items-center rounded-sm text-white'
 export const CHAT_AVATAR_COACH =
   'bg-[linear-gradient(160deg,#4b6dff,#2a49df)] shadow-[0_6px_16px_rgba(42,73,223,0.4)]'
 export const CHAT_AVATAR_TRADER = 'border border-line bg-tint-2 text-fg-dim'
@@ -743,7 +749,7 @@ export const CAL_FILTERS = 'flex flex-wrap items-center gap-8'
  * the hit target, while the label beside it keeps its styling.
  */
 export const CAL_FILTER =
-  'relative inline-flex cursor-pointer items-center gap-7 rounded-[8px] border border-line bg-tint-1 px-11 py-7 text-[12.5px] text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-line-strong hover:text-fg-strong ' +
+  'relative inline-flex cursor-pointer items-center gap-7 rounded-sm border border-line bg-tint-1 px-11 py-7 text-[12.5px] text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-line-strong hover:text-fg-strong ' +
   '[&_select]:absolute [&_select]:inset-0 [&_select]:size-full [&_select]:cursor-pointer [&_select]:opacity-0 ' +
   /*
    * The select is invisible, but its native popup still inherits colour from
@@ -759,15 +765,15 @@ export const CAL_FILTER_ACTIVE =
   'border-transparent bg-accent text-accent-ink [&_svg]:text-accent-ink'
 
 export const CAL_CLEAR =
-  'rounded-[8px] px-11 py-7 text-[12.5px] text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+  'rounded-sm px-11 py-7 text-[12.5px] text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
 export const CAL_ADD =
-  'inline-flex items-center gap-7 rounded-[8px] bg-green px-16 py-9 text-[13px] font-semibold text-[#04140c] transition-[filter,transform] duration-150 hover:brightness-[1.08] active:scale-[0.97] max-[760px]:justify-center'
+  'inline-flex items-center gap-7 rounded-sm bg-green px-16 py-9 text-[13px] font-semibold text-[#04140c] transition-[filter,transform] duration-150 hover:brightness-[1.08] active:scale-[0.97] max-[760px]:justify-center'
 
 export const CAL_HEAD = 'flex flex-wrap items-center gap-14'
 export const CAL_TODAY =
-  'rounded-[8px] border border-line bg-tint-1 px-15 py-7 text-[12.5px] font-medium text-fg-dim transition-[color,border-color] duration-150 hover:border-line-strong hover:text-fg-strong'
+  'rounded-sm border border-line bg-tint-1 px-15 py-7 text-[12.5px] font-medium text-fg-dim transition-[color,border-color] duration-150 hover:border-line-strong hover:text-fg-strong'
 export const CAL_NAV =
-  'flex gap-2 [&>button]:grid [&>button]:size-28 [&>button]:place-items-center [&>button]:rounded-[7px] [&>button]:text-fg-muted [&>button]:transition-[color,background-color] [&>button]:duration-150 [&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong'
+  'flex gap-2 [&>button]:grid [&>button]:size-28 [&>button]:place-items-center [&>button]:rounded-sm [&>button]:text-fg-muted [&>button]:transition-[color,background-color] [&>button]:duration-150 [&>button:hover]:bg-tint-2 [&>button:hover]:text-fg-strong'
 export const CAL_MONTH =
   'text-[18px] font-semibold tracking-[-0.01em] text-fg-strong max-[760px]:text-[16px]'
 export const CAL_MONTH_TOTAL = 'text-[14px] font-semibold tabular-nums'
@@ -782,7 +788,7 @@ export const CAL_WEEKDAY =
   'py-6 text-center text-[10px] font-semibold tracking-[0.14em] text-fg-muted uppercase'
 
 export const CAL_DAY =
-  'flex min-h-92 flex-col items-center gap-3 rounded-[9px] border border-line bg-tint-1 px-8 py-9 transition-[border-color,transform] duration-150 hover:-translate-y-1 hover:border-line-strong'
+  'flex min-h-92 flex-col items-center gap-3 rounded-sm border border-line bg-tint-1 px-8 py-9 transition-[border-color,transform] duration-150 hover:-translate-y-1 hover:border-line-strong'
 /** Profit and loss days are tinted rather than filled, so the numbers stay
  *  legible in both themes. */
 export const CAL_DAY_POS =
@@ -798,7 +804,7 @@ export const CAL_PL = 'mt-auto text-[14px] font-semibold tabular-nums'
 export const CAL_COUNT = 'mb-auto text-[11px] text-fg-muted'
 
 export const CAL_WEEK =
-  'flex flex-col items-end justify-center gap-3 rounded-[9px] bg-tint-1 px-12 py-9'
+  'flex flex-col items-end justify-center gap-3 rounded-sm bg-tint-1 px-12 py-9'
 export const CAL_WEEK_PL = 'text-[14px] font-semibold tabular-nums text-fg-muted'
 
 /* ------------------------------------------------------------------ admin */
@@ -808,7 +814,7 @@ export const ADMIN_STAT_ROW =
 export const ADMIN_STAT = 'flex flex-col gap-4 px-18 pt-16 pb-18'
 export const ADMIN_STAT_HEAD = 'mb-12 flex items-center justify-between gap-12'
 export const STAT_GLYPH =
-  'grid size-34 place-items-center rounded-[10px] border border-line bg-tint-2 text-fg-dim'
+  'grid size-34 place-items-center rounded-sm border border-line bg-tint-2 text-fg-dim'
 export const TAG = 'rounded-full bg-tint-2 px-9 py-3 text-[10.5px] font-medium text-fg-dim'
 export const TAG_POS =
   'text-green bg-[color-mix(in_srgb,var(--color-green)_15%,transparent)]'
@@ -843,7 +849,7 @@ export const ACTIVITY_FEED = 'flex flex-col px-18 pt-18 pb-16'
 export const FEED =
   'mt-8 flex list-none flex-col p-0 [&>li]:animate-slide-right [&>li:nth-child(1)]:[animation-delay:160ms] [&>li:nth-child(2)]:[animation-delay:240ms] [&>li:nth-child(3)]:[animation-delay:320ms] [&>li:nth-child(n+4)]:[animation-delay:400ms] [&>li]:grid [&>li]:grid-cols-[auto_minmax(0,1fr)_auto] [&>li]:gap-12 [&>li]:border-b [&>li]:border-line [&>li]:py-14 [&>li:last-child]:border-b-0'
 export const FEED_GLYPH =
-  'grid size-30 place-items-center rounded-[9px] bg-tint-2 text-fg-dim transition-transform duration-[240ms] ease-spring group-hover:scale-110 group-hover:-rotate-4'
+  'grid size-30 place-items-center rounded-sm bg-tint-2 text-fg-dim transition-transform duration-[240ms] ease-spring group-hover:scale-110 group-hover:-rotate-4'
 export const FEED_GLYPH_TONE: Record<string, string> = {
   signup: 'text-green bg-[color-mix(in_srgb,var(--color-green)_14%,transparent)]',
   error: 'text-red bg-[color-mix(in_srgb,var(--color-red)_14%,transparent)]',
@@ -870,7 +876,7 @@ export const BROKER_TILE =
 export const BROKER_HEAD =
   'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-10'
 export const BROKER_LOGO =
-  'grid size-30 place-items-center rounded-[8px] text-[11px] font-bold text-white'
+  'grid size-30 place-items-center rounded-sm text-[11px] font-bold text-white'
 export const BROKER_NAME = 'text-[13px] font-medium'
 export const BROKER_PROTOCOL = 'text-[10.5px] text-fg-muted'
 export const BROKER_METRICS =
@@ -970,7 +976,7 @@ export const NOTIFY_LIST =
 export const NOTIFY_ITEM =
   'flex w-full shrink-0 gap-11 rounded-sm px-9 py-10 text-left transition-colors duration-150 hover:bg-tint-2'
 export const NOTIFY_GLYPH =
-  'mt-1 grid size-28 flex-none place-items-center rounded-[9px] bg-tint-2 text-fg-dim'
+  'mt-1 grid size-28 flex-none place-items-center rounded-sm bg-tint-2 text-fg-dim'
 export const NOTIFY_GLYPH_TONE: Record<string, string> = {
   fill: 'text-green bg-[color-mix(in_srgb,var(--color-green)_14%,transparent)]',
   risk: 'text-red bg-[color-mix(in_srgb,var(--color-red)_14%,transparent)]',
@@ -2009,7 +2015,7 @@ export const LAND_NAV =
   'relative z-10 flex animate-fade items-center gap-20 px-40 pt-28 max-shell:px-24 max-[620px]:px-18 max-[620px]:pt-20'
 export const LAND_BRAND = 'flex items-center gap-10 text-[17px] font-semibold tracking-[0.04em] text-white'
 export const LAND_BRAND_MARK =
-  'grid size-30 place-items-center rounded-[9px] bg-[linear-gradient(140deg,#a99dff,#3fd8ee)] text-[14px] font-bold text-[#0b0930]'
+  'grid size-30 place-items-center rounded-sm bg-[linear-gradient(140deg,#a99dff,#3fd8ee)] text-[14px] font-bold text-[#0b0930]'
 export const LAND_LINKS =
   'mx-auto flex items-center gap-32 text-[13px] text-white/65 max-shell:hidden [&>button]:transition-colors [&>button]:duration-150 [&>button:hover]:text-white'
 export const LAND_LOGIN =
@@ -2074,7 +2080,7 @@ export const LAND_GLASS =
   'bg-[linear-gradient(160deg,rgba(255,255,255,0.13),rgba(255,255,255,0.04))] bg-[rgba(20,16,56,0.55)]'
 export const LAND_GLASS_TOP = 'flex items-center gap-10'
 export const LAND_GLASS_ICON =
-  'grid size-28 flex-none place-items-center rounded-[9px] bg-white/10 text-white max-[520px]:size-24'
+  'grid size-28 flex-none place-items-center rounded-sm bg-white/10 text-white max-[520px]:size-24'
 export const LAND_GLASS_FIGURE = 'text-[14px] leading-tight font-semibold text-white tabular-nums max-[520px]:text-[12px]'
 /** The figure as a card's title line, on a row of its own. */
 export const LAND_GLASS_NAME = `${LAND_GLASS_FIGURE} block`
@@ -2088,7 +2094,7 @@ export const LAND_SPARK_LINE =
 export const LAND_SPARK_AREA = 'animate-fade [animation-delay:900ms]'
 
 export const LAND_TAG =
-  'flex w-max max-w-full items-center gap-8 rounded-[10px] border border-white/12 bg-white/[0.09] px-10 py-7 text-[10.5px] whitespace-nowrap text-white/85 max-[520px]:text-[9.5px] [&+&]:mt-7'
+  'flex w-max max-w-full items-center gap-8 rounded-sm border border-white/12 bg-white/[0.09] px-10 py-7 text-[10.5px] whitespace-nowrap text-white/85 max-[520px]:text-[9.5px] [&+&]:mt-7'
 export const LAND_TAG_SHIFT = 'ml-18'
 export const LAND_DOT = 'size-6 flex-none rounded-full'
 export const LAND_DOT_RED = 'bg-[#f2555a] shadow-[0_0_8px_#f2555a]'
@@ -2186,7 +2192,7 @@ export const LAND_PLAN_BLURRED = 'pointer-events-none flex flex-col gap-17 opaci
 export const LAND_PLAN_SKELETON_ROW = 'flex items-center gap-9'
 /** Stands in for the price: about the width of "$25/month", blurred the same way. */
 export const LAND_PLAN_PRICE_HIDDEN =
-  'h-34 w-128 rounded-[10px] bg-white/45 opacity-80 blur-[5px] select-none'
+  'h-34 w-128 rounded-sm bg-white/45 opacity-80 blur-[5px] select-none'
 export const LAND_PLAN_SKELETON_DOT = 'size-9 flex-none rounded-full bg-[rgba(169,157,255,0.7)]'
 export const LAND_PLAN_SKELETON_BAR = 'h-8 rounded-full bg-white/40'
 export const LAND_PLAN_LOCK_BADGE =
@@ -2225,3 +2231,64 @@ export const LAND_FOOT_END = 'ml-auto'
 export const SCROLL_REVEAL =
   'translate-y-18 opacity-0 transition-[opacity,translate] duration-[650ms] ease-out'
 export const SCROLL_REVEAL_SHOWN = 'translate-y-0 opacity-100'
+
+/* ------------------------------------------------------- palette picker */
+
+/*
+ * The chooser a new trader sees once, and the same grid reused inside
+ * Settings.
+ *
+ * The veil is translucent rather than opaque, and that is the whole idea: a
+ * palette applies the moment it is clicked, so the app has to stay visible
+ * behind the card for the choice to mean anything. An opaque scrim would
+ * make this a form about colours instead of a preview of them.
+ */
+export const PICK_VEIL =
+  'fixed inset-0 z-[95] grid place-items-center overflow-y-auto p-20 bg-[color-mix(in_srgb,var(--color-bg-deep)_72%,transparent)] backdrop-blur-[10px] animate-fade'
+
+export const PICK_CARD =
+  'flex w-[min(720px,100%)] flex-col gap-20 rounded-lg border border-line-strong bg-panel-solid p-24 shadow-[var(--shadow-pop)] animate-pop max-[560px]:p-18'
+
+export const PICK_KICKER =
+  'text-[11px] font-medium tracking-[0.14em] text-accent uppercase'
+export const PICK_TITLE =
+  'mt-6 text-[22px] font-semibold tracking-[-0.02em] text-fg-strong'
+export const PICK_BODY = 'mt-6 text-[13px] leading-[1.6] text-fg-dim'
+
+/* Three across, then two, then one. The tile has to stay wide enough for the
+   preview to read as a miniature screen rather than a colour chip. */
+export const PICK_GRID =
+  'grid grid-cols-3 gap-12 max-[640px]:grid-cols-2 max-[420px]:grid-cols-1'
+
+export const PICK_TILE =
+  'group relative flex flex-col gap-10 rounded-md border border-line bg-tint-1 p-10 text-left transition-[border-color,transform,background-color] duration-150 hover:-translate-y-2 hover:border-line-strong hover:bg-tint-2'
+export const PICK_TILE_ON =
+  'border-transparent bg-tint-2 ring-2 ring-accent ring-offset-2 ring-offset-panel-solid'
+
+/*
+ * The miniature. Painted from the palette's own hex values rather than from
+ * tokens — a tile has to show the palette it offers, not the one currently
+ * applied, and tokens would give every tile the same colours.
+ */
+/* `block` is load-bearing: this renders as a span (it lives inside a button,
+   where a div would be invalid), and height does nothing on an inline box. */
+export const PICK_PREVIEW =
+  'relative block h-58 overflow-hidden rounded-sm border border-line'
+export const PICK_PREVIEW_PANEL =
+  'absolute inset-x-8 bottom-8 h-26 rounded-[6px] border border-white/10'
+export const PICK_PREVIEW_LINE =
+  'absolute top-10 left-8 h-4 w-34 rounded-full'
+export const PICK_PREVIEW_DOT = 'absolute top-9 right-8 size-7 rounded-full'
+
+export const PICK_NAME = 'text-[13px] font-medium text-fg-strong'
+export const PICK_BLURB = 'mt-3 text-[11.5px] leading-[1.5] text-fg-muted'
+
+/** The tick on the chosen tile. Sits over the preview's top-right corner. */
+export const PICK_CHECK =
+  'absolute top-16 right-16 grid size-20 place-items-center rounded-full bg-accent text-accent-ink shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+
+export const PICK_FOOT =
+  'flex flex-wrap items-center justify-between gap-14 border-t border-line pt-18'
+export const PICK_FOOT_LABEL = 'text-[12px] text-fg-muted'
+export const PICK_DONE =
+  'inline-flex items-center gap-7 rounded-sm bg-accent px-20 py-10 text-[13px] font-medium text-accent-ink transition-[background-color,transform] duration-150 hover:bg-accent-strong active:scale-[0.97]'

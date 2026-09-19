@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { ChatDock } from './components/ChatDock'
 import { SplashScreen } from './components/SplashScreen'
 import { Tour } from './components/Tour'
+import { PalettePicker } from './components/PalettePicker'
 import { accountIsNew, markTourSeen, tourSeen } from './lib/tourState'
 import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
@@ -18,7 +19,14 @@ import {
   type Profile as ProfileRecord,
 } from './lib/profile'
 import { saveTrade, useTrades } from './lib/trades'
-import { useTheme } from './lib/useTheme'
+import {
+  markPaletteChosen,
+  paletteChosen,
+  useTheme,
+  type Origin,
+  type Palette,
+  type Theme,
+} from './lib/useTheme'
 import { useWarmup } from './lib/useWarmup'
 import { labelForRoute } from './navigation'
 import { Dashboard } from './pages/Dashboard'
@@ -99,6 +107,13 @@ type TraderViewProps = {
   /** Re-fetch the account record. Settings writes to it, and the journal and
    *  the trade form both read their setup list back out of it. */
   reloadProfile: () => void
+  /* Appearance lives on the Settings screen, so the two theme axes and their
+     setters have to reach it. They are not on the profile: both are per-device
+     (see useTheme.ts), so there is nothing to save and nothing to re-fetch. */
+  theme: Theme
+  palette: Palette
+  onPickPalette: (id: Palette, origin?: Origin) => void
+  onToggleTheme: (origin?: Origin) => void
 }
 
 function TraderView({
@@ -112,6 +127,10 @@ function TraderView({
   reload,
   onQuickAdd,
   reloadProfile,
+  theme,
+  palette,
+  onPickPalette,
+  onToggleTheme,
 }: TraderViewProps) {
   // A screen the plan does not include never mounts, so nothing on it fetches
   // in the moment before the redirect lands.
@@ -144,7 +163,16 @@ function TraderView({
     case 'templates':
       return <Templates />
     case 'settings':
-      return <Settings profile={profile} onSaved={reloadProfile} />
+      return (
+        <Settings
+          profile={profile}
+          onSaved={reloadProfile}
+          theme={theme}
+          palette={palette}
+          onPickPalette={onPickPalette}
+          onToggleTheme={onToggleTheme}
+        />
+      )
     default:
       return <Placeholder title={labelForRoute(route)} />
   }
@@ -152,7 +180,7 @@ function TraderView({
 
 function App() {
   const route = useHashRoute()
-  const { theme, toggle } = useTheme()
+  const { theme, palette, toggle, setPalette } = useTheme()
   const { user, confirmed, pending, refresh } = useAuth()
   const {
     profile,
@@ -164,6 +192,12 @@ function App() {
   const nav = useNavDrawer(route)
   const rail = useCollapsedNav()
   const [tourDone, setTourDone] = useState<string | null>(null)
+  /*
+   * Held in state as well as in storage, because the picker is what writes
+   * the storage key — reading it back alone could never close the dialog for
+   * a browser with site data blocked, and it would reopen on the next render.
+   */
+  const [pickedTheme, setPickedTheme] = useState(paletteChosen)
   // Escape hatch for browsing the UI without an account, or while the API is
   // unreachable.
   const [preview, setPreview] = useState(false)
@@ -183,12 +217,34 @@ function App() {
    * never appears for the preview session, which has no account to remember it
    * against.
    */
-  const showTour = useMemo(() => {
+  /**
+   * Whether this account is new enough to be onboarded at all. Both the
+   * palette picker and the tour hang off it.
+   */
+  const onboarding = useMemo(() => {
     if (!signedIn || !uid || preview) return false
+    return accountIsNew(isNewAccount, profile?.createdAt ?? null)
+  }, [signedIn, uid, preview, isNewAccount, profile?.createdAt])
+
+  /*
+   * The palette picker comes first. Asking someone to sit through a tour of
+   * a colour scheme they are about to change is the wrong order, and the tour
+   * spotlights real elements — running both at once would put two veils on
+   * the page.
+   */
+  const showPicker = onboarding && !pickedTheme
+
+  /*
+   * The tour runs once for a new account. Derived rather than held in an
+   * effect, so it simply stops being true the moment it is dismissed — and
+   * never appears for the preview session, which has no account to remember it
+   * against.
+   */
+  const showTour = useMemo(() => {
+    if (!onboarding || !uid || showPicker) return false
     if (tourDone === uid) return false
-    if (!accountIsNew(isNewAccount, profile?.createdAt ?? null)) return false
     return !tourSeen(uid)
-  }, [signedIn, uid, preview, tourDone, isNewAccount, profile?.createdAt])
+  }, [onboarding, uid, showPicker, tourDone])
 
   // Signing in always lands on the dashboard, and signing out always returns to
   // login. Matching on `route === 'login'` alone was not enough: a session that
@@ -304,10 +360,27 @@ function App() {
             reload={reload}
             reloadProfile={reloadProfile}
             onQuickAdd={() => setLogging(true)}
+            theme={theme}
+            palette={palette}
+            onPickPalette={setPalette}
+            onToggleTheme={toggle}
           />
           </Suspense>
         </main>
       </div>
+
+      {showPicker && (
+        <PalettePicker
+          palette={palette}
+          theme={theme}
+          onPick={setPalette}
+          onToggleTheme={toggle}
+          onDone={() => {
+            markPaletteChosen()
+            setPickedTheme(true)
+          }}
+        />
+      )}
 
       {showTour && uid && (
         <Tour

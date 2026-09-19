@@ -66,9 +66,19 @@
   --color-chart-fill-mid: rgba(35, 172, 134, 0.18);
   --color-chart-fill-bottom: rgba(35, 172, 134, 0.015);
 
-  --radius-sm: 6px;
-  --radius-md: 9px;
-  --radius-lg: 12px;
+  /*
+   * The shape scale. Softer than it was (6/9/12), which is most of what the
+   * redesign changed about the silhouette: sm is chips, inputs and buttons,
+   * md is every card, lg is anything floating over the page.
+   *
+   * These are tokens, so a component that reaches for rounded-md follows the
+   * scale. A component that hardcodes rounded-[9px] does not — that is why
+   * the arbitrary values that used to sit alongside these were folded back
+   * into the scale rather than left to drift.
+   */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
 
   --font-sans: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
@@ -453,47 +463,272 @@
   --shadow-lift: 0 16px 38px rgba(0, 0, 0, 0.36);
 }
 
-/* Light theme. Only the tokens change; no utility anywhere knows about it. */
+/*
+ * ======================================================================
+ *  Palettes
+ * ======================================================================
+ *
+ * Two independent axes. `data-theme` is light or dark; `data-palette` is
+ * which set of hues that mode is built from. Every combination is a plain
+ * token swap, so no component anywhere knows a palette exists — the same
+ * mechanism that already made the light theme free.
+ *
+ * ORDER IN THIS FILE IS LOAD-BEARING. `:root[data-palette='x']` and
+ * `:root[data-theme='light']` have identical specificity (0,2,0), so a tie
+ * is settled by whichever is written last. The sequence must therefore be:
+ *
+ *   1. @theme + :root          midnight, dark      (the base, above)
+ *   2. :root[data-palette]     other palettes, dark
+ *   3. :root[data-theme=light] shared light neutrals + midnight light
+ *   4. :root[pal][theme=light] other palettes, light   (0,3,0 — always wins)
+ *
+ * Put a palette's dark block after the light block and every light theme
+ * silently renders that palette's dark surfaces.
+ *
+ * Each palette overrides only the tokens that carry hue. The neutral ramp —
+ * tints, lines, grid — is shared within a mode, because what separates one
+ * layer from the next is a white or black veil, not a colour.
+ */
+
+/* --------------------------------------------------- midnight (default) */
+
+/* Declared for completeness: its values are the base above, so this block
+   only has to exist so that `data-palette="midnight"` is a real selector
+   rather than a name that happens to match nothing. */
+:root[data-palette='midnight'] {
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------- violet */
+
+/* Warm graphite rather than blue-black, so the violet reads as the only
+   colour on the page and green/red stay reserved for money. */
+:root[data-palette='violet'] {
+  --color-bg-deep: #0c0b12;
+  --color-bg-top: #16141f;
+  --color-glow-a: rgba(124, 108, 246, 0.2);
+  --color-glow-b: rgba(196, 108, 246, 0.09);
+  --color-panel: rgba(24, 22, 33, 0.84);
+  --color-panel-solid: #191725;
+  --color-panel-inset: rgba(13, 12, 19, 0.76);
+  --color-sidebar-top: #1d1a2b;
+  --color-sidebar-mid: #161421;
+  --color-sidebar-bottom: #110f1a;
+
+  --color-fg: #e4e1ed;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #aea9c4;
+  --color-fg-muted: #7d7896;
+
+  --color-accent: #7c6cf6;
+  --color-accent-strong: #9486ff;
+  --color-accent-ink: #0b0818;
+  --color-green: #35c98a;
+  --color-red: #f2626b;
+  --color-amber: #e5b96c;
+  --color-cyan: #63b3f0;
+
+  --color-chart-line: #8b7bff;
+  --color-chart-glow: rgba(139, 123, 255, 0.38);
+  --color-chart-fill-top: rgba(139, 123, 255, 0.4);
+  --color-chart-fill-mid: rgba(124, 108, 246, 0.17);
+  --color-chart-fill-bottom: rgba(124, 108, 246, 0.015);
+}
+
+/* -------------------------------------------------------------- azure */
+
+:root[data-palette='azure'] {
+  --color-bg-deep: #060b14;
+  --color-bg-top: #0e1727;
+  --color-glow-a: rgba(59, 157, 255, 0.2);
+  --color-glow-b: rgba(69, 204, 226, 0.09);
+  --color-panel: rgba(16, 25, 40, 0.84);
+  --color-panel-solid: #101a2a;
+  --color-panel-inset: rgba(7, 13, 22, 0.76);
+  --color-sidebar-top: #142034;
+  --color-sidebar-mid: #0f1a2b;
+  --color-sidebar-bottom: #0b1422;
+
+  --color-fg: #dae4f2;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #a3b4ca;
+  --color-fg-muted: #6f8199;
+
+  --color-accent: #3b9dff;
+  --color-accent-strong: #63b3ff;
+  --color-accent-ink: #04131f;
+  --color-green: #2ec98f;
+  --color-red: #ef5f6b;
+  --color-amber: #e5b96c;
+  --color-cyan: #45cce2;
+
+  --color-chart-line: #4fa8ff;
+  --color-chart-glow: rgba(79, 168, 255, 0.38);
+  --color-chart-fill-top: rgba(79, 168, 255, 0.4);
+  --color-chart-fill-mid: rgba(59, 157, 255, 0.17);
+  --color-chart-fill-bottom: rgba(59, 157, 255, 0.015);
+}
+
+/* -------------------------------------------------------------- ember */
+
+/* True near-black with almost no tint. The amber is the only warm thing on
+   screen, which is what makes this one read as a terminal rather than a
+   dark website. */
+:root[data-palette='ember'] {
+  --color-bg-deep: #0a0a0a;
+  --color-bg-top: #131313;
+  --color-glow-a: rgba(245, 165, 36, 0.16);
+  --color-glow-b: rgba(245, 110, 36, 0.07);
+  --color-panel: rgba(20, 20, 20, 0.84);
+  --color-panel-solid: #161616;
+  --color-panel-inset: rgba(8, 8, 8, 0.76);
+  --color-sidebar-top: #1a1a1a;
+  --color-sidebar-mid: #141414;
+  --color-sidebar-bottom: #0e0e0e;
+
+  --color-fg: #e7e5e2;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #aeaba6;
+  --color-fg-muted: #7c7974;
+
+  --color-accent: #f5a524;
+  --color-accent-strong: #ffb84d;
+  --color-accent-ink: #1a1200;
+  --color-green: #31c48d;
+  --color-red: #f26d6d;
+  --color-amber: #f0b350;
+  --color-cyan: #4fc3d9;
+
+  --color-chart-line: #f5a524;
+  --color-chart-glow: rgba(245, 165, 36, 0.36);
+  --color-chart-fill-top: rgba(245, 165, 36, 0.36);
+  --color-chart-fill-mid: rgba(245, 165, 36, 0.15);
+  --color-chart-fill-bottom: rgba(245, 165, 36, 0.015);
+}
+
+/* ----------------------------------------------------------- graphite */
+
+/* No hue at all. The accent is near-white, which means the only colour
+   anywhere on the screen is the P&L — the most legible this app gets for
+   reading numbers, and the reason it is worth shipping. */
+:root[data-palette='graphite'] {
+  --color-bg-deep: #0b0b0c;
+  --color-bg-top: #141416;
+  --color-glow-a: rgba(255, 255, 255, 0.055);
+  --color-glow-b: rgba(255, 255, 255, 0.025);
+  --color-panel: rgba(22, 22, 24, 0.84);
+  --color-panel-solid: #171719;
+  --color-panel-inset: rgba(9, 9, 10, 0.76);
+  --color-sidebar-top: #1b1b1e;
+  --color-sidebar-mid: #151517;
+  --color-sidebar-bottom: #0f0f11;
+
+  --color-fg: #e4e4e7;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #a1a1aa;
+  --color-fg-muted: #71717a;
+
+  --color-accent: #e6e6e8;
+  --color-accent-strong: #ffffff;
+  --color-accent-ink: #0b0b0c;
+  --color-green: #34d399;
+  --color-red: #f87171;
+  --color-amber: #e5b96c;
+  --color-cyan: #67e8f9;
+
+  --color-chart-line: #d4d4d8;
+  --color-chart-glow: rgba(212, 212, 216, 0.3);
+  --color-chart-fill-top: rgba(212, 212, 216, 0.28);
+  --color-chart-fill-mid: rgba(212, 212, 216, 0.11);
+  --color-chart-fill-bottom: rgba(212, 212, 216, 0.012);
+}
+
+/* --------------------------------------------------------------- rose */
+
+/* The one palette where the accent sits near the loss colour, so the red is
+   pushed orange and the green pushed cool to keep all three apart. */
+:root[data-palette='rose'] {
+  --color-bg-deep: #110a10;
+  --color-bg-top: #1c121b;
+  --color-glow-a: rgba(244, 114, 182, 0.18);
+  --color-glow-b: rgba(168, 85, 247, 0.09);
+  --color-panel: rgba(29, 19, 28, 0.84);
+  --color-panel-solid: #1f1420;
+  --color-panel-inset: rgba(16, 10, 16, 0.76);
+  --color-sidebar-top: #241729;
+  --color-sidebar-mid: #1b1120;
+  --color-sidebar-bottom: #150d17;
+
+  --color-fg: #eddfe8;
+  --color-fg-strong: #ffffff;
+  --color-fg-dim: #bda7b8;
+  --color-fg-muted: #8b7588;
+
+  --color-accent: #f472b6;
+  --color-accent-strong: #f9a8d4;
+  --color-accent-ink: #2a0718;
+  --color-green: #34d399;
+  --color-red: #ff6f52;
+  --color-amber: #e5b96c;
+  --color-cyan: #67e8f9;
+
+  --color-chart-line: #f472b6;
+  --color-chart-glow: rgba(244, 114, 182, 0.36);
+  --color-chart-fill-top: rgba(244, 114, 182, 0.36);
+  --color-chart-fill-mid: rgba(244, 114, 182, 0.15);
+  --color-chart-fill-bottom: rgba(244, 114, 182, 0.015);
+}
+
+/*
+ * Light theme. Only the tokens change; no utility anywhere knows about it.
+ *
+ * This block carries two things: the neutral ramp every light palette
+ * shares, and midnight's own light hues. A palette block below overrides
+ * the second group and inherits the first.
+ */
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --color-bg-deep: #eceaf6;
-  --color-bg-top: #f6f5fc;
-  --color-glow-a: rgba(150, 130, 245, 0.3);
-  --color-glow-b: rgba(120, 110, 220, 0.16);
+  /* Midnight's light hues. Overridden per palette below. */
+  --color-bg-deep: #e9eef1;
+  --color-bg-top: #f5f8f9;
+  --color-glow-a: rgba(32, 110, 140, 0.2);
+  --color-glow-b: rgba(28, 176, 139, 0.13);
   --color-panel: rgba(255, 255, 255, 0.86);
   --color-panel-solid: #ffffff;
-  --color-panel-inset: rgba(240, 238, 250, 0.85);
+  --color-panel-inset: rgba(234, 240, 243, 0.85);
   --color-sidebar-top: #ffffff;
-  --color-sidebar-mid: #f3f1fb;
-  --color-sidebar-bottom: #e8e5f7;
+  --color-sidebar-mid: #f1f6f7;
+  --color-sidebar-bottom: #e6eef1;
 
-  --color-tint-1: rgba(31, 24, 78, 0.04);
-  --color-tint-2: rgba(31, 24, 78, 0.07);
-  --color-tint-3: rgba(31, 24, 78, 0.11);
+  /* The shared neutral ramp. A veil of near-black at three strengths — what
+     separates one light surface from the next, in every palette. */
+  --color-tint-1: rgba(17, 24, 33, 0.04);
+  --color-tint-2: rgba(17, 24, 33, 0.07);
+  --color-tint-3: rgba(17, 24, 33, 0.11);
 
-  --color-line: rgba(31, 24, 78, 0.1);
-  --color-line-strong: rgba(31, 24, 78, 0.2);
-  --color-grid: rgba(31, 24, 78, 0.13);
+  --color-line: rgba(17, 24, 33, 0.1);
+  --color-line-strong: rgba(17, 24, 33, 0.2);
+  --color-grid: rgba(17, 24, 33, 0.13);
 
-  --color-fg: #1b1739;
-  --color-fg-strong: #0e0b26;
-  --color-fg-dim: #4f4a72;
-  --color-fg-muted: #74708f;
+  --color-fg: #17212b;
+  --color-fg-strong: #0a1118;
+  --color-fg-dim: #4a5763;
+  --color-fg-muted: #6e7c88;
 
-  --color-accent: #6353e8;
-  --color-accent-strong: #5443dd;
+  --color-accent: #0e9b74;
+  --color-accent-strong: #0a7f5e;
   --color-accent-ink: #ffffff;
   --color-green: #17914f;
   --color-red: #d02c37;
   --color-amber: #b7791f;
   --color-cyan: #0d8ba4;
 
-  --color-chart-line: #4b3ecb;
-  --color-chart-glow: rgba(99, 83, 232, 0.22);
-  --color-chart-fill-top: rgba(124, 108, 246, 0.42);
-  --color-chart-fill-mid: rgba(124, 108, 246, 0.18);
-  --color-chart-fill-bottom: rgba(124, 108, 246, 0.02);
+  --color-chart-line: #0e9b74;
+  --color-chart-glow: rgba(14, 155, 116, 0.22);
+  --color-chart-fill-top: rgba(20, 180, 135, 0.4);
+  --color-chart-fill-mid: rgba(20, 180, 135, 0.16);
+  --color-chart-fill-bottom: rgba(20, 180, 135, 0.02);
 
   /*
    * Light mode sits flat. A 34px drop on a pale ground reads as a card
@@ -508,6 +743,147 @@
      tooltips — where the lift is the point. */
   --shadow-pop: 0 6px 16px rgba(38, 30, 96, 0.12);
   --shadow-lift: 0 2px 6px rgba(38, 30, 96, 0.09);
+}
+
+/*
+ * The light half of each palette. Specificity (0,3,0), so these beat both
+ * the shared light block and the palette's own dark block regardless of
+ * where any of them sit in the file.
+ *
+ * Accents are darker here than their dark-mode counterparts, and that is not
+ * a stylistic preference: the same hue that clears contrast against #0a0a0a
+ * fails badly against white. Every accent below is picked to hold up as text
+ * and as a button fill on a pale ground.
+ */
+
+:root[data-palette='midnight'][data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-palette='violet'][data-theme='light'] {
+  --color-bg-deep: #eeecf6;
+  --color-bg-top: #f8f7fc;
+  --color-glow-a: rgba(150, 130, 245, 0.28);
+  --color-glow-b: rgba(120, 110, 220, 0.15);
+  --color-panel-inset: rgba(240, 238, 250, 0.85);
+  --color-sidebar-mid: #f4f2fb;
+  --color-sidebar-bottom: #e9e6f7;
+
+  --color-fg: #1b1739;
+  --color-fg-strong: #0e0b26;
+  --color-fg-dim: #4f4a72;
+  --color-fg-muted: #74708f;
+
+  --color-accent: #6353e8;
+  --color-accent-strong: #5443dd;
+  --color-cyan: #2563eb;
+
+  --color-chart-line: #6353e8;
+  --color-chart-glow: rgba(99, 83, 232, 0.22);
+  --color-chart-fill-top: rgba(124, 108, 246, 0.42);
+  --color-chart-fill-mid: rgba(124, 108, 246, 0.18);
+  --color-chart-fill-bottom: rgba(124, 108, 246, 0.02);
+}
+
+:root[data-palette='azure'][data-theme='light'] {
+  --color-bg-deep: #e8eef7;
+  --color-bg-top: #f5f8fd;
+  --color-glow-a: rgba(22, 104, 214, 0.22);
+  --color-glow-b: rgba(13, 139, 164, 0.13);
+  --color-panel-inset: rgba(236, 242, 250, 0.85);
+  --color-sidebar-mid: #f2f6fc;
+  --color-sidebar-bottom: #e6edf8;
+
+  --color-fg: #101c2b;
+  --color-fg-strong: #060f1b;
+  --color-fg-dim: #47566a;
+  --color-fg-muted: #6b7c90;
+
+  --color-accent: #1668d6;
+  --color-accent-strong: #0f57ba;
+
+  --color-chart-line: #1668d6;
+  --color-chart-glow: rgba(22, 104, 214, 0.22);
+  --color-chart-fill-top: rgba(45, 128, 235, 0.4);
+  --color-chart-fill-mid: rgba(45, 128, 235, 0.17);
+  --color-chart-fill-bottom: rgba(45, 128, 235, 0.02);
+}
+
+:root[data-palette='ember'][data-theme='light'] {
+  --color-bg-deep: #f1ece3;
+  --color-bg-top: #faf7f2;
+  --color-glow-a: rgba(163, 92, 0, 0.16);
+  --color-glow-b: rgba(200, 140, 40, 0.11);
+  --color-panel-inset: rgba(246, 241, 233, 0.85);
+  --color-sidebar-mid: #f8f4ed;
+  --color-sidebar-bottom: #efe9de;
+
+  --color-fg: #241f18;
+  --color-fg-strong: #13100b;
+  --color-fg-dim: #5a5348;
+  --color-fg-muted: #807869;
+
+  /* Amber cannot be a button fill on white — #f5a524 on white is barely 2:1.
+     The light half drops to a bronze that clears AA and still reads amber. */
+  --color-accent: #a35c00;
+  --color-accent-strong: #8a4d00;
+  --color-amber: #a35c00;
+
+  --color-chart-line: #b06a05;
+  --color-chart-glow: rgba(176, 106, 5, 0.22);
+  --color-chart-fill-top: rgba(214, 140, 30, 0.4);
+  --color-chart-fill-mid: rgba(214, 140, 30, 0.17);
+  --color-chart-fill-bottom: rgba(214, 140, 30, 0.02);
+}
+
+:root[data-palette='graphite'][data-theme='light'] {
+  --color-bg-deep: #ececed;
+  --color-bg-top: #f7f7f8;
+  --color-glow-a: rgba(24, 24, 27, 0.06);
+  --color-glow-b: rgba(24, 24, 27, 0.035);
+  --color-panel-inset: rgba(240, 240, 242, 0.85);
+  --color-sidebar-mid: #f4f4f5;
+  --color-sidebar-bottom: #e9e9eb;
+
+  --color-fg: #1c1c1f;
+  --color-fg-strong: #09090b;
+  --color-fg-dim: #52525b;
+  --color-fg-muted: #71717a;
+
+  --color-accent: #1f1f22;
+  --color-accent-strong: #09090b;
+
+  --color-chart-line: #3f3f46;
+  --color-chart-glow: rgba(63, 63, 70, 0.2);
+  --color-chart-fill-top: rgba(63, 63, 70, 0.3);
+  --color-chart-fill-mid: rgba(63, 63, 70, 0.12);
+  --color-chart-fill-bottom: rgba(63, 63, 70, 0.015);
+}
+
+:root[data-palette='rose'][data-theme='light'] {
+  --color-bg-deep: #f6e9f0;
+  --color-bg-top: #fdf5f8;
+  --color-glow-a: rgba(219, 39, 119, 0.18);
+  --color-glow-b: rgba(147, 51, 234, 0.11);
+  --color-panel-inset: rgba(250, 238, 244, 0.85);
+  --color-sidebar-mid: #fbf2f6;
+  --color-sidebar-bottom: #f4e5ed;
+
+  --color-fg: #2a1723;
+  --color-fg-strong: #1a0d15;
+  --color-fg-dim: #634c5a;
+  --color-fg-muted: #8a7280;
+
+  --color-accent: #be185d;
+  --color-accent-strong: #9d174d;
+  /* Held apart from the accent, as in the dark half. */
+  --color-red: #c2410c;
+
+  --color-chart-line: #be185d;
+  --color-chart-glow: rgba(190, 24, 93, 0.22);
+  --color-chart-fill-top: rgba(219, 39, 119, 0.38);
+  --color-chart-fill-mid: rgba(219, 39, 119, 0.16);
+  --color-chart-fill-bottom: rgba(219, 39, 119, 0.02);
 }
 
 /* Reaches elements that only exist in a light theme, for the handful of cases
