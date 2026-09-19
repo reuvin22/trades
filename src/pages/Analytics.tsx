@@ -8,7 +8,7 @@ import {
   SetupsSection,
   TimeSection,
 } from '../components/AnalyticsSections'
-import { TradeLog } from '../components/TradeLog'
+import { TradeLog, type LogVariant } from '../components/TradeLog'
 import { AnalyticsBoard } from '../components/AnalyticsBoard'
 import { PAGE_HEAD, PAGE_SUB, PAGE_TITLE, ROW_STAGGER, TAB, TAB_ON, TABS } from '../components/ui'
 import { deriveStats, startingCapital } from '../lib/stats'
@@ -44,6 +44,15 @@ const SECTIONS = [
 ] as const
 
 type SectionKey = (typeof SECTIONS)[number]['key']
+
+/** Which trade log belongs under which tab. Absent means no log at all. */
+const LOGS: Partial<Record<SectionKey, LogVariant>> = {
+  markets: 'markets',
+  risk: 'risk',
+  time: 'time',
+  behaviour: 'behaviour',
+  execution: 'execution',
+}
 
 export function Analytics({ trades, profile }: AnalyticsProps) {
   const [open, setOpen] = useState<SectionKey>('overview')
@@ -89,7 +98,13 @@ export function Analytics({ trades, profile }: AnalyticsProps) {
         <Section trades={trades} stats={stats} capital={capital} money={money} />
       </div>
 
-      {open !== 'overview' && <TradeLog trades={trades} />}
+      {/*
+        Overview has the board, and Setups has a table that already breaks
+        results down by setup — a log of individual trades under either one
+        repeats what is directly above it. The rest each get a log ranked by
+        that tab's own question; see TradeLog for what each variant shows.
+      */}
+      {LOGS[open] && <TradeLog trades={trades} variant={LOGS[open]} capital={capital} />}
     </div>
   )
 }

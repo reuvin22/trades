@@ -124,6 +124,18 @@ const SESSION_NAMES: Record<string, string> = {
   newyork: 'New York',
 }
 
+/**
+ * The sessions one trade ran in, as a readable string.
+ *
+ * `bySession` groups many trades and only ever needs the name of a bucket;
+ * this is for the places that show a single trade's own sessions, where a
+ * trade spanning two of them has to name both rather than pick one.
+ */
+export function sessionLabels(trade: StoredTrade): string {
+  if (trade.sessions.length === 0) return '—'
+  return trade.sessions.map((entry) => SESSION_NAMES[entry] ?? entry).join(', ')
+}
+
 export function bySession(trades: StoredTrade[]): Slice[] {
   return groupBy(trades, (trade) =>
     trade.sessions.length === 0
