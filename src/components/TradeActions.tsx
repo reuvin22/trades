@@ -231,7 +231,10 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
             {/* The fallback holds the chart's exact height, so the dialog does
                 not resize under the pointer when the library lands. */}
             <Suspense fallback={<div className={TV_PENDING} />}>
-              {shown && <TradeChart trade={trade} />}
+              {/* Keyed by id so opening a different record mounts a fresh
+                  chart rather than leaving the previous trade's candles up
+                  while the new ones are still in flight. */}
+              {shown && <TradeChart key={trade.id} trade={trade} />}
             </Suspense>
           </div>
         </div>

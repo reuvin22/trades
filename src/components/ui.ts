@@ -2398,3 +2398,7 @@ export const TV_EMPTY =
  *  nothing below it moves when the real one arrives. */
 export const TV_PENDING =
   'h-[clamp(240px,42vh,380px)] animate-pulse rounded-sm border border-line bg-panel-inset max-[900px]:h-[clamp(220px,38vh,300px)]'
+
+/** Says why the chart is showing a position and no candles. Stated plainly,
+ *  because an unconfigured provider is a decision rather than a fault. */
+export const TV_NOTE = 'text-[11px] leading-[1.5] text-fg-muted'
