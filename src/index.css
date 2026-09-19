@@ -439,7 +439,11 @@
   }
 
   /* The width at which the sidebar stops being permanent and becomes a
-     drawer. Used as max-shell: throughout the shell. */
+     drawer. Used as max-shell: throughout the shell.
+
+     Mirrored as SHELL_BREAKPOINT in components/layout.ts, because Tailwind
+     inlines breakpoint tokens into media queries instead of emitting them as
+     custom properties, so script cannot read this one back. Change both. */
   --breakpoint-shell: 961px;
 }
 

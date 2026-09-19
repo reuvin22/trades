@@ -33,7 +33,7 @@ const ALL_STEPS: TourStep[] = [
     route: 'dashboard',
     target: 'nav',
     title: 'Getting around',
-    body: 'Six screens, and this is how you reach them. On a narrow screen they live behind the menu button in the top bar.',
+    body: 'Every screen lives behind one of these icons. Click a category and the sidebar widens to show what it holds. On a narrow screen it all sits behind the menu button in the top bar.',
   },
   {
     id: 'quick-add',

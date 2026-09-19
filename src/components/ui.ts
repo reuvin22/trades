@@ -2292,3 +2292,48 @@ export const PICK_FOOT =
 export const PICK_FOOT_LABEL = 'text-[12px] text-fg-muted'
 export const PICK_DONE =
   'inline-flex items-center gap-7 rounded-sm bg-accent px-20 py-10 text-[13px] font-medium text-accent-ink transition-[background-color,transform] duration-150 hover:bg-accent-strong active:scale-[0.97]'
+
+/* --------------------------------------------------------- sidebar groups */
+
+/*
+ * A category and the children it discloses.
+ *
+ * The sidebar opens as a rail of icons, so a category has two jobs: name
+ * itself when there is room, and expand the rail when there is not. The
+ * disclosure is click-only — deliberately not hover — because a sub-menu that
+ * springs open while the pointer is crossing the rail on its way somewhere
+ * else is the thing that makes icon rails unpleasant to use.
+ */
+
+/** The caret on a category. Rotates rather than swapping glyph. */
+export const NAV_CARET =
+  'ml-auto flex-none opacity-60 transition-transform duration-200 ease-out'
+export const NAV_CARET_OPEN = 'rotate-90'
+
+/*
+ * The open/shut animation, done with grid rows rather than max-height.
+ *
+ * A group has no fixed height, so a max-height would have to be a guess:
+ * too small clips the last child, too large leaves the transition hanging
+ * after the list has already finished moving. `grid-rows-[0fr]` to `[1fr]`
+ * animates to the content's real height, whatever it turns out to be.
+ */
+export const NAV_SUB = 'grid transition-[grid-template-rows,opacity] duration-200 ease-out'
+export const NAV_SUB_OPEN = 'grid-rows-[1fr] opacity-100'
+export const NAV_SUB_SHUT = 'grid-rows-[0fr] opacity-0'
+/** The row that actually clips. Children cannot overflow it while shut. */
+export const NAV_SUB_INNER = 'overflow-hidden'
+
+/*
+ * A child link. Indented to start where the parent's *label* starts, not
+ * where its icon does, so the two levels read as a hierarchy rather than as
+ * two lists. The pseudo-element is a segment of rule: stacked, they draw one
+ * continuous line down the group, and the active child lights its own segment.
+ */
+export const NAV_SUB_ITEM =
+  'relative flex w-full items-center py-9 pr-32 pl-64 text-left text-[14.5px] ' +
+  'transition-[color,background-color] duration-150 ' +
+  "before:absolute before:inset-y-0 before:left-43 before:w-1 before:content-['']"
+export const NAV_SUB_IDLE =
+  'font-normal text-fg-muted before:bg-line hover:bg-tint-1 hover:text-fg'
+export const NAV_SUB_ACTIVE = 'font-medium text-fg-strong bg-tint-1 before:bg-accent'

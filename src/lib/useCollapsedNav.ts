@@ -13,13 +13,21 @@ import { useCallback, useEffect, useState } from 'react'
  */
 const KEY = 'ragdex:nav-collapsed'
 
+/*
+ * The rail is the default, not the exception.
+ *
+ * The sidebar opens as icons and widens when a category is clicked, so the
+ * narrow state is the resting one and the wide state is what you ask for.
+ * Note the test is against 'false' rather than 'true': an absent preference
+ * has to mean collapsed, and the old check returned false for it.
+ */
 function read(): boolean {
   try {
-    return localStorage.getItem(KEY) === 'true'
+    return localStorage.getItem(KEY) !== 'false'
   } catch {
     // Private windows and blocked site data both throw on access rather than
     // returning null. An unreadable preference is simply the default one.
-    return false
+    return true
   }
 }
 

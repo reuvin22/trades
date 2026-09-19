@@ -8,6 +8,22 @@ import { CONTENT_STAGGER } from './ui'
  * content column are defined once here instead of being kept in step by hand.
  */
 
+/**
+ * The width at which the sidebar stops being a drawer and becomes a column.
+ *
+ * **Must match `--breakpoint-shell` in index.css.** Tailwind inlines
+ * breakpoint tokens straight into media queries rather than emitting them as
+ * custom properties, so unlike every other token in this project there is no
+ * way to read this one back at runtime. This is the only place the number is
+ * written for script; that token is the only place it is written for styles.
+ * Change one and you must change the other.
+ *
+ * Script needs it because the rail only exists above this width: clicking a
+ * category widens the sidebar, and doing that from a phone would rewrite a
+ * preference belonging to a screen the person is not currently using.
+ */
+export const SHELL_BREAKPOINT = 961
+
 const SHELL_WASH =
   'bg-[radial-gradient(1100px_700px_at_78%_-12%,var(--color-glow-a),transparent_62%),radial-gradient(900px_620px_at_108%_42%,var(--color-glow-b),transparent_60%),linear-gradient(180deg,var(--color-bg-top)_0%,var(--color-bg-deep)_100%)]'
 

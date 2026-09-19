@@ -1,8 +1,26 @@
-import { TRADER_NAV, type IconComponent } from '../navigation'
+import { useState } from 'react'
+import {
+  groupOfRoute,
+  isGroup,
+  TRADER_NAV,
+  type IconComponent,
+  type NavGroup,
+} from '../navigation'
 import { navigate } from '../lib/useHashRoute'
-import { CollapseIcon, CloseIcon, PlusIcon } from './Icons'
-import { sidebarClass } from './layout'
-import { NAV_DISABLED } from './ui'
+import { ChevronRightIcon, CollapseIcon, CloseIcon, PlusIcon } from './Icons'
+import { SHELL_BREAKPOINT, sidebarClass } from './layout'
+import {
+  NAV_CARET,
+  NAV_CARET_OPEN,
+  NAV_DISABLED,
+  NAV_SUB,
+  NAV_SUB_ACTIVE,
+  NAV_SUB_IDLE,
+  NAV_SUB_INNER,
+  NAV_SUB_ITEM,
+  NAV_SUB_OPEN,
+  NAV_SUB_SHUT,
+} from './ui'
 
 type SidebarProps = {
   route: string
@@ -56,6 +74,112 @@ export function DrawerClose({ onClose }: { onClose: () => void }) {
   )
 }
 
+/**
+ * The shared shape of a top-level row, whether it navigates or discloses.
+ *
+ * Extracted so a category and a link are the same object to the eye: they sit
+ * in one list, and a category that styled itself even slightly differently
+ * would read as a different kind of control rather than as a peer.
+ *
+ * `within` is the third state, for a category holding the page you are on. It
+ * brightens the label but deliberately skips the gradient and the edge bar —
+ * those belong to the child that is actually open, and painting both made the
+ * sidebar look like two pages were active at once.
+ */
+function navButtonClass({
+  collapsed,
+  disabled = false,
+  active = false,
+  within = false,
+}: {
+  collapsed: boolean
+  disabled?: boolean
+  active?: boolean
+  within?: boolean
+}): string {
+  return (
+    'relative flex items-center gap-14 py-13 text-left text-[16px] transition-[color,background-color] duration-150 ' +
+    (collapsed
+      ? 'shell:mx-auto shell:size-44 shell:justify-center shell:gap-0 shell:rounded-[12px] shell:p-0 px-32 '
+      : 'px-32 ') +
+    'animate-slide-left ' +
+    // Nudges its label on hover, but only where there is somewhere to go.
+    (disabled
+      ? `${NAV_DISABLED} font-normal text-fg-dim `
+      : '[&>span]:transition-transform [&>span]:duration-[180ms] hover:[&>span]:translate-x-3 [&_svg]:transition-transform [&_svg]:duration-[220ms] [&_svg]:ease-spring hover:[&_svg]:scale-[1.12] ') +
+    (disabled
+      ? ''
+      : active
+      ? 'font-medium text-fg-strong bg-[linear-gradient(90deg,color-mix(in_srgb,var(--color-accent)_18%,transparent),color-mix(in_srgb,var(--color-accent)_5%,transparent))] ' +
+        // On the rail: kill the gradient (a background-image) and paint a
+        // solid tile (a background-colour) instead, so the two never fight
+        // over the same property. The edge bar goes with it.
+        (collapsed
+          ? 'shell:bg-none shell:bg-[color-mix(in_srgb,var(--color-accent)_24%,transparent)] shell:after:hidden shell:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-accent)_40%,transparent)] '
+          : '') +
+        // The active rail, bled to the panel edge.
+        "after:absolute after:inset-y-0 after:right-0 after:w-2 after:content-[''] " +
+        'after:bg-[linear-gradient(180deg,var(--color-accent-strong),var(--color-accent))] ' +
+        'after:shadow-[0_0_14px_color-mix(in_srgb,var(--color-accent)_85%,transparent)] max-shell:after:hidden'
+      : within
+      ? 'font-medium text-fg-strong hover:bg-tint-1'
+      : 'font-normal text-fg-dim hover:bg-tint-1 hover:text-fg')
+  )
+}
+
+/**
+ * A category: expands the rail if it is narrow, then discloses its children.
+ *
+ * Click only. The brief says it explicitly and it is the right call — a rail
+ * that opens sub-menus under the pointer fires them at someone whose mouse is
+ * only travelling across it, and on a touch screen there is no hover to speak
+ * of anyway.
+ */
+function NavCategory({
+  group,
+  open,
+  within,
+  collapsed,
+  onToggle,
+}: {
+  group: NavGroup
+  open: boolean
+  within: boolean
+  collapsed: boolean
+  onToggle: () => void
+}) {
+  const Icon = group.icon
+
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={`nav-group-${group.id}`}
+      title={collapsed ? group.label : undefined}
+      onClick={onToggle}
+      className={navButtonClass({ collapsed, within })}
+    >
+      <Icon size={20} className={`flex-none ${within ? 'opacity-100' : 'opacity-85'}`} />
+      <span
+        className={
+          'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ' +
+          (collapsed ? 'shell:max-w-0 shell:opacity-0 max-w-200' : 'max-w-200')
+        }
+      >
+        {group.label}
+      </span>
+      {/* The caret is meaningless on the rail, where there is no room for the
+          list it would be pointing at. */}
+      <ChevronRightIcon
+        size={14}
+        className={`${NAV_CARET} ${open ? NAV_CARET_OPEN : ''} ${
+          collapsed ? 'shell:hidden' : ''
+        }`}
+      />
+    </button>
+  )
+}
+
 export function NavButton({
   target,
   label,
@@ -94,32 +218,7 @@ export function NavButton({
         navigate(target)
         onNavigate()
       }}
-      className={
-        'relative flex items-center gap-14 py-13 text-left text-[16px] transition-[color,background-color] duration-150 ' +
-        (collapsed
-          ? 'shell:mx-auto shell:size-44 shell:justify-center shell:gap-0 shell:rounded-[12px] shell:p-0 px-32 '
-          : 'px-32 ') +
-        'animate-slide-left ' +
-        // Nudges its label on hover, but only where there is somewhere to go.
-        (disabled
-          ? `${NAV_DISABLED} font-normal text-fg-dim `
-          : '[&>span]:transition-transform [&>span]:duration-[180ms] hover:[&>span]:translate-x-3 [&_svg]:transition-transform [&_svg]:duration-[220ms] [&_svg]:ease-spring hover:[&_svg]:scale-[1.12] ') +
-        (disabled
-          ? ''
-          : active
-          ? 'font-medium text-fg-strong bg-[linear-gradient(90deg,color-mix(in_srgb,var(--color-accent)_18%,transparent),color-mix(in_srgb,var(--color-accent)_5%,transparent))] ' +
-            // On the rail: kill the gradient (a background-image) and paint a
-            // solid tile (a background-colour) instead, so the two never fight
-            // over the same property. The edge bar goes with it.
-            (collapsed
-              ? 'shell:bg-none shell:bg-[color-mix(in_srgb,var(--color-accent)_24%,transparent)] shell:after:hidden shell:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-accent)_40%,transparent)] '
-              : '') +
-            // The active rail, bled to the panel edge.
-            "after:absolute after:inset-y-0 after:right-0 after:w-2 after:content-[''] " +
-            'after:bg-[linear-gradient(180deg,var(--color-accent-strong),var(--color-accent))] ' +
-            'after:shadow-[0_0_14px_color-mix(in_srgb,var(--color-accent)_85%,transparent)] max-shell:after:hidden'
-          : 'font-normal text-fg-dim hover:bg-tint-1 hover:text-fg')
-      }
+      className={navButtonClass({ collapsed, disabled, active })}
     >
       <Icon size={size} className={`flex-none ${active ? 'opacity-100' : 'opacity-85'}`} />
       {/* Hidden rather than dropped: the button keeps its accessible name, so
@@ -180,6 +279,43 @@ export function Sidebar({
   collapsed,
   onToggleCollapse,
 }: SidebarProps) {
+  /*
+   * Which category is open, derived rather than stored.
+   *
+   * The default is simply the category holding the current page, so arriving
+   * on the calendar by any means — a link, a deep link, the quick-add dialog
+   * — leaves Trading open around it without anything having to notice the
+   * navigation and react to it.
+   *
+   * A click is recorded as an override *stamped with the route it was made
+   * on*, so it lasts exactly as long as you stay on that page and then falls
+   * back to the derived answer. That one detail is what removes the effect
+   * this used to need: syncing state to a prop in `useEffect` renders twice
+   * and trips the cascading-render rule, and this never has to sync at all.
+   */
+  const [override, setOverride] = useState<{ route: string; group: string | null } | null>(
+    null,
+  )
+  const openGroup =
+    override !== null && override.route === route ? override.group : groupOfRoute(route)
+
+  const toggleGroup = (id: string) => {
+    setOverride({ route, group: openGroup === id ? null : id })
+
+    /*
+     * Widen the rail on the way, since a disclosed list is unreadable at 76px.
+     *
+     * Guarded by the breakpoint rather than by `collapsed` alone: below it the
+     * sidebar is a drawer that always shows labels, and `collapsed` is still
+     * whatever the desktop left it at. Toggling from a phone would silently
+     * rewrite a preference that belongs to a screen this person is not using.
+     */
+    if (!collapsed) return
+    if (window.matchMedia(`(min-width: ${SHELL_BREAKPOINT}px)`).matches) {
+      onToggleCollapse()
+    }
+  }
+
   return (
     <>
       <NavScrim open={open} onClose={onClose} />
@@ -271,18 +407,70 @@ export function Sidebar({
           className={collapsed ? 'flex flex-col gap-2 shell:-mx-12 -mx-22' : '-mx-22 flex flex-col gap-2'}
           aria-label="Primary"
         >
-          {TRADER_NAV.map(({ route: target, label, icon, disabled }) => (
-            <NavButton
-              key={target}
-              target={target}
-              label={label}
-              icon={icon}
-              active={route === target}
-              onNavigate={onClose}
-              disabled={disabled}
-              collapsed={collapsed}
-            />
-          ))}
+          {TRADER_NAV.map((entry) => {
+            if (!isGroup(entry)) {
+              return (
+                <NavButton
+                  key={entry.route}
+                  target={entry.route}
+                  label={entry.label}
+                  icon={entry.icon}
+                  active={route === entry.route}
+                  onNavigate={onClose}
+                  disabled={entry.disabled}
+                  collapsed={collapsed}
+                />
+              )
+            }
+
+            const open = openGroup === entry.id
+            const within = entry.children.some((child) => child.route === route)
+
+            return (
+              <div key={entry.id}>
+                <NavCategory
+                  group={entry}
+                  open={open}
+                  within={within}
+                  collapsed={collapsed}
+                  onToggle={() => toggleGroup(entry.id)}
+                />
+
+                {/* Rendered whether open or shut so the transition has
+                    something to move between, and hidden outright on the rail
+                    where there is no width to indent into. */}
+                <div
+                  id={`nav-group-${entry.id}`}
+                  className={`${NAV_SUB} ${open ? NAV_SUB_OPEN : NAV_SUB_SHUT} ${
+                    collapsed ? 'shell:hidden' : ''
+                  }`}
+                >
+                  <div className={NAV_SUB_INNER}>
+                    {entry.children.map((child) => (
+                      <button
+                        key={child.route}
+                        type="button"
+                        aria-current={route === child.route ? 'page' : undefined}
+                        // Not focusable while the group is shut: a collapsed
+                        // list still occupies the tab order otherwise, and the
+                        // focus ring lands on something nobody can see.
+                        tabIndex={open ? undefined : -1}
+                        onClick={() => {
+                          navigate(child.route)
+                          onClose()
+                        }}
+                        className={`${NAV_SUB_ITEM} ${
+                          route === child.route ? NAV_SUB_ACTIVE : NAV_SUB_IDLE
+                        }`}
+                      >
+                        {child.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </nav>
 
         <QuickAddButton
