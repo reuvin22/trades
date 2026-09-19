@@ -25,6 +25,8 @@ export function AnalyticsBoard({ trades, stats, capital }: { trades: StoredTrade
     <div className="analytics-curve"><RollingEquityCurve equity={stats.equity} opening={capital} /></div>
     <article className="analytics-setup"><h3>Setup Efficiency</h3>{setups.length ? setups.map((setup) => <div key={setup.label}><span>{setup.label}</span><i><b style={{ width: `${Math.abs(setup.netPl) / maxSetup * 100}%` }} /></i><em>{setup.netPl >= 0 ? '+' : ''}{setup.netPl.toFixed(0)}</em></div>) : <p>No setup data yet.</p>}</article>
     <article className="analytics-hours"><h3>P&L by Hour & Day</h3><div>{Array.from({ length: 35 }, (_, index) => { const entry = hours[index % Math.max(1, hours.length)]; const intensity = entry ? Math.max(.12, Math.abs(entry.netPl) / maxHour) : 0; return <span key={index} style={{ opacity: intensity, background: entry?.netPl && entry.netPl < 0 ? 'var(--color-red)' : 'var(--color-accent)' }} /> })}</div><small>Mon&nbsp;&nbsp; Tue&nbsp;&nbsp; Wed&nbsp;&nbsp; Thu&nbsp;&nbsp; Fri</small></article>
-    <article className="analytics-mistakes"><h3>Mistake Impact</h3><div className="analytics-donut" style={{ background: gradient }}><i /></div><ul>{mistakes.map((mistake, index) => <li key={mistake.label}><b style={{ background: COLORS[index] }} />{mistake.label}</li>)}</ul></article>
+    {/* The chart and its legend are wrapped so they can be centred in the
+        card as one block without the heading being dragged in with them. */}
+    <article className="analytics-mistakes"><h3>Mistake Impact</h3><div className="analytics-mistakes-body"><div className="analytics-donut" style={{ background: gradient }}><i /></div><ul>{mistakes.map((mistake, index) => <li key={mistake.label}><b style={{ background: COLORS[index] }} />{mistake.label}</li>)}</ul></div></article>
   </section>
 }
