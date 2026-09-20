@@ -1071,6 +1071,10 @@
 .terminal-equity { grid-area: equity; min-height: 360px; }
 .terminal-metrics { grid-area: metrics; min-height: 360px; }
 .terminal-side { grid-area: side; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-height: 360px; }
+/* The side column holds two cards, and the discipline score is the first —
+   a plan without it leaves the calendar in a half-height track with a hole
+   under it, so the column becomes a single row instead. */
+.terminal-side-solo { grid-template-rows: 1fr; }
 .terminal-trades { grid-area: trades; }
 .terminal-strategies { grid-area: strategies; }
 
@@ -1087,7 +1091,7 @@
 .terminal-stat span { margin-top: 5px; color: var(--color-fg-muted); font-size: 10px; }
 
 @media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'trades trades' 'strategies strategies'; } }
-@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } }
+@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } .terminal-side-solo { grid-template-rows: 220px; } }
 
 /* The remaining terminal screens share the dashboard's dense, framed surface
    but retain their existing data controls and keyboard interactions. */

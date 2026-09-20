@@ -1,4 +1,4 @@
-import { hasFeature, routeAllowed } from '../lib/entitlements'
+import { hasFeature, routeAllowed, type PlanId } from '../lib/entitlements'
 
 export type TourStep = {
   id: string
@@ -148,17 +148,29 @@ const ALL_STEPS: TourStep[] = [
   },
 ]
 
-/** Spotlights on things the active plan hides. */
-const LOCKED_TARGETS = new Set([
-  ...(hasFeature('coach') ? [] : ['coach']),
-  ...(hasFeature('messages') ? [] : ['messages']),
-  ...(hasFeature('leakDetection') ? [] : ['insights']),
-  ...(hasFeature('analytics') ? [] : ['metrics', 'edge']),
-])
+/** Spotlights on things a plan hides. */
+function lockedTargets(plan: PlanId): Set<string> {
+  return new Set([
+    ...(hasFeature('coach', plan) ? [] : ['coach']),
+    ...(hasFeature('messages', plan) ? [] : ['messages']),
+    ...(hasFeature('leakDetection', plan) ? [] : ['insights']),
+    ...(hasFeature('analytics', plan) ? [] : ['metrics', 'edge']),
+  ])
+}
 
-/** The tour, without stops for screens and widgets the plan does not have. */
-export const TOUR = ALL_STEPS.filter(
-  (step) =>
-    (step.route === undefined || routeAllowed(step.route)) &&
-    (step.target === undefined || !LOCKED_TARGETS.has(step.target)),
-)
+/**
+ * The tour, without stops for screens and widgets the plan does not have.
+ *
+ * A function of the plan rather than a constant: this module is imported long
+ * before the profile says which plan to build it for, and a Free account
+ * walked through a tour of the AI coach would be shown a door it cannot open.
+ */
+export function tourSteps(plan: PlanId): TourStep[] {
+  const locked = lockedTargets(plan)
+
+  return ALL_STEPS.filter(
+    (step) =>
+      (step.route === undefined || routeAllowed(step.route, plan)) &&
+      (step.target === undefined || !locked.has(step.target)),
+  )
+}

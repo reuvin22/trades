@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { CATALOGUE, WIDGET_ABOUT } from '../lib/widgetCatalogue'
+import { useMemo, useState } from 'react'
+import { catalogue, WIDGET_ABOUT } from '../lib/widgetCatalogue'
+import { usePlan } from '../lib/entitlements'
 import {
   forgetLayout,
   readLayout,
@@ -46,6 +47,11 @@ import {
  * without something a safe thing to do.
  */
 export function Templates() {
+  // Only the widgets this plan includes are offered. A locked one left in the
+  // list would be a switch that turns on something that never renders.
+  const plan = usePlan()
+  const pages = useMemo(() => catalogue(plan), [plan])
+
   /*
    * One layout per page, read once and written on every change.
    *
@@ -55,7 +61,7 @@ export function Templates() {
    */
   const [layouts, setLayouts] = useState<Record<string, Layout>>(() =>
     Object.fromEntries(
-      CATALOGUE.map((page) => [page.key, reconcile(readLayout(page.key), page.widgets)]),
+      pages.map((page) => [page.key, reconcile(readLayout(page.key), page.widgets)]),
     ),
   )
 
@@ -71,7 +77,7 @@ export function Templates() {
     setLayouts((current) => {
       const next: Record<string, Layout> = {}
 
-      for (const page of CATALOGUE) {
+      for (const page of pages) {
         // Only the hidden list is cleared. Sizes and order are the trader's
         // other decision and are none of this button's business.
         next[page.key] = { ...current[page.key], hidden: [] }
@@ -86,7 +92,7 @@ export function Templates() {
     setLayouts(() => {
       const next: Record<string, Layout> = {}
 
-      for (const page of CATALOGUE) {
+      for (const page of pages) {
         forgetLayout(page.key)
         next[page.key] = reconcile(null, page.widgets)
       }
@@ -95,7 +101,7 @@ export function Templates() {
     })
   }
 
-  const hiddenCount = CATALOGUE.reduce(
+  const hiddenCount = pages.reduce(
     (total, page) => total + (layouts[page.key]?.hidden.length ?? 0),
     0,
   )
@@ -124,7 +130,7 @@ export function Templates() {
       </div>
 
       <div className={ROW_STAGGER}>
-        {CATALOGUE.map((page) => {
+        {pages.map((page) => {
           const layout = layouts[page.key]
           const shown = page.widgets.length - layout.hidden.length
 

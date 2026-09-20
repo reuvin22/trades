@@ -1,5 +1,5 @@
 import type { WidgetSpec } from './widgets'
-import { hasFeature, type Feature } from './entitlements'
+import { hasFeature, type Feature, type PlanId } from './entitlements'
 
 /**
  * Every widget the app has, and which page it belongs to.
@@ -55,13 +55,15 @@ const WIDGET_FEATURE: Record<string, Feature> = {
 }
 
 /**
- * The widgets the active plan includes. A saved layout can still name a locked
- * one; the grid skips any id it cannot find, and Templates only offers these.
+ * The widgets a plan includes. A saved layout can still name a locked one;
+ * the grid skips any id it cannot find, and Templates only offers these.
  */
-export const DASHBOARD_WIDGETS = ALL_DASHBOARD_WIDGETS.filter((widget) => {
-  const feature = WIDGET_FEATURE[widget.id]
-  return feature === undefined || hasFeature(feature)
-})
+export function dashboardWidgets(plan: PlanId): WidgetSpec[] {
+  return ALL_DASHBOARD_WIDGETS.filter((widget) => {
+    const feature = WIDGET_FEATURE[widget.id]
+    return feature === undefined || hasFeature(feature, plan)
+  })
+}
 
 /**
  * The catalogue, page by page.
@@ -69,15 +71,20 @@ export const DASHBOARD_WIDGETS = ALL_DASHBOARD_WIDGETS.filter((widget) => {
  * Only the dashboard is a widget grid so far. The others are listed as they
  * are converted; adding a page here and passing its widgets to `WidgetGrid` is
  * the whole of the work.
+ *
+ * A function of the plan, like the rest: Templates offers what the plan has,
+ * and the plan is not known at import time.
  */
-export const CATALOGUE: PageWidgets[] = [
-  {
-    key: 'dashboard',
-    title: 'Dashboard',
-    route: '#/dashboard',
-    widgets: DASHBOARD_WIDGETS,
-  },
-]
+export function catalogue(plan: PlanId): PageWidgets[] {
+  return [
+    {
+      key: 'dashboard',
+      title: 'Dashboard',
+      route: '#/dashboard',
+      widgets: dashboardWidgets(plan),
+    },
+  ]
+}
 
 /** What each widget is for, in a sentence, for the Templates screen. */
 export const WIDGET_ABOUT: Record<string, string> = {

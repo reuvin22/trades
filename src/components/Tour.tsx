@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { TOUR } from '../data/tour'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { tourSteps } from '../data/tour'
+import { usePlan } from '../lib/entitlements'
 import { navigate } from '../lib/useHashRoute'
 import { ArrowUpIcon, ChevronRightIcon, CloseIcon, RobotIcon } from './Icons'
 import {
@@ -56,8 +57,13 @@ export function Tour({ onFinish }: { onFinish: () => void }) {
   const [rect, setRect] = useState<Rect | null>(null)
   const card = useRef<HTMLDivElement>(null)
 
-  const step = TOUR[index]
-  const last = index === TOUR.length - 1
+  // The tour skips stops for anything this plan does not include, so a Free
+  // account is not walked up to a locked door.
+  const plan = usePlan()
+  const steps = useMemo(() => tourSteps(plan), [plan])
+
+  const step = steps[index]
+  const last = index === steps.length - 1
 
   // Land on the right screen before looking for anything on it.
   useEffect(() => {
@@ -182,13 +188,13 @@ export function Tour({ onFinish }: { onFinish: () => void }) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onFinish()
-      if (event.key === 'ArrowRight') setIndex((i) => Math.min(TOUR.length - 1, i + 1))
+      if (event.key === 'ArrowRight') setIndex((i) => Math.min(steps.length - 1, i + 1))
       if (event.key === 'ArrowLeft') setIndex((i) => Math.max(0, i - 1))
     }
 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onFinish])
+  }, [onFinish, steps.length])
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Product tour">
@@ -237,13 +243,13 @@ export function Tour({ onFinish }: { onFinish: () => void }) {
         <span className={TOUR_TRACK}>
           <span
             className={TOUR_FILL}
-            style={{ width: `${((index + 1) / TOUR.length) * 100}%` }}
+            style={{ width: `${((index + 1) / steps.length) * 100}%` }}
           />
         </span>
 
         <div className={TOUR_FOOT}>
           <span className={TOUR_COUNT}>
-            {index + 1} / {TOUR.length}
+            {index + 1} / {steps.length}
           </span>
 
           <button type="button" className={TOUR_SKIP} onClick={onFinish}>

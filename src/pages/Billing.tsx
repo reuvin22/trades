@@ -48,13 +48,16 @@ import {
 type BillingProps = {
   user: AuthUser | null
   profile: Profile | null
+  /** Re-read the account record, so the new plan reaches the entitlements
+   *  store and the sidebar follows it without a reload. */
+  onChanged: () => void
 }
 
 
 /** Placeholder history until a payment processor is connected. */
 const INVOICES: { id: string; date: string; amount: number; status: string }[] = []
 
-export function Billing({ user, profile }: BillingProps) {
+export function Billing({ user, profile, onChanged }: BillingProps) {
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [pending, setPending] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -78,6 +81,8 @@ export function Billing({ user, profile }: BillingProps) {
     setError('')
     try {
       await savePlan(plan.id)
+      // What the plan includes changes with it, so the app has to be told.
+      onChanged()
       toast.success(
         `You are on the ${plan.name} plan`,
         'Nothing was charged — no payment processor is connected yet.',

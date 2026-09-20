@@ -15,7 +15,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from './components/Icons'
-import { hasFeature, type Feature } from './lib/entitlements'
+import { hasFeature, type Feature, type PlanId } from './lib/entitlements'
 
 export type IconComponent = ComponentType<{ size?: number; className?: string }>
 
@@ -97,21 +97,29 @@ const TRADER_TREE: NavEntry[] = [
   },
 ]
 
-const allowed = (item: NavItem) => item.feature === undefined || hasFeature(item.feature)
-
 /**
- * The sidebar: what the active plan includes.
+ * The sidebar: what a plan includes.
  *
  * A category whose children are all gated out is dropped with them. Leaving
  * an empty "Insights" on a plan with neither analytics nor the coach would be
  * a disclosure that opens onto nothing.
+ *
+ * A function of the plan rather than a constant, because the plan is not
+ * known when this module is imported — it arrives with the profile. Built
+ * once per plan change by the caller, which is cheap: the tree is a dozen
+ * entries.
  */
-export const TRADER_NAV: NavEntry[] = TRADER_TREE.flatMap((entry): NavEntry[] => {
-  if (!isGroup(entry)) return allowed(entry) ? [entry] : []
+export function traderNav(plan: PlanId): NavEntry[] {
+  const allowed = (item: NavItem) =>
+    item.feature === undefined || hasFeature(item.feature, plan)
 
-  const children = entry.children.filter(allowed)
-  return children.length === 0 ? [] : [{ ...entry, children }]
-})
+  return TRADER_TREE.flatMap((entry): NavEntry[] => {
+    if (!isGroup(entry)) return allowed(entry) ? [entry] : []
+
+    const children = entry.children.filter(allowed)
+    return children.length === 0 ? [] : [{ ...entry, children }]
+  })
+}
 
 /** Every destination in the tree, flattened — the tree itself is the only
  *  place a route and its label are written down. */
@@ -119,9 +127,15 @@ const ALL_TRADER_NAV: NavItem[] = TRADER_TREE.flatMap((entry) =>
   isGroup(entry) ? entry.children : [entry],
 )
 
-/** Which category holds a route, so the sidebar can open it on arrival. */
+/**
+ * Which category holds a route, so the sidebar can open it on arrival.
+ *
+ * Reads the whole tree rather than one plan's view of it. Where a route sits
+ * is a fact about the tree and does not change with the plan, and a locked
+ * route never reaches here anyway — `App` redirects off one before it renders.
+ */
 export function groupOfRoute(route: string): string | null {
-  for (const entry of TRADER_NAV) {
+  for (const entry of TRADER_TREE) {
     if (isGroup(entry) && entry.children.some((child) => child.route === route)) {
       return entry.id
     }

@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   groupOfRoute,
   isGroup,
-  TRADER_NAV,
+  traderNav,
   type IconComponent,
   type NavGroup,
 } from '../navigation'
 import { navigate } from '../lib/useHashRoute'
+import { usePlan } from '../lib/entitlements'
 import { ChevronRightIcon, CollapseIcon, CloseIcon, PlusIcon } from './Icons'
 import { SHELL_BREAKPOINT, sidebarClass } from './layout'
 import {
@@ -296,6 +297,11 @@ export function Sidebar({
   const [override, setOverride] = useState<{ route: string; group: string | null } | null>(
     null,
   )
+
+  // Rebuilt only when the plan changes, which is once per sign-in in practice.
+  const plan = usePlan()
+  const nav = useMemo(() => traderNav(plan), [plan])
+
   const openGroup =
     override !== null && override.route === route ? override.group : groupOfRoute(route)
 
@@ -407,7 +413,7 @@ export function Sidebar({
           className={collapsed ? 'flex flex-col gap-2 shell:-mx-12 -mx-22' : '-mx-22 flex flex-col gap-2'}
           aria-label="Primary"
         >
-          {TRADER_NAV.map((entry) => {
+          {nav.map((entry) => {
             if (!isGroup(entry)) {
               return (
                 <NavButton

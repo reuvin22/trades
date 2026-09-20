@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ChatDock } from './components/ChatDock'
 import { SplashScreen } from './components/SplashScreen'
 import { Tour } from './components/Tour'
@@ -36,7 +36,14 @@ import { Placeholder } from './pages/Placeholder'
 import { VerifyEmail } from './pages/VerifyEmail'
 import type { StoredTrade } from './lib/trades'
 import type { AuthUser } from './lib/useAuth'
-import { hasFeature, routeAllowed } from './lib/entitlements'
+import {
+  hasFeature,
+  planFromApi,
+  PREVIEW_PLAN,
+  routeAllowed,
+  setActivePlan,
+  usePlan,
+} from './lib/entitlements'
 
 /**
  * Shown while a page's code is on its way.
@@ -159,7 +166,7 @@ function TraderView({
     case 'profile':
       return <Profile user={user} profile={profile} onSaved={reloadProfile} />
     case 'billing':
-      return <Billing user={user} profile={profile} />
+      return <Billing user={user} profile={profile} onChanged={reloadProfile} />
     case 'templates':
       return <Templates />
     case 'settings':
@@ -203,6 +210,28 @@ function App() {
   const [preview, setPreview] = useState(false)
 
   const uid = user?.uid ?? null
+
+  /*
+   * What this account is entitled to, pushed into the entitlements store.
+   *
+   * The store rather than a prop or a context because the plan is read from
+   * outside React as well: `apiFetch` checks it before every request, and so
+   * do `chat.ts` and `uploads.ts`. Those are the guarantee — hiding a button
+   * is only the courtesy — and none of them can call a hook.
+   *
+   * A layout effect, not an ordinary one, so the write lands between render
+   * and paint. Everything plan-derived renders once at the default Free and
+   * then again with the real plan; with `useEffect` that second render is
+   * after the paint, which shows a paying account a stripped sidebar for a
+   * frame. `usePlan()` here also re-renders the tree when the plan changes,
+   * which is what makes a plan switch on the billing page take effect without
+   * a reload.
+   */
+  const plan = usePlan()
+  useLayoutEffect(() => {
+    setActivePlan(preview ? PREVIEW_PLAN : planFromApi(profile?.plan))
+  }, [preview, profile?.plan])
+
   const { trades, loading, error, reload } = useTrades(confirmed ? uid : null)
   // Confirmed, not merely signed in. A Google account arrives with Firebase
   // already calling it verified, so that flag cannot be the gate — this one is.
@@ -273,10 +302,12 @@ function App() {
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])
 
-  // A deep link to a locked screen lands on the dashboard instead.
+  // A deep link to a locked screen lands on the dashboard instead. Keyed on
+  // the plan as well as the route, so an account that arrives on #/coach
+  // before its profile has loaded is moved off it once the plan is known.
   useEffect(() => {
-    if (signedIn && !routeAllowed(route)) navigate(HOME_ROUTE)
-  }, [signedIn, route])
+    if (signedIn && !routeAllowed(route, plan)) navigate(HOME_ROUTE)
+  }, [signedIn, route, plan])
 
   /*
    * Held until there is something to show, not merely until the session is

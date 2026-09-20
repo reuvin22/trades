@@ -14,6 +14,7 @@ import { GREETING, GREETING_ROW, GREETING_SPAN, GREETING_SUB, PAGE_ACTIONS } fro
 import type { DateRange } from '../components/DateRangePicker'
 import type { StoredTrade } from '../lib/trades'
 import type { Profile } from '../lib/profile'
+import { hasFeature, usePlan } from '../lib/entitlements'
 
 type DashboardProps = { trades: StoredTrade[]; profile: Profile | null; onQuickAdd: () => void }
 const SPAN = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
@@ -39,6 +40,18 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
   const name = profile?.displayName?.trim().split(' ')[0] ?? ''
   const covered = coverage(shown)
 
+  /*
+   * The dashboard is a fixed composition rather than a widget grid, so it has
+   * to gate its own paid cards — `dashboardWidgets` only feeds Templates.
+   *
+   * The discipline score grades execution against the rules you set, and the
+   * setup table is the ranking. Neither is in the Free tier, and both would
+   * otherwise render for an account that is not paying for them.
+   */
+  const plan = usePlan()
+  const discipline = hasFeature('ruleTracking', plan)
+  const setups = hasFeature('setupRanking', plan)
+
   return <>
     <div className={`${GREETING_ROW} dashboard-heading`}>
       <div><h2 className={GREETING}>{greeting()}{name && `, ${name}`}</h2><p className={GREETING_SUB}>Your trading performance at a glance.</p></div>
@@ -51,9 +64,9 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
     <div className="terminal-dashboard">
       <div className="terminal-equity"><EquityChart equity={stats.equity} opening={opening} spanLabel={label} /></div>
       <div className="terminal-metrics"><StatCards stats={stats} currency={money} opening={opening} /></div>
-      <div className="terminal-side"><DisciplineCard trades={shown} /><PerformanceCalendar dailyPl={stats.dailyPl} /></div>
+      <div className={discipline ? 'terminal-side' : 'terminal-side terminal-side-solo'}>{discipline && <DisciplineCard trades={shown} />}<PerformanceCalendar dailyPl={stats.dailyPl} /></div>
       <div className="terminal-trades"><RecentActivity trades={shown} /></div>
-      <div className="terminal-strategies"><SetupTable trades={shown} money={money} /></div>
+      {setups && <div className="terminal-strategies"><SetupTable trades={shown} money={money} /></div>}
     </div>
   </>
 }
