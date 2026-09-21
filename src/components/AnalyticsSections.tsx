@@ -16,6 +16,8 @@ import {
   type Grain,
 } from '../lib/analytics'
 import { bySetup } from '../lib/dashboardStats'
+import { usePreferences } from '../lib/preferences'
+import { ConsistencyCard } from './ConsistencyCard'
 import { RollingEquityCurve } from './RollingEquityCurve'
 import { SliceTable } from './SliceTable'
 import { BarList } from './BarList'
@@ -332,6 +334,9 @@ export function TimeSection({ trades, stats, money }: Common) {
 /* ------------------------------------------------------------- behaviour */
 
 export function BehaviourSection({ trades, money }: Common) {
+  // Same card as the dashboard, and the same preference switches both off.
+  const { showConsistency } = usePreferences()
+
   const post = useMemo(() => postLoss(trades), [trades])
   const mistakes = useMemo(() => byMistake(trades), [trades])
   const emotions = useMemo(() => byEmotion(trades), [trades])
@@ -347,6 +352,8 @@ export function BehaviourSection({ trades, money }: Common) {
         What you do after something happens. A count of mistakes is a list; the
         comparison below is a finding.
       </p>
+
+      {showConsistency && <ConsistencyCard trades={trades} money={money} />}
 
       <article className={`${CARD} ${PANEL}`}>
         <div className={PANEL_HEAD}>

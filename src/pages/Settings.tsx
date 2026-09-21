@@ -45,8 +45,17 @@ import {
   SOON_BADGE,
   TAG_CLOUD,
   TAG_TOGGLE,
+  TPL_ITEM,
+  TPL_ITEM_ABOUT,
+  TPL_ITEM_BODY,
+  TPL_ITEM_NAME,
+  TPL_KNOB,
+  TPL_SWITCH,
+  TPL_SWITCH_OFF,
+  TPL_SWITCH_ON,
 } from '../components/ui'
 import { hasFeature } from '../lib/entitlements'
+import { setPreference, usePreferences } from '../lib/preferences'
 
 type SettingsProps = {
   profile: ProfileRecord | null
@@ -172,6 +181,7 @@ export function Settings({
     seeded.current = profile.uid
     setDraft(toDraft(profile))
   }, [profile])
+  const { showConsistency } = usePreferences()
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [newStrategy, setNewStrategy] = useState('')
@@ -293,6 +303,36 @@ export function Settings({
         </p>
 
         <PaletteGrid palette={palette} theme={theme} onPick={onPickPalette} />
+
+        {/*
+          Sits with the palette rather than with the risk settings because it
+          is the same kind of choice: what this device shows, applied on the
+          spot, with nothing to save. The score itself is worked out from
+          trades already loaded, so switching it off is a matter of taste
+          rather than of cost.
+        */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={showConsistency}
+          className={`${TPL_ITEM} mt-18`}
+          onClick={() => setPreference('showConsistency', !showConsistency)}
+        >
+          <span
+            className={`${TPL_SWITCH} ${showConsistency ? TPL_SWITCH_ON : TPL_SWITCH_OFF}`}
+            aria-hidden="true"
+          >
+            <span className={TPL_KNOB} style={{ left: showConsistency ? '17px' : '3px' }} />
+          </span>
+
+          <span className={TPL_ITEM_BODY}>
+            <span className={TPL_ITEM_NAME}>Consistency score</span>
+            <span className={TPL_ITEM_ABOUT}>
+              Today&rsquo;s best trade as a percentage of your best trade ever.
+              Shown on the dashboard and under Analytics &rsaquo; Behaviour.
+            </span>
+          </span>
+        </button>
 
         <div className="mt-18 flex items-center gap-12">
           <span className={FIELD_LABEL}>Mode</span>

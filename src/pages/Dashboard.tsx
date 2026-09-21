@@ -15,6 +15,8 @@ import type { DateRange } from '../components/DateRangePicker'
 import type { StoredTrade } from '../lib/trades'
 import type { Profile } from '../lib/profile'
 import { hasFeature, usePlan } from '../lib/entitlements'
+import { usePreferences } from '../lib/preferences'
+import { ConsistencyCard } from '../components/ConsistencyCard'
 
 type DashboardProps = { trades: StoredTrade[]; profile: Profile | null; onQuickAdd: () => void }
 const SPAN = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
@@ -52,6 +54,10 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
   const discipline = hasFeature('ruleTracking', plan)
   const setups = hasFeature('setupRanking', plan)
 
+  // Switched off under Settings > Appearance. A preference, not a plan: the
+  // score is computed here from trades already loaded, so it costs nothing.
+  const { showConsistency } = usePreferences()
+
   return <>
     <div className={`${GREETING_ROW} dashboard-heading`}>
       <div><h2 className={GREETING}>{greeting()}{name && `, ${name}`}</h2><p className={GREETING_SUB}>Your trading performance at a glance.</p></div>
@@ -65,6 +71,9 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
       <div className="terminal-equity"><EquityChart equity={stats.equity} opening={opening} spanLabel={label} /></div>
       <div className="terminal-metrics"><StatCards stats={stats} currency={money} opening={opening} /></div>
       <div className={discipline ? 'terminal-side' : 'terminal-side terminal-side-solo'}>{discipline && <DisciplineCard trades={shown} />}<PerformanceCalendar dailyPl={stats.dailyPl} /></div>
+      {/* `trades`, not `shown`: "best ever" means the whole journal, so the
+          range picker above deliberately does not reach this card. */}
+      {showConsistency && <div className="terminal-consistency"><ConsistencyCard trades={trades} money={money} /></div>}
       <div className="terminal-trades"><RecentActivity trades={shown} /></div>
       {setups && <div className="terminal-strategies"><SetupTable trades={shown} money={money} /></div>}
     </div>

@@ -1661,6 +1661,35 @@ export const PANEL_TITLE =
 export const PANEL_NOTE = 'text-[11px] text-fg-muted tabular-nums'
 export const PANEL_EMPTY = 'py-14 text-[13px] leading-[1.55] text-fg-muted'
 
+/* ---- consistency: a gauge, and the three parts behind it ---- */
+
+/**
+ * Gauge beside its own breakdown, rather than stacked.
+ *
+ * A score out of ten on its own is a number nobody can act on. The three
+ * parts are what say which of them to go and fix, so they sit next to the
+ * figure, not under a disclosure. Wraps to a column on a narrow card.
+ */
+export const GAUGE_SPLIT = 'flex flex-wrap items-center gap-x-28 gap-y-18'
+export const GAUGE_DIAL = 'grid size-124 flex-none place-items-center rounded-full'
+export const GAUGE_FACE =
+  'grid size-104 place-items-center rounded-full bg-panel-solid text-center'
+export const GAUGE_VALUE = 'text-[28px] font-semibold leading-none'
+export const GAUGE_OUT_OF = 'text-[13px] font-normal text-fg-muted'
+export const GAUGE_CAPTION = '-mt-18 text-[10px] text-fg-muted'
+
+/** What sits beside the dial: the two figures behind it, then the sentence. */
+export const GAUGE_PARTS = 'flex min-w-200 flex-1 flex-col gap-14'
+export const GAUGE_PART_ABOUT = 'text-[11px] leading-[1.5] text-fg-muted'
+
+/** The inputs to the ratio, shown so the percentage can be checked by eye. */
+export const GAUGE_READING_ROW = 'flex flex-wrap gap-x-32 gap-y-12'
+export const GAUGE_READING = 'flex flex-col gap-3'
+export const GAUGE_READING_LABEL =
+  'text-[10px] font-medium tracking-[0.11em] text-fg-muted uppercase'
+export const GAUGE_READING_VALUE =
+  'text-[17px] font-semibold tabular-nums text-fg-strong'
+
 /* ---- setup performance: a table, because it is one ---- */
 
 export const SETUP_TABLE = 'w-full border-collapse text-[13px]'

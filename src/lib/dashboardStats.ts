@@ -1,4 +1,5 @@
 import type { StoredTrade } from './trades'
+import { dayKey, tradeDate } from './stats'
 
 /**
  * The figures the dashboard adds on top of `deriveStats`.
@@ -265,6 +266,67 @@ export function disciplineScore(trades: StoredTrade[]): DisciplineScore {
     graded,
     total: trades.length,
   }
+}
+
+export type ConsistencyScore = {
+  /** Today's best against the best ever, as a percentage. Null when there is
+   *  nothing to divide. */
+  score: number | null
+  /** The most any single trade made today. Null when nothing closed today. */
+  today: number | null
+  /** The most any single trade has ever made. Null when nothing has won yet. */
+  best: number | null
+  /** Trades dated today, so the card can say what it read. */
+  todayCount: number
+}
+
+/**
+ * Today's best trade measured against the best trade ever.
+ *
+ * Deliberately not a judgement. There is no good or bad band here and no
+ * colour that means "you are failing" — where a trader wants to sit on this
+ * scale is personal, and the card exists to be watched over time rather than
+ * to grade anybody. 100% simply means today set a new record, because today's
+ * trades are part of "ever" and the ratio therefore cannot exceed one.
+ *
+ * Both halves are absolute, not filtered. "Today" is today by the reader's
+ * own clock and "ever" is the whole journal, so the dashboard's date range
+ * deliberately does not move this figure — a range of last week has no
+ * "today" in it, and one of the last year would not change what the record is.
+ *
+ * A losing day scores zero rather than a negative percentage. The ratio of a
+ * loss to a record win is arithmetically fine and reads as nonsense, and
+ * "no winning trade today" is what is actually being said.
+ */
+export function consistencyScore(
+  trades: StoredTrade[],
+  now: Date = new Date(),
+): ConsistencyScore {
+  const todayKey = dayKey(now)
+
+  let today: number | null = null
+  let best: number | null = null
+  let todayCount = 0
+
+  for (const trade of trades) {
+    if (trade.netPl === null) continue
+
+    if (best === null || trade.netPl > best) best = trade.netPl
+
+    const when = tradeDate(trade)
+    if (when === null || dayKey(when) !== todayKey) continue
+
+    todayCount += 1
+    if (today === null || trade.netPl > today) today = trade.netPl
+  }
+
+  // Nothing to measure against until one trade has actually made money.
+  const score =
+    best === null || best <= 0 || today === null
+      ? null
+      : (Math.max(0, today) / best) * 100
+
+  return { score, today, best, todayCount }
 }
 
 /** Good morning / afternoon / evening, by the reader's own clock. */

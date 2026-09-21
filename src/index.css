@@ -1063,7 +1063,7 @@
 .terminal-dashboard {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(280px, 3.2fr) minmax(270px, 4fr);
-  grid-template-areas: 'equity metrics side' 'trades trades trades' 'strategies strategies strategies';
+  grid-template-areas: 'equity metrics side' 'consistency consistency consistency' 'trades trades trades' 'strategies strategies strategies';
   gap: 12px;
   align-items: stretch;
 }
@@ -1077,6 +1077,11 @@
 .terminal-side-solo { grid-template-rows: 1fr; }
 .terminal-trades { grid-area: trades; }
 .terminal-strategies { grid-area: strategies; }
+/* Full width, so the gauge can sit beside its own breakdown rather than
+   above it. An area the element may be absent from: the row then has no
+   content and collapses, which is what switching the card off should look
+   like. */
+.terminal-consistency { grid-area: consistency; }
 
 .terminal-dashboard .terminal-equity > section { height: 100%; }
 .terminal-dashboard .terminal-equity .text-\[16px\] { font-size: 14px; }
@@ -1084,14 +1089,23 @@
 .terminal-dashboard .terminal-side > article { height: 100%; box-shadow: none; }
 
 .terminal-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; height: 100%; }
-.terminal-stat { display: flex; min-height: 0; flex-direction: column; justify-content: center; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: linear-gradient(145deg, rgba(30, 45, 63, .9), rgba(16, 26, 40, .96)); }
-.terminal-stat-featured { border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-line)); background: linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 16%, #152c36), rgba(13, 37, 43, .96)); }
+/* These tiles used to paint themselves a hardcoded navy gradient. That is the
+   one thing nothing in this file is allowed to do: it ignored both axes, so
+   in light mode a dark tile kept the dark surface while the text switched to
+   the light ramp — near-black labels on near-black card — and under any
+   palette but midnight the tiles stayed blue while the rest of the page was
+   violet or rose. They are ordinary cards, so they use the card surface and
+   let the tokens decide what that means. */
+.terminal-stat { display: flex; min-height: 0; flex-direction: column; justify-content: center; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-panel); backdrop-filter: blur(14px); }
+/* Featured carries its accent on the border alone. With no tinted fill left
+   to help it read, the mix is stronger than the 38% it sat at before. */
+.terminal-stat-featured { border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-line)); }
 .terminal-stat p { margin: 0; color: var(--color-fg-dim); font-size: 10px; }
 .terminal-stat strong { margin-top: 3px; color: var(--color-fg-strong); font-size: clamp(17px, 1.5vw, 22px); font-weight: 600; letter-spacing: -.035em; line-height: 1.05; }
 .terminal-stat span { margin-top: 5px; color: var(--color-fg-muted); font-size: 10px; }
 
-@media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'trades trades' 'strategies strategies'; } }
-@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } .terminal-side-solo { grid-template-rows: 220px; } }
+@media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'consistency consistency' 'trades trades' 'strategies strategies'; } }
+@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'consistency' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } .terminal-side-solo { grid-template-rows: 220px; } }
 
 /* The remaining terminal screens share the dashboard's dense, framed surface
    but retain their existing data controls and keyboard interactions. */
