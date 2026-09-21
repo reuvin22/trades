@@ -1117,16 +1117,16 @@
 /* Journal: filters become a compact instrument bar and the summary has the
    low-profile tiles shown above a full trading blotter in the reference. */
 .terminal-journal .grid { gap: 10px; }
-.terminal-journal [data-tour='filters'] { margin-top: 2px; border: 1px solid var(--color-line); border-radius: 8px; padding: 8px; background: rgba(11, 22, 35, .62); }
+.terminal-journal [data-tour='filters'] { margin-top: 2px; border: 1px solid var(--color-line); border-radius: 8px; padding: 8px; background: var(--color-panel-inset); }
 .terminal-journal [data-tour='filters'] > * { border-radius: 6px; box-shadow: none; }
 .terminal-journal table { font-size: 12px; }
-.terminal-journal thead { background: rgba(98, 117, 145, .16); }
+.terminal-journal thead { background: var(--color-tint-2); }
 .terminal-journal th { padding-top: 8px; padding-bottom: 8px; font-size: 9px; }
 .terminal-journal td { padding-top: 8px; padding-bottom: 8px; }
 
 /* Analytics: the tab row reads as the compact scope selector from the mockup;
    the existing Overview/Setups/Risk views still supply the actual analysis. */
-.terminal-analytics [role='tablist'] { border: 1px solid var(--color-line); border-radius: 8px; padding: 4px; background: rgba(11, 22, 35, .7); }
+.terminal-analytics [role='tablist'] { border: 1px solid var(--color-line); border-radius: 8px; padding: 4px; background: var(--color-panel-inset); }
 .terminal-analytics [role='tab'] { min-height: 32px; border-radius: 5px; }
 .terminal-analytics [role='tab'][aria-selected='true'] { background: color-mix(in srgb, var(--color-accent) 17%, transparent); color: var(--color-accent-strong); }
 .terminal-analytics > .flex > * { border-radius: 8px; }
@@ -1136,7 +1136,7 @@
 .terminal-calendar { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .terminal-calendar > .flex { order: -2; }
 .terminal-calendar > .grid { order: 2; }
-.terminal-calendar [data-tour='calendar-grid'] { padding: 10px; border-radius: 9px; background: rgba(12, 23, 36, .82); box-shadow: var(--shadow-card); }
+.terminal-calendar [data-tour='calendar-grid'] { padding: 10px; border-radius: 9px; background: var(--color-panel); box-shadow: var(--shadow-card); }
 .terminal-calendar button[data-date] { border-radius: 5px; }
 .terminal-calendar [data-pl] { font-weight: 600; }
 
@@ -1205,33 +1205,33 @@
 .journal-page-head button { border:1px solid var(--color-line); border-radius:6px; background:var(--color-tint-1); padding:8px 12px; color:var(--color-fg-dim); font-size:11px; }
 .journal-page-head button:last-child { border-color:transparent; background:var(--color-accent); color:var(--color-accent-ink); font-weight:700; }
 .journal-error { border:1px solid color-mix(in srgb,var(--color-red) 35%,transparent); border-radius:7px; padding:9px 12px; color:var(--color-red); font-size:12px; }
-.journal-workspace { display:grid; grid-template-columns:300px minmax(0,1fr); min-height:530px; overflow:hidden; border:1px solid var(--color-line); border-radius:10px; background:linear-gradient(135deg,rgba(22,37,55,.95),rgba(10,18,30,.97)); box-shadow:var(--shadow-card); }
-.journal-log-panel { display:flex; min-width:0; flex-direction:column; border-right:1px solid var(--color-line); background:rgba(5,14,25,.32); padding:14px; }
+.journal-workspace { display:grid; grid-template-columns:300px minmax(0,1fr); min-height:530px; overflow:hidden; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }
+.journal-log-panel { display:flex; min-width:0; flex-direction:column; border-right:1px solid var(--color-line); background:var(--color-panel-inset); padding:14px; }
 .journal-log-head,.journal-detail-head,.journal-linked > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .journal-log-head h3,.journal-notes h3,.journal-linked h3 { margin:0; color:var(--color-fg-strong); font-size:13px; font-weight:600; }
 .journal-log-head button,.journal-linked button { border:0; background:transparent; color:var(--color-accent); font-size:10px; }
-.journal-search { display:flex; align-items:center; gap:7px; margin-top:10px; border:1px solid var(--color-line); border-radius:5px; background:rgba(10,20,33,.7); padding:6px 8px; color:var(--color-fg-muted); }
+.journal-search { display:flex; align-items:center; gap:7px; margin-top:10px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-tint-1); padding:6px 8px; color:var(--color-fg-muted); }
 .journal-search input { min-width:0; width:100%; border:0; outline:0; background:transparent; color:var(--color-fg); font-size:11px; }
 .journal-log-list { display:flex; flex:1; flex-direction:column; gap:8px; margin-top:13px; overflow-y:auto; padding-right:2px; }
-.journal-log-item { position:relative; width:100%; border:1px solid var(--color-line); border-left:2px solid var(--color-accent); border-radius:5px; background:rgba(29,43,61,.64); padding:8px 34px 7px 10px; text-align:left; transition:background-color .15s ease; }
-.journal-log-item:hover,.journal-log-item.active { background:rgba(41,62,84,.82); }
+.journal-log-item { position:relative; width:100%; border:1px solid var(--color-line); border-left:2px solid var(--color-accent); border-radius:5px; background:var(--color-tint-2); padding:8px 34px 7px 10px; text-align:left; transition:background-color .15s ease; }
+.journal-log-item:hover,.journal-log-item.active { background:var(--color-tint-3); }
 .journal-log-item > span,.journal-log-item small { display:block; color:var(--color-fg-muted); font-size:9px; }
 .journal-log-item strong { display:block; margin:3px 0 1px; color:var(--color-fg); font-size:11px; font-weight:500; }
 .journal-log-item em { position:absolute; top:12px; right:8px; color:var(--color-green); font-size:9px; font-style:normal; }
 .journal-log-item em.loss { color:var(--color-red); }
 .journal-log-item footer { display:flex; gap:4px; margin-top:6px; }
-.journal-log-item b { border-radius:3px; background:rgba(45,213,161,.16); padding:2px 4px; color:var(--color-accent-strong); font-size:8px; font-weight:500; }
-.journal-log-item b:nth-child(2) { background:rgba(237,106,112,.16); color:var(--color-red); }.journal-log-item b:nth-child(3) { background:rgba(229,185,108,.16); color:var(--color-amber); }
+.journal-log-item b { border-radius:3px; background:color-mix(in srgb,var(--color-accent) 16%,transparent); padding:2px 4px; color:var(--color-accent-strong); font-size:8px; font-weight:500; }
+.journal-log-item b:nth-child(2) { background:color-mix(in srgb,var(--color-red) 16%,transparent); color:var(--color-red); }.journal-log-item b:nth-child(3) { background:color-mix(in srgb,var(--color-amber) 16%,transparent); color:var(--color-amber); }
 .journal-detail-panel { min-width:0; padding:17px; }
-.journal-detail-head h2 { margin:0; color:var(--color-fg-strong); font-size:15px; }.journal-detail-head span { color:var(--color-fg-muted); font-size:10px; }.journal-detail-head strong { color:#efc466; letter-spacing:2px; font-size:14px; }
-.journal-notes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; }.journal-notes article,.journal-review-card,.journal-linked { border:1px solid var(--color-line); border-radius:6px; background:rgba(9,18,30,.52); padding:10px; }.journal-notes p,.journal-linked p { min-height:42px; margin:7px 0 0; color:var(--color-fg-muted); font-size:10px; line-height:1.45; }
+.journal-detail-head h2 { margin:0; color:var(--color-fg-strong); font-size:15px; }.journal-detail-head span { color:var(--color-fg-muted); font-size:10px; }.journal-detail-head strong { color:var(--color-amber); letter-spacing:2px; font-size:14px; }
+.journal-notes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; }.journal-notes article,.journal-review-card,.journal-linked { border:1px solid var(--color-line); border-radius:6px; background:var(--color-panel-inset); padding:10px; }.journal-notes p,.journal-linked p { min-height:42px; margin:7px 0 0; color:var(--color-fg-muted); font-size:10px; line-height:1.45; }
 .journal-reviews { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:10px; }.journal-review-card > div:first-child { display:flex; justify-content:space-between; color:var(--color-fg-dim); font-size:10px; }.journal-review-card strong { display:block; margin-top:12px; color:var(--color-fg); font-size:11px; }.journal-switch { display:block; width:21px; height:12px; border-radius:99px; background:var(--color-tint-3); }.journal-switch.on { background:var(--color-accent); }.journal-switch.on::after { content:''; display:block; width:8px; height:8px; margin:2px 2px 0 auto; border-radius:50%; background:#fff; }.journal-rule-line { height:4px; margin-top:9px; overflow:hidden; border-radius:99px; background:var(--color-tint-3); }.journal-rule-line span { display:block; height:100%; border-radius:inherit; background:var(--color-fg-muted); }.journal-rule-line span.good { background:var(--color-accent); }
 .journal-linked { margin-top:10px; }.journal-linked .flex { margin-top:9px; }.journal-empty { padding:18px; color:var(--color-fg-muted); font-size:12px; text-align:center; }
 @media (max-width:700px) { .journal-page-head { align-items:stretch; flex-direction:column; }.journal-page-head > div:last-child > * { flex:1 1 auto; }.journal-workspace { grid-template-columns:1fr; }.journal-log-panel { max-height:310px; border-right:0; border-bottom:1px solid var(--color-line); }.journal-detail-panel { padding:12px; }.journal-notes,.journal-reviews { grid-template-columns:1fr; }.journal-notes p { min-height:auto; }.journal-log-list { min-height:170px; }.journal-log-item { flex:none; } }
 
 /* -------------------------------------------------------- analytics board */
-.analytics-board { display:grid; grid-template-columns:1.05fr 1fr; gap:10px; padding:10px; border:1px solid var(--color-line); border-radius:10px; background:linear-gradient(135deg,rgba(21,35,53,.9),rgba(10,18,31,.95)); box-shadow:var(--shadow-card); }
-.analytics-kpis { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }.analytics-kpis article,.analytics-setup,.analytics-hours,.analytics-mistakes { border:1px solid var(--color-line); border-radius:6px; background:rgba(9,18,30,.58); padding:11px; }.analytics-kpis span,.analytics-board h3 { color:var(--color-fg-dim); font-size:10px; font-weight:500; }.analytics-kpis strong { display:block; margin-top:7px; color:var(--color-fg-strong); font-size:21px; text-align:center; }.analytics-gauge { color:var(--color-fg-strong)!important; }.analytics-curve > section { min-height:195px; padding:11px; box-shadow:none; }.analytics-curve [class*='min-h'] { min-height:128px!important; }.analytics-curve [class*='text-[22px]'] { font-size:12px; }.analytics-curve [class*='text-[13px]'] { display:none; }.analytics-setup { display:flex; flex-direction:column; gap:12px; }.analytics-setup h3,.analytics-hours h3,.analytics-mistakes h3 { margin:0 0 5px; color:var(--color-fg-strong); }.analytics-setup > div { display:grid; grid-template-columns:72px 1fr 48px; align-items:center; gap:8px; font-size:9px; }.analytics-setup i { height:10px; overflow:hidden; border-radius:2px; background:var(--color-tint-3); }.analytics-setup b { display:block; height:100%; background:var(--color-accent); }.analytics-setup em { color:var(--color-accent-strong); font-size:9px; font-style:normal; text-align:right; }.analytics-setup p { color:var(--color-fg-muted); font-size:11px; }/* Fixed 38px cells rather than 7 fractions of the card. Stretching to the
+.analytics-board { display:grid; grid-template-columns:1.05fr 1fr; gap:10px; padding:10px; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }
+.analytics-kpis { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }.analytics-kpis article,.analytics-setup,.analytics-hours,.analytics-mistakes { border:1px solid var(--color-line); border-radius:6px; background:var(--color-panel-inset); padding:11px; }.analytics-kpis span,.analytics-board h3 { color:var(--color-fg-dim); font-size:10px; font-weight:500; }.analytics-kpis strong { display:block; margin-top:7px; color:var(--color-fg-strong); font-size:21px; text-align:center; }.analytics-gauge { color:var(--color-fg-strong)!important; }.analytics-curve > section { min-height:195px; padding:11px; box-shadow:none; }.analytics-curve [class*='min-h'] { min-height:128px!important; }.analytics-curve [class*='text-[22px]'] { font-size:12px; }.analytics-curve [class*='text-[13px]'] { display:none; }.analytics-setup { display:flex; flex-direction:column; gap:12px; }.analytics-setup h3,.analytics-hours h3,.analytics-mistakes h3 { margin:0 0 5px; color:var(--color-fg-strong); }.analytics-setup > div { display:grid; grid-template-columns:72px 1fr 48px; align-items:center; gap:8px; font-size:9px; }.analytics-setup i { height:10px; overflow:hidden; border-radius:2px; background:var(--color-tint-3); }.analytics-setup b { display:block; height:100%; background:var(--color-accent); }.analytics-setup em { color:var(--color-accent-strong); font-size:9px; font-style:normal; text-align:right; }.analytics-setup p { color:var(--color-fg-muted); font-size:11px; }/* Fixed 38px cells rather than 7 fractions of the card. Stretching to the
    column made a 100px tile on a wide screen, which dragged the card — and
    with it the mistake card beside it — to roughly 520px tall. Sized here and
    centred, the block stays the same size at every width, and the day labels

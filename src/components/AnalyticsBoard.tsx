@@ -5,7 +5,21 @@ import { bySetup } from '../lib/dashboardStats'
 import type { DerivedStats } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
 
-const COLORS = ['#2dd5a1', '#67d89c', '#f1c765', '#ef6d74', '#73869b']
+/**
+ * The mistake donut's slices, as tokens rather than literals.
+ *
+ * These were the dark palette's own values written out, which meant the
+ * donut kept midnight's greens on a rose or violet theme and kept dark-mode
+ * brightness against a white card. Every one maps to the token it was a copy
+ * of, so the wheel now follows both the theme and the palette.
+ */
+const COLORS = [
+  'var(--color-accent)',
+  'var(--color-green)',
+  'var(--color-amber)',
+  'var(--color-red)',
+  'var(--color-fg-muted)',
+]
 
 export function AnalyticsBoard({ trades, stats, capital }: { trades: StoredTrade[]; stats: DerivedStats; capital: number }) {
   const setups = useMemo(() => bySetup(trades).slice(0, 3), [trades])
