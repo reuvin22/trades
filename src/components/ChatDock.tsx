@@ -29,6 +29,7 @@ import { readableApiError } from '../lib/api'
 import type { AuthUser } from '../lib/useAuth'
 import { accentFor, displayNameFor, initialsFor } from '../data/messages'
 import { groupInitials, groupTint, useGroups, type ChatGroup } from '../lib/groups'
+import { RoomMembers } from './RoomMembers'
 import { hasFeature } from '../lib/entitlements'
 import {
   ChatIcon,
@@ -117,14 +118,9 @@ import {
   DOCK_ROOM,
   DOCK_ROOM_BODY,
   DOCK_ROOM_HEAD,
-  DOCK_ROOM_MEMBER,
-  DOCK_ROOM_MEMBER_NAME,
-  DOCK_ROOM_MEMBERS,
+  DOCK_ROOM_COUNT,
   DOCK_ROOM_NAME,
   DOCK_ROOM_NOTICE,
-  DOCK_ROOM_SECTION,
-  DOCK_ROOM_SUB,
-  DOCK_ROOM_YOU,
   MODAL_CLOSE,
 } from './ui'
 
@@ -475,6 +471,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   const [roomName, setRoomName] = useState('')
   const [picked, setPicked] = useState<string[]>([])
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
+  const [showingMembers, setShowingMembers] = useState(false)
   const [draft, setDraft] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
   const threadBox = useRef<HTMLDivElement>(null)
@@ -619,13 +616,25 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     setAdding(false)
     setCreating(false)
 
-    if (next === 'groups') select(null)
-    else setActiveRoomId(null)
+    if (next === 'groups') {
+      select(null)
+    } else {
+      setActiveRoomId(null)
+      setShowingMembers(false)
+    }
   }
 
   function openRoom(id: string) {
     select(null)
     setActiveRoomId(id)
+    setShowingMembers(false)
+  }
+
+  /** Removing the last person leaves a room with only you in it, which is
+   *  allowed — emptying it entirely is not, so the roster keeps you. */
+  function removeFromRoom(uid: string) {
+    if (activeRoomId === null) return
+    rooms.removeMember(activeRoomId, uid)
   }
 
   function togglePick(uid: string) {
@@ -1008,7 +1017,11 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
               }`}
             >
               {activeRoom !== null ? (
-                <Room room={activeRoom} onBack={() => setActiveRoomId(null)} />
+                <Room
+                  room={activeRoom}
+                  onBack={() => setActiveRoomId(null)}
+                  onShowMembers={() => setShowingMembers(true)}
+                />
               ) : person === null ? (
                 <p className={DOCK_EMPTY}>
                   {pane === 'groups'
@@ -1173,19 +1186,39 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
           </div>
         </section>
       )}
+
+      {/* A native <dialog>, so it sits above the dock without a z-index race. */}
+      <RoomMembers
+        room={showingMembers ? activeRoom : null}
+        meUid={me}
+        onClose={() => setShowingMembers(false)}
+        onNickname={(uid, nickname) => {
+          if (activeRoomId !== null) rooms.setNickname(activeRoomId, uid, nickname)
+        }}
+        onRemove={removeFromRoom}
+      />
     </>
   )
 }
 
 /**
- * One room, as far as this can honestly go.
+ * One room.
  *
- * Members and a name, and a plain statement of what is missing where the
- * composer would be. There is no thread to render: a room has no key to
- * decrypt with and no path in `database.rules.json` to read from, so drawing
- * a message list here would be drawing one that could never arrive.
+ * The header carries the name and the member count; the count is the way into
+ * the roster, which opens in a dialog rather than filling this panel. The body
+ * is where the thread goes, and it is empty because there is no thread to draw
+ * — a room has no key to decrypt with and no path in `database.rules.json` to
+ * read from, so a message list here would be one that could never arrive.
  */
-function Room({ room, onBack }: { room: ChatGroup; onBack: () => void }) {
+function Room({
+  room,
+  onBack,
+  onShowMembers,
+}: {
+  room: ChatGroup
+  onBack: () => void
+  onShowMembers: () => void
+}) {
   return (
     <div className={DOCK_ROOM}>
       <header className={DOCK_ROOM_HEAD}>
@@ -1197,9 +1230,9 @@ function Room({ room, onBack }: { room: ChatGroup; onBack: () => void }) {
 
         <span className="min-w-0">
           <span className={`${DOCK_ROOM_NAME} block`}>{room.name}</span>
-          <span className={`${DOCK_ROOM_SUB} block`}>
-            {room.members.length} members
-          </span>
+          <button type="button" className={DOCK_ROOM_COUNT} onClick={onShowMembers}>
+            {room.members.length} {room.members.length === 1 ? 'member' : 'members'}
+          </button>
         </span>
 
         <button type="button" className={`${DOCK_BACK} ml-auto`} onClick={onBack}>
@@ -1207,26 +1240,7 @@ function Room({ room, onBack }: { room: ChatGroup; onBack: () => void }) {
         </button>
       </header>
 
-      <div className={DOCK_ROOM_BODY}>
-        <h3 className={DOCK_ROOM_SECTION}>In this room</h3>
-
-        <div className={DOCK_ROOM_MEMBERS}>
-          {room.members.map((member) => (
-            <div key={member.uid} className={DOCK_ROOM_MEMBER}>
-              <span className={DOCK_AVATAR} aria-hidden="true">
-                <span
-                  className={DOCK_AVATAR_FACE}
-                  style={{ background: accentFor(member.uid) }}
-                >
-                  {initialsFor(member.name, '')}
-                </span>
-              </span>
-              <span className={DOCK_ROOM_MEMBER_NAME}>{member.name}</span>
-              {member.name === 'You' && <span className={DOCK_ROOM_YOU}>You</span>}
-            </div>
-          ))}
-        </div>
-      </div>
+      <p className={DOCK_ROOM_BODY}>Nothing has been said in here yet.</p>
 
       <p className={DOCK_ROOM_NOTICE}>
         Group messages are not connected yet. One-to-one chat works because a

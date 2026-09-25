@@ -2746,16 +2746,48 @@ export const DOCK_ROOM = 'flex min-h-0 flex-1 flex-col'
 export const DOCK_ROOM_HEAD =
   'flex shrink-0 items-center gap-11 border-b border-line px-14 py-11'
 export const DOCK_ROOM_NAME = 'text-[13px] font-semibold text-fg-strong'
-export const DOCK_ROOM_SUB = 'mt-1 text-[11px] text-fg-muted'
-export const DOCK_ROOM_BODY = 'flex-1 overflow-y-auto px-14 py-14'
-export const DOCK_ROOM_SECTION =
-  'mb-9 text-[10px] font-semibold tracking-[0.12em] text-fg-muted uppercase'
-export const DOCK_ROOM_MEMBERS = 'flex flex-col gap-2'
-export const DOCK_ROOM_MEMBER = 'flex items-center gap-10 rounded-sm px-6 py-6'
-export const DOCK_ROOM_MEMBER_NAME = 'text-[12px] text-fg-dim'
-/** Marks the one member who is you, so a four-person room reads as four. */
-export const DOCK_ROOM_YOU =
-  'ml-auto text-[10px] font-semibold tracking-[0.1em] text-fg-muted uppercase'
+/**
+ * The member count, which is also the way into the roster.
+ *
+ * A button rather than a line of text. Who is in a room is the thing people
+ * reach for first, and it does not deserve the whole panel underneath — a
+ * four-person list filling the space where a conversation goes reads as a
+ * conversation that is missing.
+ */
+export const DOCK_ROOM_COUNT =
+  'mt-1 block text-left text-[11px] text-fg-muted transition-colors duration-150 hover:text-accent-strong hover:underline'
+
+/** Where the thread will go. Empty on purpose, and says why. */
+export const DOCK_ROOM_BODY =
+  'grid flex-1 place-items-center px-24 py-20 text-center text-[12.5px] text-fg-muted'
+
+/* ---- the member roster, in a dialog ---- */
+
+export const MEMBER_LIST = 'flex flex-col gap-2'
+export const MEMBER_ROW =
+  'flex items-center gap-12 rounded-sm px-8 py-8 transition-colors duration-150 hover:bg-tint-1'
+export const MEMBER_FACE =
+  'grid size-34 flex-none place-items-center overflow-hidden rounded-full text-[12px] font-semibold text-white'
+export const MEMBER_BODY = 'flex min-w-0 flex-col'
+export const MEMBER_NAME = 'text-[13.5px] font-medium text-fg-strong'
+/** The real name, under a nickname — so a room can always tell who it means. */
+export const MEMBER_REAL = 'mt-1 text-[11.5px] text-fg-muted'
+export const MEMBER_YOU =
+  'rounded-full bg-tint-2 px-8 py-2 text-[9.5px] font-semibold tracking-[0.1em] text-fg-muted uppercase'
+
+export const MEMBER_ACTIONS = 'ml-auto flex flex-none items-center gap-6'
+export const MEMBER_ACTION =
+  'rounded-sm px-10 py-6 text-[11.5px] font-medium text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+export const MEMBER_DANGER =
+  'hover:!bg-[color-mix(in_srgb,var(--color-red)_12%,transparent)] hover:!text-red'
+
+export const MEMBER_EDIT = 'ml-auto flex flex-1 items-center gap-8'
+export const MEMBER_EDIT_INPUT =
+  'min-w-0 flex-1 rounded-sm border border-line bg-tint-1 px-11 py-6 text-[12.5px] text-fg outline-none transition-colors duration-150 placeholder:text-fg-muted focus:border-accent'
+
+/** Said once, above the list, rather than on every row. */
+export const MEMBER_NOTE =
+  'mb-14 rounded-sm border border-line bg-tint-1 px-13 py-10 text-[11.5px] leading-[1.6] text-fg-muted'
 
 /**
  * Says the room is not wired up, inside the dock that is.

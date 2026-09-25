@@ -31,7 +31,25 @@ import { useCallback, useState } from 'react'
  * list only knows people you already talk to one-to-one, and a room can hold
  * someone you do not.
  */
-export type GroupMember = { uid: string; name: string }
+export type GroupMember = {
+  uid: string
+  name: string
+  /**
+   * What this person is called *in this room*.
+   *
+   * Per-room and not per-viewer, the way Messenger does it: a nickname is
+   * something the room agrees on, so setting one changes the name everybody in
+   * it sees. That also means it belongs on the membership record rather than in
+   * the setter's browser — which is another thing waiting on a server.
+   */
+  nickname?: string
+}
+
+/** What to call someone here: the nickname if the room set one. */
+export function memberLabel(member: GroupMember): string {
+  const nick = member.nickname?.trim()
+  return nick !== undefined && nick !== '' ? nick : member.name
+}
 
 export type ChatGroup = {
   id: string
@@ -108,6 +126,9 @@ export function groupInitials(name: string): string {
 export type GroupStore = {
   groups: ChatGroup[]
   create: (name: string, members: GroupMember[]) => ChatGroup
+  /** Empty clears it and the member goes back to their own name. */
+  setNickname: (groupId: string, uid: string, nickname: string) => void
+  removeMember: (groupId: string, uid: string) => void
 }
 
 /**
@@ -132,5 +153,36 @@ export function useGroups(): GroupStore {
     return room
   }, [])
 
-  return { groups, create }
+  const setNickname = useCallback((groupId: string, uid: string, nickname: string) => {
+    const trimmed = nickname.trim()
+
+    setGroups((current) =>
+      current.map((room) =>
+        room.id !== groupId
+          ? room
+          : {
+              ...room,
+              members: room.members.map((member) =>
+                member.uid !== uid
+                  ? member
+                  : // Dropped rather than stored empty, so `memberLabel` has one
+                    // case to answer and not two.
+                    { ...member, nickname: trimmed === '' ? undefined : trimmed },
+              ),
+            },
+      ),
+    )
+  }, [])
+
+  const removeMember = useCallback((groupId: string, uid: string) => {
+    setGroups((current) =>
+      current.map((room) =>
+        room.id !== groupId
+          ? room
+          : { ...room, members: room.members.filter((member) => member.uid !== uid) },
+      ),
+    )
+  }, [])
+
+  return { groups, create, setNickname, removeMember }
 }
