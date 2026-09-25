@@ -157,6 +157,10 @@ export function hasFeature(feature: Feature, plan: PlanId = active): boolean {
 const ROUTE_FEATURE: Record<string, Feature> = {
   analytics: 'analytics',
   coach: 'coach',
+  // The feed is the same promise as chat — other traders — so it belongs to
+  // the same feature. `university` is absent on purpose: it turns on the
+  // account type, not the plan, and the page decides for itself.
+  community: 'messages',
 }
 
 export function routeAllowed(route: string, plan: PlanId = active): boolean {

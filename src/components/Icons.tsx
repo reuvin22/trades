@@ -653,3 +653,43 @@ export function TemplateIcon({ size = 20, className }: IconProps) {
     </svg>
   )
 }
+
+/** A globe with its parallels: the wider room, beyond your own journal. */
+export function CommunityIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9s1.2-6.5 3.6-9Z" />
+    </svg>
+  )
+}
+
+/** A mortarboard. The teaching side of the product, not the trading side. */
+export function UniversityIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M12 4 2.5 8.6 12 13.2l9.5-4.6L12 4Z" />
+      <path d="M6.5 10.8v4.6c0 1.6 2.5 2.9 5.5 2.9s5.5-1.3 5.5-2.9v-4.6" />
+      <path d="M21.5 8.6v5" />
+    </svg>
+  )
+}
+
+/** Approval on a post. Filled by the caller when the reader has liked it. */
+export function HeartIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M12 20s-7.5-4.4-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6c0 5-7.5 9.4-7.5 9.4Z" />
+    </svg>
+  )
+}
+
+/** Keep a post. The notch is what distinguishes it from a plain tag. */
+export function BookmarkIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M6 4h12v16l-6-4.2L6 20V4Z" />
+    </svg>
+  )
+}

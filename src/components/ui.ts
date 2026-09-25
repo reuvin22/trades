@@ -2431,3 +2431,193 @@ export const TV_PENDING =
 /** Says why the chart is showing a position and no candles. Stated plainly,
  *  because an unconfigured provider is a decision rather than a fault. */
 export const TV_NOTE = 'text-[11px] leading-[1.5] text-fg-muted'
+
+/* ------------------------------------------------------------- community */
+
+/*
+ * Three columns: what to read, the reading itself, and who is around.
+ *
+ * The centre column is capped rather than fluid. A feed is prose with pictures
+ * in it, and prose set the full width of a 1400px shell is unreadable — the
+ * eye loses the line on the way back. The rails collapse before the column
+ * narrows, so the last thing to give way is the thing being read.
+ */
+export const COMM_SHELL =
+  'grid grid-cols-[176px_minmax(0,1fr)_268px] items-start gap-18 ' +
+  'max-[1180px]:grid-cols-[176px_minmax(0,1fr)] max-[860px]:grid-cols-[minmax(0,1fr)]'
+
+/** Both rails stick; only the feed scrolls under them. */
+export const COMM_RAIL =
+  'sticky top-14 flex flex-col gap-2 max-[860px]:static max-[860px]:flex-row ' +
+  'max-[860px]:flex-wrap max-[860px]:gap-8'
+/** Hidden a breakpoint earlier than the left rail: "who is around" is the
+ *  first thing worth losing, and the feed is the last. */
+export const COMM_ASIDE = 'sticky top-14 flex flex-col gap-14 max-[1180px]:hidden'
+
+export const COMM_RAIL_ITEM =
+  'flex items-center gap-10 rounded-sm px-12 py-10 text-left text-[13px] font-medium text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+export const COMM_RAIL_ACTIVE = 'bg-tint-2 text-fg-strong'
+export const COMM_RAIL_COUNT =
+  'ml-auto text-[11px] font-semibold tabular-nums text-fg-muted'
+
+export const COMM_MAIN = 'flex min-w-0 flex-col gap-14'
+
+/* -------------------------------------------------------------- composer */
+
+export const COMM_COMPOSER = 'flex flex-col gap-12 px-18 pt-16 pb-14'
+export const COMM_COMPOSER_ROW = 'flex items-start gap-12'
+/**
+ * Grows with what is typed, up to a point.
+ *
+ * `field-sizing: content` does this without a resize observer and without the
+ * scroll-height dance that reads back layout on every keystroke. Where it is
+ * unsupported the textarea simply keeps its height — the feature degrades to
+ * the old behaviour rather than to a broken one.
+ */
+export const COMM_COMPOSER_INPUT =
+  'max-h-220 min-h-44 w-full resize-none rounded-sm border border-line bg-tint-1 px-14 py-12 text-[13.5px] leading-[1.55] text-fg outline-none transition-[border-color,background-color] duration-150 [field-sizing:content] placeholder:text-fg-muted focus:border-accent focus:bg-panel-solid'
+export const COMM_COMPOSER_FOOT =
+  'flex flex-wrap items-center justify-between gap-10 border-t border-line pt-12'
+export const COMM_COMPOSER_TOOLS = 'flex flex-wrap items-center gap-6'
+export const COMM_TOOL =
+  'inline-flex items-center gap-7 rounded-sm px-10 py-7 text-[12px] font-medium text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong aria-pressed:bg-tint-2 aria-pressed:text-accent-strong'
+
+/* ------------------------------------------------------------------ post */
+
+export const COMM_POST = 'flex flex-col px-18 pt-16 pb-4'
+export const COMM_POST_HEAD = 'flex items-start gap-12'
+export const COMM_POST_WHO = 'flex min-w-0 flex-col'
+export const COMM_POST_NAME =
+  'flex flex-wrap items-center gap-8 text-[13.5px] font-semibold text-fg-strong'
+export const COMM_POST_META = 'mt-2 text-[11.5px] text-fg-muted'
+/** Account type, not plan. Says what someone is here as — student, coach —
+ *  which is what gives a reply its weight. */
+export const COMM_POST_BADGE =
+  'rounded-full border border-line bg-tint-1 px-8 py-2 text-[9.5px] font-semibold tracking-[0.08em] text-fg-muted uppercase'
+export const COMM_POST_BADGE_COACH =
+  'border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent-strong'
+
+export const COMM_POST_TEXT =
+  'mt-12 text-[13.5px] leading-[1.62] whitespace-pre-line text-fg'
+export const COMM_POST_TAGS = 'mt-10 flex flex-wrap gap-6'
+export const COMM_TAG =
+  'rounded-full bg-tint-2 px-9 py-3 text-[11px] font-medium text-fg-dim'
+
+/** The attachment is drawn, not fetched — see PostChart in the page. */
+export const COMM_POST_CHART =
+  'mt-13 overflow-hidden rounded-sm border border-line bg-panel-inset'
+export const COMM_CHART_SVG = 'block h-160 w-full'
+export const COMM_CHART_CAPTION =
+  'flex items-center justify-between gap-10 border-t border-line px-13 py-9 text-[11.5px] text-fg-muted'
+
+export const COMM_POST_COUNTS =
+  'mt-13 flex items-center gap-12 text-[11.5px] text-fg-muted'
+export const COMM_POST_ACTIONS =
+  'mt-8 flex items-center gap-2 border-t border-line pt-4'
+export const COMM_ACTION =
+  'inline-flex flex-1 items-center justify-center gap-8 rounded-sm py-10 text-[12.5px] font-medium text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
+/** Liked. Weight changes as well as colour, because colour alone is not a
+ *  state every reader can see. */
+export const COMM_ACTION_ON = 'font-semibold !text-accent-strong'
+
+export const COMM_COMMENTS = 'flex flex-col gap-12 border-t border-line px-18 py-14'
+export const COMM_COMMENT = 'flex items-start gap-10'
+export const COMM_COMMENT_BODY =
+  'min-w-0 rounded-md rounded-tl-[4px] bg-tint-1 px-13 py-9'
+export const COMM_COMMENT_NAME = 'text-[12px] font-semibold text-fg-strong'
+export const COMM_COMMENT_TEXT = 'mt-2 text-[12.5px] leading-[1.5] text-fg-dim'
+export const COMM_COMMENT_FORM = 'flex items-center gap-10'
+export const COMM_COMMENT_INPUT =
+  'h-38 w-full rounded-full border border-line bg-tint-1 px-15 text-[12.5px] text-fg outline-none transition-[border-color,background-color] duration-150 placeholder:text-fg-muted focus:border-accent focus:bg-panel-solid'
+
+/* ---------------------------------------------------------------- people */
+
+export const COMM_ASIDE_CARD = 'px-15 pt-14 pb-12'
+export const COMM_ASIDE_HEAD =
+  'mb-12 flex items-center justify-between gap-10 text-[11px] font-semibold tracking-[0.14em] text-fg-muted uppercase'
+export const COMM_PEOPLE = 'flex flex-col gap-2'
+export const COMM_PERSON =
+  'flex w-full items-center gap-11 rounded-sm px-8 py-8 text-left transition-colors duration-150 hover:bg-tint-2'
+export const COMM_PERSON_BODY = 'flex min-w-0 flex-col'
+export const COMM_PERSON_NAME =
+  'overflow-hidden text-[12.5px] font-medium text-ellipsis whitespace-nowrap text-fg-strong'
+export const COMM_PERSON_ROLE =
+  'overflow-hidden text-[11px] text-ellipsis whitespace-nowrap text-fg-muted'
+export const COMM_PERSON_TAIL = 'ml-auto flex flex-none items-center gap-7'
+/** Unread count on a recent conversation. */
+export const COMM_PERSON_UNREAD =
+  'grid min-w-18 place-items-center rounded-full bg-accent px-6 py-1 text-[10px] font-semibold text-accent-ink'
+
+/**
+ * The presence dot, on the avatar's corner.
+ *
+ * Bordered in the panel colour so it reads as punched out of the avatar
+ * rather than floating over it — the same trick the chat dock uses.
+ */
+export const COMM_ONLINE =
+  'absolute right-0 bottom-0 size-9 rounded-full border-2 border-panel-solid bg-green'
+
+/** Avatar with room for the presence dot. The size comes from the call site. */
+export const COMM_AVATAR = 'relative flex-none'
+export const COMM_AVATAR_FACE =
+  'grid size-full place-items-center overflow-hidden rounded-full font-semibold text-white'
+
+/* ------------------------------------------------------------ university */
+
+/**
+ * The roster header: who you teach, at a glance.
+ *
+ * A band rather than a card, because the figures under it are the cards — and
+ * two stacked panels of the same weight make neither one the headline.
+ */
+export const UNI_BAND =
+  'flex flex-wrap items-center gap-18 px-22 pt-20 pb-20 ' +
+  'bg-[linear-gradient(120deg,color-mix(in_srgb,var(--color-accent)_10%,transparent),transparent_58%)]'
+export const UNI_BAND_BODY = 'flex min-w-0 flex-col gap-5'
+export const UNI_BAND_NAME =
+  'text-[19px] font-semibold tracking-[-0.015em] text-fg-strong'
+export const UNI_BAND_SUB = 'text-[12.5px] text-fg-muted'
+export const UNI_BAND_ACTIONS = 'ml-auto flex flex-wrap gap-10 max-[620px]:ml-0'
+
+export const UNI_TABS = 'flex flex-wrap gap-2 border-b border-line'
+export const UNI_TAB =
+  'relative -mb-1 px-14 py-11 text-[12.5px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg-strong'
+export const UNI_TAB_ACTIVE =
+  'text-fg-strong after:absolute after:inset-x-3 after:-bottom-1 after:h-2 after:rounded-full after:bg-accent after:content-[""]'
+
+export const UNI_STUDENT = 'flex items-center gap-12'
+export const UNI_STUDENT_NAME = 'block text-[13.5px] font-medium text-fg-strong'
+export const UNI_STUDENT_MAIL = 'mt-1 block text-[11.5px] text-fg-muted'
+
+/** Where a student is in the programme. The tone carries the stage. */
+export const UNI_LEVEL =
+  'inline-block rounded-full px-10 py-3 text-[10.5px] font-semibold tracking-[0.06em]'
+export const UNI_LEVEL_TONE: Record<string, string> = {
+  foundation: 'bg-[color-mix(in_srgb,var(--color-cyan)_16%,transparent)] text-cyan',
+  developing: 'bg-[color-mix(in_srgb,var(--color-amber)_18%,transparent)] text-amber',
+  consistent: 'bg-[color-mix(in_srgb,var(--color-green)_16%,transparent)] text-green',
+  funded:
+    'bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)] text-accent-strong',
+}
+
+export const UNI_PROGRESS_CELL = 'flex items-center gap-10'
+export const UNI_PROGRESS = 'h-4 w-88 overflow-hidden rounded-full bg-tint-3'
+export const UNI_PROGRESS_PCT = 'text-[11.5px] tabular-nums text-fg-muted'
+
+export const UNI_ROW_ACTIONS = 'flex justify-end gap-6'
+export const UNI_GHOST =
+  'inline-flex items-center gap-7 rounded-sm border border-line px-11 py-7 text-[11.5px] font-medium text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-line-strong hover:bg-tint-2 hover:text-fg-strong'
+
+/** The student's view: one coach, rather than a roster. */
+export const UNI_COACH_CARD = 'flex flex-wrap items-center gap-16 px-22 pt-20 pb-20'
+export const UNI_COACH_BODY = 'flex min-w-0 flex-col gap-4'
+export const UNI_COACH_ROLE =
+  'text-[10.5px] font-semibold tracking-[0.14em] text-accent-strong uppercase'
+export const UNI_COACH_NAME = 'text-[17px] font-semibold text-fg-strong'
+export const UNI_COACH_NOTE = 'text-[12.5px] leading-[1.55] text-fg-muted'
+
+/** Padding included: the grid sits inside a card that supplies none, and a
+ *  call site that appends its own would be inline Tailwind. */
+export const UNI_PEER_GRID =
+  'grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-12 px-22 pb-22'
+export const UNI_PEER = 'flex items-center gap-12 px-15 py-13'

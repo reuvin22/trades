@@ -81,6 +81,12 @@ const Calendar = lazy(() =>
 const AiCoach = lazy(() =>
   import('./pages/AiCoach').then((module) => ({ default: module.AiCoach })),
 )
+const Community = lazy(() =>
+  import('./pages/Community').then((module) => ({ default: module.Community })),
+)
+const MyUniversity = lazy(() =>
+  import('./pages/MyUniversity').then((module) => ({ default: module.MyUniversity })),
+)
 const Profile = lazy(() =>
   import('./pages/Profile').then((module) => ({ default: module.Profile })),
 )
@@ -163,6 +169,10 @@ function TraderView({
       return <Calendar trades={trades} profile={profile} />
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
+    case 'community':
+      return <Community profile={profile} />
+    case 'university':
+      return <MyUniversity profile={profile} />
     case 'profile':
       return <Profile user={user} profile={profile} onSaved={reloadProfile} />
     case 'billing':

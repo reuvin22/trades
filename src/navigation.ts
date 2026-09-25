@@ -5,6 +5,7 @@ import {
   AuditIcon,
   CalendarIcon,
   CoachIcon,
+  CommunityIcon,
   DashboardIcon,
   JournalIcon,
   OrgIcon,
@@ -12,6 +13,7 @@ import {
   SettingsIcon,
   TemplateIcon,
   SubscriptionIcon,
+  UniversityIcon,
   UsersIcon,
   WalletIcon,
 } from './components/Icons'
@@ -82,6 +84,24 @@ const TRADER_TREE: NavEntry[] = [
     children: [
       { route: 'analytics', label: 'Analytics', icon: AnalyticsIcon, feature: 'analytics' },
       { route: 'coach', label: 'AI Coach', icon: CoachIcon, feature: 'coach' },
+    ],
+  },
+  /*
+   * Deliberately not gated as a whole.
+   *
+   * The feed belongs to `messages`, the same feature chat does — it is the
+   * same promise about talking to other traders. My University is not: what
+   * it shows turns on `account_type`, which is a different axis from the plan
+   * and one this tree cannot see. The page answers for itself instead, and an
+   * individual account gets a reason rather than a missing menu item.
+   */
+  {
+    id: 'community',
+    label: 'Community',
+    icon: CommunityIcon,
+    children: [
+      { route: 'community', label: 'Feed', icon: CommunityIcon, feature: 'messages' },
+      { route: 'university', label: 'My University', icon: UniversityIcon },
     ],
   },
   {
