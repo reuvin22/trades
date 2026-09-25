@@ -2621,3 +2621,75 @@ export const UNI_COACH_NOTE = 'text-[12.5px] leading-[1.55] text-fg-muted'
 export const UNI_PEER_GRID =
   'grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-12 px-22 pb-22'
 export const UNI_PEER = 'flex items-center gap-12 px-15 py-13'
+
+/* -------------------------------------------------- one student's record */
+
+/** Back to the roster. Sits above the page head, not inside it. */
+export const UNI_BACK =
+  'inline-flex items-center gap-7 self-start px-2 text-[12.5px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg-strong'
+
+/** A roster row that opens onto something. The rail in ROW already signals
+ *  hover; this only adds the pointer and the keyboard affordance. */
+export const UNI_ROW_LINK = 'cursor-pointer'
+/** The student's name, as the row's real activator — a row click is a
+ *  convenience, and a convenience is not reachable from a keyboard. */
+export const UNI_NAME_BUTTON =
+  'block text-left text-[13.5px] font-medium text-fg-strong transition-colors duration-150 hover:text-accent-strong hover:underline'
+
+/** Identity, dates and stage, above the numbers. */
+export const UNI_WHO = 'flex flex-wrap items-center gap-16 px-22 pt-20 pb-20'
+export const UNI_WHO_BODY = 'flex min-w-0 flex-col gap-5'
+export const UNI_WHO_NAME =
+  'flex flex-wrap items-center gap-10 text-[21px] font-semibold tracking-[-0.02em] text-fg-strong'
+export const UNI_WHO_MAIL = 'text-[12.5px] text-fg-muted'
+export const UNI_WHO_FACTS =
+  'mt-4 flex flex-wrap items-center gap-x-18 gap-y-6 text-[11.5px] text-fg-muted'
+
+/**
+ * The equity chart needs a height to grow into.
+ *
+ * The chart fills whatever box it is given — it is `preserveAspectRatio="none"`
+ * by design — so a wrapper with no height collapses it to nothing. The
+ * dashboard solves this with a grid area; here it is stated directly.
+ */
+export const UNI_CHART_WRAP = 'min-h-360'
+
+/** Curve on the left, the breakdown beside it, stacking on a narrow screen. */
+export const UNI_SPLIT =
+  'grid grid-cols-[minmax(0,1fr)_340px] items-start gap-16 max-[1080px]:grid-cols-[minmax(0,1fr)]'
+
+/* ---------------------------------------------------------- the timeline */
+
+/** The head of a card whose body is a table or a list, not a form. */
+export const UNI_CARD_HEAD =
+  'flex flex-wrap items-baseline justify-between gap-12 px-20 pt-16'
+/** The stack that sits beside the equity curve. */
+export const UNI_SPLIT_STACK = 'flex flex-col gap-16'
+export const UNI_TIMELINE = 'flex flex-col gap-2 px-14 pt-4 pb-14'
+export const UNI_EVENT = 'flex items-start gap-13 rounded-sm px-8 py-11'
+export const UNI_EVENT_GLYPH =
+  'grid size-28 flex-none place-items-center rounded-full border'
+export const UNI_EVENT_TONE: Record<string, string> = {
+  review:
+    'border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-accent-strong',
+  milestone:
+    'border-[color-mix(in_srgb,var(--color-green)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-green)_12%,transparent)] text-green',
+  flag: 'border-[color-mix(in_srgb,var(--color-amber)_44%,transparent)] bg-[color-mix(in_srgb,var(--color-amber)_14%,transparent)] text-amber',
+  note: 'border-line bg-tint-1 text-fg-muted',
+  win: 'border-[color-mix(in_srgb,var(--color-green)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-green)_12%,transparent)] text-green',
+  loss: 'border-[color-mix(in_srgb,var(--color-red)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_12%,transparent)] text-red',
+}
+export const UNI_EVENT_BODY = 'flex min-w-0 flex-col gap-3'
+export const UNI_EVENT_TITLE =
+  'flex flex-wrap items-center gap-9 text-[13px] font-medium text-fg-strong'
+export const UNI_EVENT_KIND =
+  'rounded-full bg-tint-2 px-8 py-2 text-[9.5px] font-semibold tracking-[0.09em] text-fg-muted uppercase'
+export const UNI_EVENT_TEXT = 'text-[12.5px] leading-[1.55] text-fg-dim'
+export const UNI_EVENT_AGE = 'ml-auto flex-none text-[11px] text-fg-muted'
+
+/** The rule-adherence readout beside the curve. */
+export const UNI_RULES = 'flex flex-col gap-13'
+export const UNI_RULE = 'flex flex-col gap-6'
+export const UNI_RULE_HEAD =
+  'flex items-baseline justify-between gap-10 text-[12.5px] text-fg-dim'
+export const UNI_RULE_PCT = 'text-[12.5px] font-semibold tabular-nums text-fg-strong'

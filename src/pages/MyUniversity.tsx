@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { ChatIcon, JournalIcon, UserPlusIcon } from '../components/Icons'
+import { useMemo, useState } from 'react'
+import { ChatIcon, ChevronRightIcon, UserPlusIcon } from '../components/Icons'
 import { accentFor, initialsFor } from '../data/messages'
+import { journalFor } from '../data/studentJournal'
 import {
   CLASSMATES,
   LEVEL_LABEL,
@@ -8,6 +9,7 @@ import {
   REQUESTS,
   STUDENTS,
   UNIVERSITY,
+  type Student,
 } from '../data/university'
 import {
   CARD,
@@ -15,13 +17,16 @@ import {
   COMM_AVATAR_FACE,
   EMPTY_BLOCK,
   METER_FILL,
+  MONO,
   MUTED_NOTE,
+  NEG,
   PAGE_HEAD,
   PAGE_SUB,
   PAGE_TITLE,
   PILL,
   PILL_ACCENT,
   PILL_IDLE,
+  POS,
   ROW,
   SOON_BADGE,
   STAT_CARD,
@@ -45,12 +50,14 @@ import {
   UNI_GHOST,
   UNI_LEVEL,
   UNI_LEVEL_TONE,
+  UNI_NAME_BUTTON,
   UNI_PEER,
   UNI_PEER_GRID,
   UNI_PROGRESS,
   UNI_PROGRESS_CELL,
   UNI_PROGRESS_PCT,
   UNI_ROW_ACTIONS,
+  UNI_ROW_LINK,
   UNI_STUDENT,
   UNI_STUDENT_MAIL,
   UNI_STUDENT_NAME,
@@ -58,6 +65,10 @@ import {
   UNI_TAB_ACTIVE,
   UNI_TABS,
 } from '../components/ui'
+import { disciplineScore } from '../lib/dashboardStats'
+import { moneyIn } from '../lib/journalStats'
+import { deriveStats } from '../lib/stats'
+import { navigate } from '../lib/useHashRoute'
 import type { Profile } from '../lib/profile'
 
 /**
@@ -70,10 +81,9 @@ import type { Profile } from '../lib/profile'
  *
  * **Nothing here is connected.** There is no enrolment anywhere in the API
  * yet: no collection joining a coach to a student, no endpoint listing one.
- * The roster is fixtures in `data/university.ts`, and the figures in it are
- * the sort the server derives and a client never supplies — so when this does
- * get built, the numbers arrive with the roster rather than being computed in
- * the browser.
+ * The roster is fixtures, and every number on it is derived from the sample
+ * journals in `data/studentJournal.ts` by the same functions the trader's own
+ * dashboard uses — so a row and the page it opens can never disagree.
  */
 export function MyUniversity({ profile }: { profile: Profile | null }) {
   const accountType = profile?.accountType ?? 'individual'
@@ -85,29 +95,72 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
           <h2 className={PAGE_TITLE}>My University</h2>
           <p className={PAGE_SUB}>
             {accountType === 'coach'
-              ? 'The traders you are teaching, what they have logged, and who is waiting on a review.'
+              ? 'The traders you are teaching, what they have logged, and who is waiting on a review. Open anyone to see their whole record.'
               : 'Who is teaching you, and who is learning alongside you.'}
           </p>
         </div>
       </div>
 
-      {accountType === 'coach' && <CoachView />}
+      {accountType === 'coach' && <CoachView profile={profile} />}
       {accountType === 'student' && <StudentView />}
       {accountType === 'individual' && <UnaffiliatedView />}
     </>
   )
 }
 
+/* --------------------------------------------------------- derived roster */
+
+type RosterRow = {
+  student: Student
+  trades: number
+  winRate: number
+  netPl: number
+  discipline: number | null
+}
+
+/**
+ * One pass over every student's journal.
+ *
+ * Memoised because it is the whole roster's arithmetic, and the tab switch
+ * above it re-renders this component. `journalFor` caches per uid, so the
+ * generation itself only ever happens once.
+ */
+function useRoster(): RosterRow[] {
+  return useMemo(
+    () =>
+      STUDENTS.map((student) => {
+        const trades = journalFor(student.uid)
+        const stats = deriveStats(trades)
+        return {
+          student,
+          trades: stats.tradeCount,
+          winRate: stats.winRate,
+          netPl: stats.netPl,
+          discipline: disciplineScore(trades).score,
+        }
+      }),
+    [],
+  )
+}
+
 /* ------------------------------------------------------------- coach view */
 
-function CoachView() {
+function CoachView({ profile }: { profile: Profile | null }) {
   const [tab, setTab] = useState<'students' | 'requests'>('students')
+  const roster = useRoster()
+  const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
 
   const active = STUDENTS.filter((student) => student.lastActive.endsWith('h')).length
   const awaiting = STUDENTS.filter((student) => student.awaitingReview === true).length
-  const meanDiscipline = Math.round(
-    STUDENTS.reduce((total, student) => total + student.discipline, 0) / STUDENTS.length,
-  )
+
+  const graded = roster.filter((row) => row.discipline !== null)
+  const meanDiscipline =
+    graded.length === 0
+      ? null
+      : Math.round(
+          graded.reduce((total, row) => total + (row.discipline ?? 0), 0) / graded.length,
+        )
+  const cohortPl = roster.reduce((total, row) => total + row.netPl, 0)
 
   return (
     <>
@@ -134,7 +187,15 @@ function CoachView() {
         <Figure label="Students" value={String(STUDENTS.length)} />
         <Figure label="Active today" value={String(active)} />
         <Figure label="Awaiting review" value={String(awaiting)} />
-        <Figure label="Mean discipline" value={`${meanDiscipline}%`} />
+        <Figure
+          label="Mean discipline"
+          value={meanDiscipline === null ? '—' : `${meanDiscipline}%`}
+        />
+        <Figure
+          label="Cohort P&L"
+          value={money(cohortPl)}
+          tone={cohortPl >= 0 ? 'pos' : 'neg'}
+        />
       </div>
 
       <div className={UNI_TABS}>
@@ -154,7 +215,7 @@ function CoachView() {
         </button>
       </div>
 
-      {tab === 'students' ? <Roster /> : <Requests />}
+      {tab === 'students' ? <Roster roster={roster} money={money} /> : <Requests />}
 
       <p className={MUTED_NOTE}>
         Sample roster. Enrolment is not built yet — no part of the API joins a coach
@@ -164,7 +225,17 @@ function CoachView() {
   )
 }
 
-function Roster() {
+function Roster({
+  roster,
+  money,
+}: {
+  roster: RosterRow[]
+  money: (value: number) => string
+}) {
+  function open(uid: string) {
+    navigate(`university/${uid}`)
+  }
+
   return (
     <section className={CARD}>
       <div className={TABLE_WRAP}>
@@ -175,6 +246,7 @@ function Roster() {
               <th className={TH}>Stage</th>
               <th className={TH}>Trades</th>
               <th className={TH}>Win rate</th>
+              <th className={TH}>Net P&amp;L</th>
               <th className={TH}>Discipline</th>
               <th className={TH}>Progress</th>
               <th className={TH}>Last active</th>
@@ -182,13 +254,32 @@ function Roster() {
             </tr>
           </thead>
           <tbody>
-            {STUDENTS.map((student) => (
-              <tr key={student.uid} className={ROW}>
+            {roster.map(({ student, trades, winRate, netPl, discipline }) => (
+              /*
+               * The row is clickable for convenience; the name inside it is
+               * the real activator, because a click handler on a <tr> is
+               * unreachable from a keyboard. The inner button stops the event
+               * so one press is not handled twice.
+               */
+              <tr
+                key={student.uid}
+                className={`${ROW} ${UNI_ROW_LINK}`}
+                onClick={() => open(student.uid)}
+              >
                 <td className={TD}>
                   <span className={UNI_STUDENT}>
                     <Face uid={student.uid} name={student.name} email={student.email} />
                     <span>
-                      <span className={UNI_STUDENT_NAME}>{student.name}</span>
+                      <button
+                        type="button"
+                        className={UNI_NAME_BUTTON}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          open(student.uid)
+                        }}
+                      >
+                        {student.name}
+                      </button>
                       <span className={UNI_STUDENT_MAIL}>{student.email}</span>
                     </span>
                   </span>
@@ -198,9 +289,14 @@ function Roster() {
                     {LEVEL_LABEL[student.level]}
                   </span>
                 </td>
-                <td className={TD}>{student.trades}</td>
-                <td className={TD}>{student.winRate}%</td>
-                <td className={TD}>{student.discipline}%</td>
+                <td className={TD}>{trades}</td>
+                <td className={TD}>{Math.round(winRate)}%</td>
+                <td className={`${TD} ${MONO} ${netPl >= 0 ? POS : NEG}`}>
+                  {money(netPl)}
+                </td>
+                <td className={TD}>
+                  {discipline === null ? '—' : `${Math.round(discipline)}%`}
+                </td>
                 <td className={TD}>
                   <span className={UNI_PROGRESS_CELL}>
                     <span className={UNI_PROGRESS}>
@@ -215,14 +311,7 @@ function Roster() {
                 <td className={TD}>{student.lastActive} ago</td>
                 <td className={TD}>
                   <span className={UNI_ROW_ACTIONS}>
-                    <button type="button" className={UNI_GHOST} disabled>
-                      <ChatIcon size={14} />
-                      Message
-                    </button>
-                    <button type="button" className={UNI_GHOST} disabled>
-                      <JournalIcon size={14} />
-                      Journal
-                    </button>
+                    <ChevronRightIcon size={16} />
                   </span>
                 </td>
               </tr>
@@ -283,6 +372,15 @@ function Requests() {
 /* ----------------------------------------------------------- student view */
 
 function StudentView() {
+  const peers = useMemo(
+    () =>
+      CLASSMATES.map((peer) => ({
+        peer,
+        trades: journalFor(peer.uid).length,
+      })),
+    [],
+  )
+
   return (
     <>
       <section className={`${CARD} ${UNI_COACH_CARD}`}>
@@ -311,13 +409,13 @@ function StudentView() {
         </div>
 
         <div className={UNI_PEER_GRID}>
-          {CLASSMATES.map((peer) => (
+          {peers.map(({ peer, trades }) => (
             <div key={peer.uid} className={`${CARD} ${UNI_PEER}`}>
               <Face uid={peer.uid} name={peer.name} email={peer.email} />
               <span>
                 <span className={UNI_STUDENT_NAME}>{peer.name}</span>
                 <span className={UNI_STUDENT_MAIL}>
-                  {LEVEL_LABEL[peer.level]} · {peer.trades} trades
+                  {LEVEL_LABEL[peer.level]} · {trades} trades
                 </span>
               </span>
             </div>
@@ -351,11 +449,21 @@ function UnaffiliatedView() {
 
 /* ------------------------------------------------------------------ parts */
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone?: 'pos' | 'neg'
+}) {
+  const colour = tone === 'pos' ? POS : tone === 'neg' ? NEG : ''
+
   return (
     <div className={`${CARD} ${STAT_CARD}`}>
       <span className={STAT_LABEL}>{label}</span>
-      <span className={STAT_VALUE}>{value}</span>
+      <span className={`${STAT_VALUE} ${colour}`}>{value}</span>
     </div>
   )
 }

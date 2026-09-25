@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   groupOfRoute,
   isGroup,
+  sectionOfRoute,
   traderNav,
   type IconComponent,
   type NavGroup,
@@ -305,6 +306,10 @@ export function Sidebar({
   const openGroup =
     override !== null && override.route === route ? override.group : groupOfRoute(route)
 
+  // A detail page keeps its parent lit — `university/s-mia` is still
+  // My University while you read it.
+  const section = sectionOfRoute(route)
+
   const toggleGroup = (id: string) => {
     setOverride({ route, group: openGroup === id ? null : id })
 
@@ -421,7 +426,7 @@ export function Sidebar({
                   target={entry.route}
                   label={entry.label}
                   icon={entry.icon}
-                  active={route === entry.route}
+                  active={section === entry.route}
                   onNavigate={onClose}
                   disabled={entry.disabled}
                   collapsed={collapsed}
@@ -430,7 +435,7 @@ export function Sidebar({
             }
 
             const open = openGroup === entry.id
-            const within = entry.children.some((child) => child.route === route)
+            const within = entry.children.some((child) => child.route === section)
 
             return (
               <div key={entry.id}>
@@ -456,7 +461,7 @@ export function Sidebar({
                       <button
                         key={child.route}
                         type="button"
-                        aria-current={route === child.route ? 'page' : undefined}
+                        aria-current={section === child.route ? 'page' : undefined}
                         // Not focusable while the group is shut: a collapsed
                         // list still occupies the tab order otherwise, and the
                         // focus ring lands on something nobody can see.
@@ -466,7 +471,7 @@ export function Sidebar({
                           onClose()
                         }}
                         className={`${NAV_SUB_ITEM} ${
-                          route === child.route ? NAV_SUB_ACTIVE : NAV_SUB_IDLE
+                          section === child.route ? NAV_SUB_ACTIVE : NAV_SUB_IDLE
                         }`}
                       >
                         {child.label}

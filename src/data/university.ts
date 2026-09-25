@@ -4,10 +4,14 @@
  * Same standing as `data/community.ts`: there is no enrolment endpoint yet,
  * so this is the shape the screen needs rather than anything the API returns.
  *
- * Every figure here is the kind the backend derives and the client never
- * supplies — win rate, trade count, discipline. They are written out as plain
- * numbers because nothing computes them yet; when the API grows a roster
- * these become a response and the page stops importing this file.
+ * What is deliberately *not* here: trade counts, win rates, P&L, discipline.
+ * Those are derived from `data/studentJournal.ts` by the product's own
+ * `deriveStats` and `disciplineScore`, the same functions the trader's own
+ * dashboard uses. A number typed here would be a number that could disagree
+ * with the student's page, and the roster exists to be clicked through.
+ *
+ * What stays here is what a journal cannot tell you: who someone is, where
+ * they are in the programme, and what the coach has done with them.
  */
 
 export type StudentLevel = 'foundation' | 'developing' | 'consistent' | 'funded'
@@ -24,14 +28,10 @@ export type Student = {
   name: string
   email: string
   level: StudentLevel
-  /** Trades logged since enrolling. */
-  trades: number
-  winRate: number
   /** How much of the programme is behind them, 0–100. */
   progress: number
-  /** Rules followed as a share of trades — the number the coach reads first. */
-  discipline: number
   lastActive: string
+  enrolled: string
   /** Set when the student has asked for a journal review and not had one. */
   awaitingReview?: boolean
 }
@@ -56,22 +56,18 @@ export const STUDENTS: Student[] = [
     name: 'Mia Torres',
     email: 'mia.torres@example.com',
     level: 'consistent',
-    trades: 128,
-    winRate: 54,
     progress: 74,
-    discipline: 91,
     lastActive: '2h',
+    enrolled: 'March 2026',
   },
   {
     uid: 's-ade',
     name: 'Ade Fashola',
     email: 'ade.f@example.com',
     level: 'funded',
-    trades: 203,
-    winRate: 49,
     progress: 96,
-    discipline: 88,
     lastActive: '5h',
+    enrolled: 'January 2026',
     awaitingReview: true,
   },
   {
@@ -79,11 +75,9 @@ export const STUDENTS: Student[] = [
     name: 'Priya Raman',
     email: 'priya.r@example.com',
     level: 'developing',
-    trades: 61,
-    winRate: 44,
     progress: 48,
-    discipline: 62,
     lastActive: '1d',
+    enrolled: 'May 2026',
     awaitingReview: true,
   },
   {
@@ -91,35 +85,33 @@ export const STUDENTS: Student[] = [
     name: 'Jae Kwon',
     email: 'jae.kwon@example.com',
     level: 'developing',
-    trades: 37,
-    winRate: 51,
     progress: 35,
-    discipline: 77,
     lastActive: '2d',
+    enrolled: 'June 2026',
   },
   {
     uid: 's-nadia',
     name: 'Nadia Haddad',
     email: 'nadia.h@example.com',
     level: 'foundation',
-    trades: 12,
-    winRate: 33,
     progress: 14,
-    discipline: 58,
     lastActive: '4d',
+    enrolled: 'August 2026',
   },
   {
     uid: 's-tom',
     name: 'Tom Whitfield',
     email: 't.whitfield@example.com',
     level: 'foundation',
-    trades: 4,
-    winRate: 25,
     progress: 6,
-    discipline: 41,
     lastActive: '9d',
+    enrolled: 'September 2026',
   },
 ]
+
+export const STUDENT_BY_UID: Record<string, Student> = Object.fromEntries(
+  STUDENTS.map((student) => [student.uid, student]),
+)
 
 export const REQUESTS: EnrolmentRequest[] = [
   {
@@ -137,6 +129,110 @@ export const REQUESTS: EnrolmentRequest[] = [
     age: '3d',
   },
 ]
+
+/* --------------------------------------------------------- coaching notes */
+
+export type CoachingEventKind = 'review' | 'milestone' | 'flag' | 'note'
+
+export type CoachingEvent = {
+  id: string
+  kind: CoachingEventKind
+  title: string
+  body: string
+  age: string
+}
+
+export const EVENT_LABEL: Record<CoachingEventKind, string> = {
+  review: 'Review',
+  milestone: 'Milestone',
+  flag: 'Flag',
+  note: 'Note',
+}
+
+/**
+ * What the coach has done, which a journal cannot show.
+ *
+ * The rest of a student's timeline — trades, wins, breaks — is read off their
+ * journal rather than written here, so it can never drift from the numbers on
+ * the same page.
+ */
+export const COACHING_EVENTS: Record<string, CoachingEvent[]> = {
+  's-mia': [
+    {
+      id: 'e-mia-1',
+      kind: 'milestone',
+      title: 'Moved up to Consistent',
+      body: 'Four straight weeks inside the risk plan with no rule breaks on entry.',
+      age: '6d',
+    },
+    {
+      id: 'e-mia-2',
+      kind: 'review',
+      title: 'Weekly journal review',
+      body: 'Cutting the 09:45 continuation was the whole change. Told her to leave it alone for another month before adding anything back.',
+      age: '13d',
+    },
+  ],
+  's-ade': [
+    {
+      id: 'e-ade-1',
+      kind: 'milestone',
+      title: 'Passed phase 2',
+      body: 'Funded on the 50k account. Risk drops to 0.5% per trade from here.',
+      age: '3d',
+    },
+    {
+      id: 'e-ade-2',
+      kind: 'note',
+      title: 'Asked for a review',
+      body: 'Wants a second read on the Thursday session before next week.',
+      age: '5h',
+    },
+  ],
+  's-priya': [
+    {
+      id: 'e-priya-1',
+      kind: 'flag',
+      title: 'Size, not direction',
+      body: 'Three of five losses last week were oversized on the same setup. Same trades at half risk is a flat week.',
+      age: '2d',
+    },
+    {
+      id: 'e-priya-2',
+      kind: 'review',
+      title: 'Weekly journal review',
+      body: 'Asked her to log a rule break even when the trade closes green.',
+      age: '9d',
+    },
+  ],
+  's-jae': [
+    {
+      id: 'e-jae-1',
+      kind: 'note',
+      title: 'Session focus',
+      body: 'Sticking to London only for the next fortnight. New York entries were the bulk of the damage.',
+      age: '4d',
+    },
+  ],
+  's-nadia': [
+    {
+      id: 'e-nadia-1',
+      kind: 'flag',
+      title: 'Journalling gaps',
+      body: 'Half the entries have no rule answers filled in, so discipline cannot be read yet.',
+      age: '4d',
+    },
+  ],
+  's-tom': [
+    {
+      id: 'e-tom-1',
+      kind: 'note',
+      title: 'Just started',
+      body: 'Four trades in. Nothing to read yet — the point of this month is the habit, not the numbers.',
+      age: '9d',
+    },
+  ],
+}
 
 /** What a student sees instead of a roster: the person teaching them. */
 export const MY_COACH = {

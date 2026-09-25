@@ -155,12 +155,25 @@ const ALL_TRADER_NAV: NavItem[] = TRADER_TREE.flatMap((entry) =>
  * route never reaches here anyway — `App` redirects off one before it renders.
  */
 export function groupOfRoute(route: string): string | null {
+  const head = sectionOfRoute(route)
+
   for (const entry of TRADER_TREE) {
-    if (isGroup(entry) && entry.children.some((child) => child.route === route)) {
+    if (isGroup(entry) && entry.children.some((child) => child.route === head)) {
       return entry.id
     }
   }
   return null
+}
+
+/**
+ * The screen a route belongs to, ignoring anything it addresses.
+ *
+ * `university/s-mia` is one student's record, but as far as the sidebar is
+ * concerned it is still My University — it should stay lit, and its category
+ * should stay open, while you read a row you opened from it.
+ */
+export function sectionOfRoute(route: string): string {
+  return route.split('/')[0]
 }
 
 export const ADMIN_NAV: NavSection[] = [
