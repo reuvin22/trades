@@ -397,6 +397,18 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
 
     const database = rtdb
 
+    /*
+     * Detaching the listeners below stops new callbacks, but it cannot stop a
+     * decryption already in flight. Without this flag that promise still
+     * resolves and writes to state after the effect has been torn down — and
+     * because the key it writes is a contact id, a thread removed from the
+     * list could be put back by a decrypt that started before it went.
+     *
+     * The same guard the rest of this file already uses; see
+     * `useChatConnection` and `useImageUrl`.
+     */
+    let live = true
+
     const stops = watching.split(',').flatMap((them) => {
       const threadId = threadIdFor(me, them)
 
@@ -442,12 +454,14 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
                   ? await decryptMessage(them, message.image)
                   : undefined,
               })),
-            ).then((readable) =>
+            ).then((readable) => {
+              if (!live) return
+
               setThreads((current) => ({
                 ...current,
                 [them]: { ...(current[them] ?? EMPTY), messages: readable },
-              })),
-            )
+              }))
+            })
           },
         ),
 
@@ -470,7 +484,10 @@ export function useContacts(user: AuthUser | null, ready: boolean): Contact[] {
       ]
     })
 
-    return () => stops.forEach((stop) => stop())
+    return () => {
+      live = false
+      stops.forEach((stop) => stop())
+    }
   }, [me, ready, watching])
 
   /** Newest conversation first, so whoever just wrote rises to the top. */

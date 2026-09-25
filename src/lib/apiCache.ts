@@ -35,6 +35,30 @@ type Entry = {
 const entries = new Map<string, Entry>()
 
 /**
+ * How many entries may sit here before expired ones are swept out.
+ *
+ * There has to be a sweep at all because nothing else removes an entry once
+ * its TTL passes: a key is only overwritten when the same URL is asked for
+ * again, and one that is never asked for again keeps its whole payload for
+ * the life of the tab. Most keys are asked for repeatedly and cost nothing,
+ * but the ones carrying a parameter — a signed URL per image, a page per
+ * cursor — are each asked for once and then held forever.
+ *
+ * A threshold rather than a timer per entry: a timer would mean scheduling
+ * and cancelling work for every request to reclaim a few kilobytes, and the
+ * sweep below only runs on the request that crosses the line.
+ */
+const SWEEP_ABOVE = 64
+
+/** Drop everything past its TTL. Entries in flight have `until` 0 and a
+ *  `pending`, so they are never swept out from under a caller waiting on one. */
+function sweep(now: number): void {
+  for (const [key, entry] of entries) {
+    if (entry.pending === undefined && entry.until <= now) entries.delete(key)
+  }
+}
+
+/**
  * Run a request through the cache, or join one already running.
  *
  * The key identifies the response, not the request — two callers asking for
@@ -46,6 +70,9 @@ export async function through<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   const now = Date.now()
+
+  if (entries.size > SWEEP_ABOVE) sweep(now)
+
   const hit = entries.get(key)
 
   if (hit) {
