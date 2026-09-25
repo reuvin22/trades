@@ -2693,3 +2693,75 @@ export const UNI_RULE = 'flex flex-col gap-6'
 export const UNI_RULE_HEAD =
   'flex items-baseline justify-between gap-10 text-[12.5px] text-fg-dim'
 export const UNI_RULE_PCT = 'text-[12.5px] font-semibold tabular-nums text-fg-strong'
+
+/* ------------------------------------------------- group conversations */
+
+/**
+ * The button that swaps the list between people and rooms.
+ *
+ * `aria-pressed` rather than `aria-expanded`: this does not disclose a panel
+ * under the header the way "add a contact" does, it changes what the list
+ * beneath is a list of. DOCK_ADD styles the open state off `aria-expanded`,
+ * so the two cannot share one class.
+ */
+export const DOCK_GROUPS_TOGGLE =
+  'grid size-28 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong aria-pressed:bg-accent aria-pressed:text-accent-ink'
+
+/** A group's avatar: square-ish, so a room never reads as a person. */
+export const DOCK_GROUP_FACE =
+  'grid size-full place-items-center rounded-[9px] text-[11px] font-semibold text-white'
+
+/** Starts a new room, at the top of the list rather than the bottom — the
+ *  list grows downward and a button under it would keep moving. */
+export const DOCK_GROUP_NEW =
+  'flex w-full items-center gap-10 border-b border-line px-12 py-10 text-left text-[12px] font-medium text-accent-strong transition-colors duration-150 hover:bg-tint-2'
+
+export const DOCK_GROUP_FORM =
+  'flex shrink-0 flex-col gap-9 border-b border-line px-10 py-10'
+export const DOCK_GROUP_INPUT =
+  'w-full rounded-full border border-line bg-tint-2 px-12 py-7 text-[12px] text-fg outline-none transition-colors duration-150 placeholder:text-fg-muted focus:border-accent'
+export const DOCK_GROUP_LABEL =
+  'text-[10px] font-semibold tracking-[0.12em] text-fg-muted uppercase'
+
+/** The contact picker inside the create form. Capped and scrolled: a trader
+ *  with forty contacts would otherwise push the buttons off the panel. */
+export const DOCK_GROUP_PICKER =
+  'flex max-h-132 flex-col gap-1 overflow-y-auto rounded-sm border border-line bg-tint-1 p-4'
+export const DOCK_GROUP_PICK =
+  'flex w-full items-center gap-9 rounded-sm px-8 py-6 text-left text-[12px] text-fg-dim transition-colors duration-150 hover:bg-tint-2 aria-pressed:text-fg-strong'
+export const DOCK_GROUP_TICK =
+  'grid size-16 flex-none place-items-center rounded-[5px] border border-line-strong text-transparent transition-[background-color,border-color,color] duration-150'
+export const DOCK_GROUP_TICK_ON = 'border-accent bg-accent text-accent-ink'
+
+export const DOCK_GROUP_ACTIONS = 'flex items-center justify-end gap-8'
+export const DOCK_GROUP_BUTTON =
+  'rounded-full px-12 py-6 text-[11.5px] font-medium transition-[color,background-color] duration-150 disabled:cursor-not-allowed disabled:opacity-50'
+export const DOCK_GROUP_CANCEL = 'text-fg-muted hover:bg-tint-2 hover:text-fg-strong'
+export const DOCK_GROUP_CREATE =
+  'bg-accent text-accent-ink hover:bg-accent-strong disabled:bg-tint-3 disabled:text-fg-muted'
+
+/* ---- one room, in the main column ---- */
+
+export const DOCK_ROOM = 'flex min-h-0 flex-1 flex-col'
+export const DOCK_ROOM_HEAD =
+  'flex shrink-0 items-center gap-11 border-b border-line px-14 py-11'
+export const DOCK_ROOM_NAME = 'text-[13px] font-semibold text-fg-strong'
+export const DOCK_ROOM_SUB = 'mt-1 text-[11px] text-fg-muted'
+export const DOCK_ROOM_BODY = 'flex-1 overflow-y-auto px-14 py-14'
+export const DOCK_ROOM_SECTION =
+  'mb-9 text-[10px] font-semibold tracking-[0.12em] text-fg-muted uppercase'
+export const DOCK_ROOM_MEMBERS = 'flex flex-col gap-2'
+export const DOCK_ROOM_MEMBER = 'flex items-center gap-10 rounded-sm px-6 py-6'
+export const DOCK_ROOM_MEMBER_NAME = 'text-[12px] text-fg-dim'
+/** Marks the one member who is you, so a four-person room reads as four. */
+export const DOCK_ROOM_YOU =
+  'ml-auto text-[10px] font-semibold tracking-[0.1em] text-fg-muted uppercase'
+
+/**
+ * Says the room is not wired up, inside the dock that is.
+ *
+ * Stated where the composer would be, because that is where somebody finds
+ * out — a notice at the top gets read before it means anything.
+ */
+export const DOCK_ROOM_NOTICE =
+  'shrink-0 border-t border-line bg-[color-mix(in_srgb,var(--color-amber)_10%,transparent)] px-14 py-10 text-[11px] leading-[1.6] text-fg-dim'

@@ -31,6 +31,15 @@ export type Feature =
   | 'coach'
   /** Live chat with other traders. */
   | 'messages'
+  /**
+   * Conversations with more than one other person.
+   *
+   * Its own feature rather than part of `messages`, although the two currently
+   * cover the same tiers. They are different promises — one-to-one chat and a
+   * room — and a tier that wanted the first without the second would otherwise
+   * have nothing to say so.
+   */
+  | 'groupChat'
   | 'pdfExport'
   /** The discipline score: execution measured against your own rules. */
   | 'ruleTracking'
@@ -44,6 +53,7 @@ const PRO: readonly Feature[] = [
   'leakDetection',
   'coach',
   'messages',
+  'groupChat',
   'pdfExport',
 ]
 

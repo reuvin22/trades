@@ -693,3 +693,15 @@ export function BookmarkIcon({ size = 20, className }: IconProps) {
     </svg>
   )
 }
+
+/** A room rather than a person: a bubble with two heads in it. */
+export function GroupChatIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M21 11.5c0 3.6-4 6.5-9 6.5a10.9 10.9 0 0 1-2.6-.3L4.5 20l1.2-3.3C4 15.5 3 13.6 3 11.5 3 7.9 7 5 12 5s9 2.9 9 6.5Z" />
+      <circle cx="9.6" cy="11" r="1.5" />
+      <circle cx="14.4" cy="11" r="1.5" />
+      <path d="M7.3 14.4c.6-.8 1.4-1.2 2.3-1.2M14.4 13.2c.9 0 1.7.4 2.3 1.2" />
+    </svg>
+  )
+}

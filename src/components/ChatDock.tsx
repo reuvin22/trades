@@ -28,9 +28,13 @@ import { ACCEPTED, imageFromPaste, prepareChatImage } from '../lib/chartImage'
 import { readableApiError } from '../lib/api'
 import type { AuthUser } from '../lib/useAuth'
 import { accentFor, displayNameFor, initialsFor } from '../data/messages'
+import { groupInitials, groupTint, useGroups, type ChatGroup } from '../lib/groups'
+import { hasFeature } from '../lib/entitlements'
 import {
   ChatIcon,
+  CheckIcon,
   CloseIcon,
+  GroupChatIcon,
   ImageIcon,
   SearchIcon,
   SeenIcon,
@@ -96,6 +100,31 @@ import {
   DOCK_TRAY_THUMB,
   DOCK_TRAY_THUMB_EMPTY,
   DOCK_UNREAD,
+  DOCK_GROUP_ACTIONS,
+  DOCK_GROUP_BUTTON,
+  DOCK_GROUP_CANCEL,
+  DOCK_GROUP_CREATE,
+  DOCK_GROUP_FACE,
+  DOCK_GROUP_FORM,
+  DOCK_GROUP_INPUT,
+  DOCK_GROUP_LABEL,
+  DOCK_GROUP_NEW,
+  DOCK_GROUP_PICK,
+  DOCK_GROUP_PICKER,
+  DOCK_GROUP_TICK,
+  DOCK_GROUP_TICK_ON,
+  DOCK_GROUPS_TOGGLE,
+  DOCK_ROOM,
+  DOCK_ROOM_BODY,
+  DOCK_ROOM_HEAD,
+  DOCK_ROOM_MEMBER,
+  DOCK_ROOM_MEMBER_NAME,
+  DOCK_ROOM_MEMBERS,
+  DOCK_ROOM_NAME,
+  DOCK_ROOM_NOTICE,
+  DOCK_ROOM_SECTION,
+  DOCK_ROOM_SUB,
+  DOCK_ROOM_YOU,
   MODAL_CLOSE,
 } from './ui'
 
@@ -431,6 +460,21 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   const [open, setOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  /*
+   * Rooms, and which list the aside is showing.
+   *
+   * `pane` rather than a second disclosure under the header: the two are lists
+   * of the same thing — conversations — so they take turns in one column
+   * instead of stacking and halving each other.
+   */
+  const rooms = useGroups()
+  const groupsAllowed = hasFeature('groupChat')
+  const [pane, setPane] = useState<'people' | 'groups'>('people')
+  const [creating, setCreating] = useState(false)
+  const [roomName, setRoomName] = useState('')
+  const [picked, setPicked] = useState<string[]>([])
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
   const threadBox = useRef<HTMLDivElement>(null)
@@ -564,6 +608,56 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     }
   }
 
+  /* ---------------------------------------------------------------- rooms */
+
+  const activeRoom = rooms.groups.find((room) => room.id === activeRoomId) ?? null
+
+  /** Swap the list. Whatever was open in the other pane closes with it, or the
+   *  main column would show a conversation the list beside it no longer has. */
+  function showPane(next: 'people' | 'groups') {
+    setPane(next)
+    setAdding(false)
+    setCreating(false)
+
+    if (next === 'groups') select(null)
+    else setActiveRoomId(null)
+  }
+
+  function openRoom(id: string) {
+    select(null)
+    setActiveRoomId(id)
+  }
+
+  function togglePick(uid: string) {
+    setPicked((current) =>
+      current.includes(uid)
+        ? current.filter((entry) => entry !== uid)
+        : [...current, uid],
+    )
+  }
+
+  function createRoom() {
+    const name = roomName.trim()
+    if (name === '' || picked.length === 0 || me === null) return
+
+    // The caller is a member of the room they just made — stated here rather
+    // than left for the server to infer, because nothing is inferring it yet.
+    const chosen = picked.map((uid) => {
+      const found = contacts.find((entry) => entry.person.uid === uid)
+      return {
+        uid,
+        name: found === undefined ? 'Trader' : toPerson(found.person).name,
+      }
+    })
+
+    const room = rooms.create(name, [{ uid: me, name: 'You' }, ...chosen])
+
+    setCreating(false)
+    setRoomName('')
+    setPicked([])
+    openRoom(room.id)
+  }
+
   async function send(event: FormEvent) {
     event.preventDefault()
 
@@ -680,7 +774,11 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
         <section className={DOCK_PANEL} id={panelId} aria-label="Messages">
           <div className={DOCK_BODY}>
             {/* One column at narrow widths: the list steps aside for a thread. */}
-            <aside className={`${DOCK_ASIDE} ${active ? 'max-[620px]:hidden' : ''}`}>
+            <aside
+              className={`${DOCK_ASIDE} ${
+                active || activeRoom !== null ? 'max-[620px]:hidden' : ''
+              }`}
+            >
               <div className={DOCK_ASIDE_HEAD}>
                 <h2 className={DOCK_ASIDE_TITLE}>Messages</h2>
 
@@ -689,12 +787,38 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                     <button
                       type="button"
                       className={DOCK_ADD}
-                      aria-expanded={adding}
+                      aria-expanded={adding && pane === 'people'}
                       aria-label="Add a contact"
                       title="Add a contact"
-                      onClick={() => setAdding((current) => !current)}
+                      // From the rooms list this is also a way back to people:
+                      // the search it opens lives under that list, and opening
+                      // it without switching would set a flag nothing showed.
+                      onClick={() => {
+                        if (pane === 'groups') {
+                          showPane('people')
+                          setAdding(true)
+                          return
+                        }
+                        setAdding((current) => !current)
+                      }}
                     >
                       <UserPlusIcon size={15} />
+                    </button>
+                  )}
+
+                  {/* Paid tiers only — see `groupChat` in entitlements.ts. */}
+                  {unavailable === null && groupsAllowed && (
+                    <button
+                      type="button"
+                      className={DOCK_GROUPS_TOGGLE}
+                      aria-pressed={pane === 'groups'}
+                      aria-label={
+                        pane === 'groups' ? 'Show people' : 'Show group chats'
+                      }
+                      title={pane === 'groups' ? 'People' : 'Group chats'}
+                      onClick={() => showPane(pane === 'groups' ? 'people' : 'groups')}
+                    >
+                      <GroupChatIcon size={15} />
                     </button>
                   )}
 
@@ -709,19 +833,145 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
                 </div>
               </div>
 
-              {adding && (
+              {adding && pane === 'people' && (
                 <AddContact known={known} onAdd={add} onClose={() => setAdding(false)} />
               )}
 
+              {pane === 'groups' && (
+                <>
+                  {creating ? (
+                    <div className={DOCK_GROUP_FORM}>
+                      <input
+                        className={DOCK_GROUP_INPUT}
+                        value={roomName}
+                        autoFocus
+                        maxLength={60}
+                        placeholder="Name this room…"
+                        aria-label="Group name"
+                        onChange={(event) => setRoomName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') createRoom()
+                          if (event.key !== 'Escape') return
+                          event.stopPropagation()
+                          setCreating(false)
+                        }}
+                      />
+
+                      <span className={DOCK_GROUP_LABEL}>
+                        Who is in it ({picked.length})
+                      </span>
+
+                      {contacts.length === 0 ? (
+                        <p className={DOCK_CONTACTS_EMPTY}>
+                          Add a contact first — a room needs somebody in it.
+                        </p>
+                      ) : (
+                        <div className={DOCK_GROUP_PICKER}>
+                          {contacts.map((entry: ChatContact) => {
+                            const listed = toPerson(entry.person)
+                            const on = picked.includes(listed.uid)
+
+                            return (
+                              <button
+                                key={listed.uid}
+                                type="button"
+                                className={DOCK_GROUP_PICK}
+                                aria-pressed={on}
+                                onClick={() => togglePick(listed.uid)}
+                              >
+                                <span
+                                  className={`${DOCK_GROUP_TICK} ${on ? DOCK_GROUP_TICK_ON : ''}`}
+                                  aria-hidden="true"
+                                >
+                                  <CheckIcon size={11} />
+                                </span>
+                                {listed.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      <div className={DOCK_GROUP_ACTIONS}>
+                        <button
+                          type="button"
+                          className={`${DOCK_GROUP_BUTTON} ${DOCK_GROUP_CANCEL}`}
+                          onClick={() => setCreating(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className={`${DOCK_GROUP_BUTTON} ${DOCK_GROUP_CREATE}`}
+                          disabled={roomName.trim() === '' || picked.length === 0}
+                          onClick={createRoom}
+                        >
+                          Create
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={DOCK_GROUP_NEW}
+                      onClick={() => setCreating(true)}
+                    >
+                      <UserPlusIcon size={14} />
+                      New group chat
+                    </button>
+                  )}
+                </>
+              )}
+
               <div className={DOCK_CONTACTS}>
-                {contacts.length === 0 && !adding && (
+                {pane === 'groups' && rooms.groups.length === 0 && !creating && (
+                  <p className={DOCK_CONTACTS_EMPTY}>
+                    No group chats yet. Make one and pick who is in it.
+                  </p>
+                )}
+
+                {pane === 'groups' &&
+                  rooms.groups.map((room) => (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => openRoom(room.id)}
+                      aria-current={room.id === activeRoomId ? 'true' : undefined}
+                      className={`${DOCK_CONTACT} ${
+                        room.id === activeRoomId ? DOCK_CONTACT_ACTIVE : ''
+                      }`}
+                    >
+                      <span className={DOCK_AVATAR} aria-hidden="true">
+                        <span
+                          className={DOCK_GROUP_FACE}
+                          style={{ background: groupTint(room.id) }}
+                        >
+                          {groupInitials(room.name)}
+                        </span>
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className={`${DOCK_CONTACT_NAME} block`}>{room.name}</span>
+                        <span className={`${DOCK_CONTACT_ROLE} block`}>
+                          {room.preview ?? `${room.members.length} members`}
+                        </span>
+                      </span>
+
+                      {room.unread > 0 && (
+                        <span className={DOCK_UNREAD}>{room.unread}</span>
+                      )}
+                    </button>
+                  ))}
+
+                {pane === 'people' && contacts.length === 0 && !adding && (
                   <p className={DOCK_CONTACTS_EMPTY}>
                     {unavailable ??
                       'No conversations yet. Add someone by their email address.'}
                   </p>
                 )}
 
-                {contacts.map((entry: ChatContact) => {
+                {pane === 'people' &&
+                  contacts.map((entry: ChatContact) => {
                   const listed = toPerson(entry.person)
 
                   return (
@@ -752,10 +1002,18 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
               </div>
             </aside>
 
-            <div className={`${DOCK_MAIN} ${active ? '' : 'max-[620px]:hidden'}`}>
-              {person === null ? (
+            <div
+              className={`${DOCK_MAIN} ${
+                active || activeRoom !== null ? '' : 'max-[620px]:hidden'
+              }`}
+            >
+              {activeRoom !== null ? (
+                <Room room={activeRoom} onBack={() => setActiveRoomId(null)} />
+              ) : person === null ? (
                 <p className={DOCK_EMPTY}>
-                  Pick someone on the left and the conversation opens here.
+                  {pane === 'groups'
+                    ? 'Pick a group on the left, or make a new one.'
+                    : 'Pick someone on the left and the conversation opens here.'}
                 </p>
               ) : (
                 <>
@@ -916,5 +1174,67 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
         </section>
       )}
     </>
+  )
+}
+
+/**
+ * One room, as far as this can honestly go.
+ *
+ * Members and a name, and a plain statement of what is missing where the
+ * composer would be. There is no thread to render: a room has no key to
+ * decrypt with and no path in `database.rules.json` to read from, so drawing
+ * a message list here would be drawing one that could never arrive.
+ */
+function Room({ room, onBack }: { room: ChatGroup; onBack: () => void }) {
+  return (
+    <div className={DOCK_ROOM}>
+      <header className={DOCK_ROOM_HEAD}>
+        <span className={DOCK_AVATAR} aria-hidden="true">
+          <span className={DOCK_GROUP_FACE} style={{ background: groupTint(room.id) }}>
+            {groupInitials(room.name)}
+          </span>
+        </span>
+
+        <span className="min-w-0">
+          <span className={`${DOCK_ROOM_NAME} block`}>{room.name}</span>
+          <span className={`${DOCK_ROOM_SUB} block`}>
+            {room.members.length} members
+          </span>
+        </span>
+
+        <button type="button" className={`${DOCK_BACK} ml-auto`} onClick={onBack}>
+          Back
+        </button>
+      </header>
+
+      <div className={DOCK_ROOM_BODY}>
+        <h3 className={DOCK_ROOM_SECTION}>In this room</h3>
+
+        <div className={DOCK_ROOM_MEMBERS}>
+          {room.members.map((member) => (
+            <div key={member.uid} className={DOCK_ROOM_MEMBER}>
+              <span className={DOCK_AVATAR} aria-hidden="true">
+                <span
+                  className={DOCK_AVATAR_FACE}
+                  style={{ background: accentFor(member.uid) }}
+                >
+                  {initialsFor(member.name, '')}
+                </span>
+              </span>
+              <span className={DOCK_ROOM_MEMBER_NAME}>{member.name}</span>
+              {member.name === 'You' && <span className={DOCK_ROOM_YOU}>You</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className={DOCK_ROOM_NOTICE}>
+        Group messages are not connected yet. One-to-one chat works because a
+        thread id is the two uids sorted, which is what the database rules check
+        and what the API derives a key from — a room needs a real member list and
+        a key that survives people joining, so it needs server work before
+        anything can be sent here.
+      </p>
+    </div>
   )
 }
