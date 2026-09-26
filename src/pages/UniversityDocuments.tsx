@@ -11,6 +11,7 @@ import { QuestionBuilder } from '../components/QuestionBuilder'
 import { RichTextEditor } from '../components/RichTextEditor'
 import {
   ANSWER_PROMPT,
+  BLOCK_AFTER,
   CARD,
   DOC_BODY,
   DOC_FLAG,
@@ -27,6 +28,7 @@ import {
   FIELD_HINT,
   FIELD_LABEL,
   MUTED_NOTE,
+  NOTE_AFTER,
   PAGE_ACTIONS,
   PAGE_HEAD,
   PAGE_SUB,
@@ -154,7 +156,7 @@ export function UniversityDocuments({ profile }: { profile: Profile | null }) {
         !state.documents.some((entry) => entry.isIntake) && (
           <section className={`${CARD} ${SET_SECTION}`}>
             <p className={ANSWER_PROMPT}>No intake form is set</p>
-            <p className={MUTED_NOTE} style={{ marginTop: 6 }}>
+            <p className={`${MUTED_NOTE} ${NOTE_AFTER}`}>
               Invited traders are not being asked anything — they see a plain
               Accept instead. Open a form and switch on{' '}
               <strong>Use as the intake form</strong> to have them answer it
@@ -345,7 +347,7 @@ function Editor({
             </label>
           </div>
 
-          <div className={SET_GRID} style={{ marginTop: 16 }}>
+          <div className={`${SET_GRID} ${BLOCK_AFTER}`}>
             <Switch
               label="Required"
               hint="Shown to every student as outstanding until they complete it."

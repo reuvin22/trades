@@ -1,5 +1,6 @@
 import {
   AnvilIcon,
+  ChevronLeftIcon,
   CompetitionIcon,
   StormIcon,
   TrophyIcon,
@@ -7,6 +8,8 @@ import {
 import {
   WAR_AVATAR,
   WAR_AVATAR_LETTERS,
+  WAR_BACK,
+  WAR_BAR,
   WAR_BADGE,
   WAR_BADGE_HOT,
   WAR_BADGES,
@@ -19,6 +22,10 @@ import {
   WAR_KICKER,
   WAR_LEDE,
   WAR_MAIL,
+  WAR_MARK,
+  WAR_ME,
+  WAR_ME_FACE,
+  WAR_ME_NAME,
   WAR_NOTE,
   WAR_PAGE,
   WAR_PIT,
@@ -37,6 +44,7 @@ import {
   WAR_WHO,
 } from '../components/ui'
 import { displayNameFor, initialsFor } from '../data/messages'
+import { navigate } from '../lib/useHashRoute'
 import { accountTypeLabel } from '../lib/profile'
 import { useImageUrl } from '../lib/useImageUrl'
 import type { Profile } from '../lib/profile'
@@ -65,6 +73,41 @@ export function Competition({ profile }: { profile: Profile | null }) {
   return (
     <div className={WAR_PAGE}>
       <span className={WAR_GRAIN} aria-hidden="true" />
+
+      {/*
+        The chrome this page brings with it.
+        
+        Taking the whole window means taking the sidebar's job too: something
+        has to say where you are and how to get back, and the account has to
+        stay visible or "your account comes with you" is a claim the screen
+        does not back up.
+      */}
+      <header className={WAR_BAR}>
+        <span className={WAR_MARK}>
+          <CompetitionIcon size={16} />
+          RagDex Arena
+        </span>
+
+        <button
+          type="button"
+          className={WAR_BACK}
+          onClick={() => navigate('dashboard')}
+        >
+          <ChevronLeftIcon size={14} />
+          Back to journal
+        </button>
+
+        <span className={WAR_ME}>
+          <span className={WAR_ME_FACE}>
+            {photo ? (
+              <img src={photo} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              initials
+            )}
+          </span>
+          <span className={WAR_ME_NAME}>{handle}</span>
+        </span>
+      </header>
 
       <div className={WAR_INNER}>
         <header className={WAR_HERO}>

@@ -71,11 +71,20 @@ export function appShell(collapsed: boolean): string {
   )
 }
 
-/** The admin sidebar is narrower. */
-export const ADMIN_SHELL = APP_SHELL.replace(
-  'grid-cols-[300px_1fr]',
-  'grid-cols-[268px_1fr]',
-)
+/**
+ * The admin sidebar is wider than the trader's.
+ *
+ * Written out rather than derived. This was a `.replace` looking for
+ * `grid-cols-[300px_1fr]`, which `APP_SHELL` has not contained since it went
+ * to 180px — so the call matched nothing and `ADMIN_SHELL` was silently just
+ * `APP_SHELL`. A string built by find-and-replace has no way to say it found
+ * nothing, which is why this is spelled out instead.
+ *
+ * Below the breakpoint it is a drawer like the other one, so the single
+ * column rule still wins.
+ */
+export const ADMIN_SHELL =
+  `grid min-h-screen grid-cols-[268px_1fr] max-shell:grid-cols-[1fr] ${SHELL_WASH}`
 
 /** min-w-0 stops wide tables from stretching the grid column. */
 export const WORKSPACE = 'flex min-w-0 flex-col'

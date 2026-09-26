@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircleIcon, CheckIcon, SpinnerIcon } from '../components/Icons'
 import {
+  ACTION_ROW_WIDE,
   CARD,
   EMPTY_BLOCK,
   MUTED_NOTE,
@@ -166,7 +167,7 @@ export function SigningRun() {
           </div>
         )}
 
-        <p style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <p className={ACTION_ROW_WIDE}>
           <button
             type="button"
             className={`${PILL} ${PILL_ACCENT}`}

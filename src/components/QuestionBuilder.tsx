@@ -1,5 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from './Icons'
 import {
+  BLOCK_AFTER,
   CARD,
   FIELD,
   FIELD_HINT,
@@ -10,10 +11,11 @@ import {
   Q_ADD,
   Q_CARD,
   Q_CHOICE,
+  Q_CHOICES,
   Q_CHOICE_BOX,
   Q_CHOICE_DOT,
-  Q_CHOICES,
   Q_HEAD,
+  Q_LIST,
   Q_NUMBER,
   Q_TOOL,
   Q_TOOLS,
@@ -102,7 +104,7 @@ export function QuestionBuilder({
           </p>
         )}
 
-        <div className={Q_CHOICES} style={{ gap: 14 }}>
+        <div className={Q_LIST}>
           {questions.map((question, index) => (
             <div key={question.id || `new-${index}`} className={Q_CARD}>
               <div className={Q_HEAD}>
@@ -252,8 +254,7 @@ export function QuestionBuilder({
 
         <button
           type="button"
-          className={Q_ADD}
-          style={{ marginTop: 14 }}
+          className={`${Q_ADD} ${BLOCK_AFTER}`}
           disabled={questions.length >= 40}
           onClick={() => onChange([...questions, blankQuestion()])}
         >

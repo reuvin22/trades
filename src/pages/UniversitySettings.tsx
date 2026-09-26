@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronLeftIcon, SpinnerIcon } from '../components/Icons'
 import { RichTextEditor } from '../components/RichTextEditor'
 import {
+  BLOCK_AFTER_WIDE,
   CARD,
   EMPTY_BLOCK,
   FIELD,
@@ -275,7 +276,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
             </label>
           </div>
 
-          <div className={SET_HEAD} style={{ marginTop: 22 }}>
+          <div className={`${SET_HEAD} ${BLOCK_AFTER_WIDE}`}>
             <div>
               <h3 className={SET_TITLE}>Placeholders</h3>
               <p className={SET_ABOUT}>
@@ -428,6 +429,14 @@ function Section({
  * Deliberately not the real one: the server owns that markup, and a second
  * copy here would drift. This shows the order of the parts and the button,
  * which is what somebody laying out a template needs to see.
+ */
+/*
+ * The one place in this app that writes inline styles on purpose.
+ *
+ * It is a preview of an email, and an email is inline styles — a mail client
+ * strips a stylesheet. Rendering this with Tailwind classes would make the
+ * preview look right here and wrong in an inbox, which is the one thing a
+ * preview must not do.
  */
 function Preview({ settings, coach }: { settings: Settings; coach: string }) {
   const accent = /^#[0-9a-f]{6}$/i.test(settings.template.accent)

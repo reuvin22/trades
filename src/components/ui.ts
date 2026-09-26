@@ -1701,7 +1701,10 @@ export const SETUP_NAME = 'max-w-160 truncate font-medium text-fg not-tabular-nu
 
 /* ---- risk health ---- */
 
-export const RISK_GRID = 'grid grid-cols-2 gap-x-16 gap-y-14'
+/** Two columns of label-and-figure. One below 420px, where 140px is not
+ *  enough for a label like "Largest position" and a number beside it. */
+export const RISK_GRID =
+  'grid grid-cols-2 gap-x-16 gap-y-14 max-[420px]:grid-cols-1'
 export const RISK_ITEM = 'flex flex-col gap-4'
 export const RISK_LABEL = 'text-[11.5px] text-fg-muted'
 export const RISK_VALUE = 'text-[17px] font-medium tabular-nums text-fg-strong'
@@ -2456,18 +2459,6 @@ export const TV_NOTE = 'text-[11px] leading-[1.5] text-fg-muted'
 
 /* ------------------------------------------------------------- community */
 
-/*
- * Three columns: what to read, the reading itself, and who is around.
- *
- * The centre column is capped rather than fluid. A feed is prose with pictures
- * in it, and prose set the full width of a 1400px shell is unreadable — the
- * eye loses the line on the way back. The rails collapse before the column
- * narrows, so the last thing to give way is the thing being read.
- */
-export const COMM_SHELL =
-  'grid grid-cols-[176px_minmax(0,1fr)_268px] items-start gap-18 ' +
-  'max-[1180px]:grid-cols-[176px_minmax(0,1fr)] max-[860px]:grid-cols-[minmax(0,1fr)]'
-
 /** Both rails stick; only the feed scrolls under them. */
 export const COMM_RAIL =
   'sticky top-14 flex flex-col gap-2 max-[860px]:static max-[860px]:flex-row ' +
@@ -2904,9 +2895,18 @@ export const SET_PREVIEW_PAGE =
 
 /** Placeholders, as a table of where each value comes from. A chip alone said
  *  nothing about who fills it in, which read as a field with no value. */
+/*
+ * Three columns of prose, which stops being readable well before it stops
+ * fitting. Below 640px the table stops being a table: the header row is
+ * dropped and each row becomes a block, so a placeholder and what it becomes
+ * sit one above the other instead of in two 90px columns.
+ */
 export const TOKEN_TABLE =
   'w-full border-collapse text-left [&_th]:border-b [&_th]:border-line [&_th]:pb-8 [&_th]:text-[10.5px] [&_th]:font-medium [&_th]:tracking-[0.12em] [&_th]:text-fg-muted [&_th]:uppercase ' +
-  '[&_td]:border-b [&_td]:border-line [&_td]:py-10 [&_td]:align-top [&_td]:text-[12.5px] [&_td]:text-fg-dim [&_tr:last-child_td]:border-b-0'
+  '[&_td]:border-b [&_td]:border-line [&_td]:py-10 [&_td]:align-top [&_td]:text-[12.5px] [&_td]:text-fg-dim [&_tr:last-child_td]:border-b-0 ' +
+  'max-[640px]:block max-[640px]:[&_thead]:hidden max-[640px]:[&_tbody]:block ' +
+  'max-[640px]:[&_tr]:block max-[640px]:[&_tr]:border-b max-[640px]:[&_tr]:border-line max-[640px]:[&_tr]:py-10 ' +
+  'max-[640px]:[&_td]:block max-[640px]:[&_td]:border-b-0 max-[640px]:[&_td]:py-3'
 export const TOKEN_CHIP =
   'inline-flex items-center gap-6 rounded-sm border border-line bg-tint-1 px-9 py-4 font-mono text-[11.5px] text-accent-strong transition-colors duration-150 hover:border-accent hover:bg-tint-2'
 export const TOKEN_SOURCE = 'text-[12.5px] text-fg-dim'
@@ -2945,6 +2945,9 @@ export const Q_TOOLS = 'ml-auto flex items-center gap-4'
 export const Q_TOOL =
   'grid size-26 place-items-center rounded-sm text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-fg-strong disabled:opacity-35'
 export const Q_CHOICES = 'flex flex-col gap-7'
+/** The questions themselves, which want more air between them than the
+ *  choices inside one do. */
+export const Q_LIST = 'flex flex-col gap-14'
 export const Q_CHOICE = 'flex items-center gap-9'
 export const Q_CHOICE_DOT =
   'size-12 flex-none rounded-full border border-line-strong'
@@ -3050,15 +3053,31 @@ export const STEP_KIND = 'ml-auto flex-none text-[11.5px] text-fg-muted'
  */
 
 /**
- * The whole surface, broken out of the page's pale wash.
+ * The whole window.
  *
- * Negative margins cancel the content column's padding so the dark reaches
- * the edges. Without them this is a dark rectangle sitting on a pink page,
- * which reads as a broken card rather than as a different place.
+ * Not a panel inside the journal's shell — this replaces it, the way the admin
+ * terminal does. A dark card sitting in a pale frame reads as a broken card;
+ * arriving somewhere means the sidebar and the top bar go too, and the page
+ * carries its own way back instead.
  */
 export const WAR_PAGE =
-  '-mx-26 -mt-8 -mb-40 min-h-[calc(100vh-72px)] max-shell:-mx-18 text-[#e9e2da] ' +
+  'relative min-h-screen w-full overflow-x-hidden text-[#e9e2da] ' +
   'bg-[radial-gradient(1200px_520px_at_50%_-10%,rgba(255,106,26,0.18),transparent_70%),radial-gradient(760px_400px_at_88%_16%,rgba(159,18,57,0.16),transparent_66%),linear-gradient(180deg,#1a1520_0%,#15121a_46%,#0c0a10_100%)]'
+
+/* ---- the chrome it brings with it ---- */
+
+export const WAR_BAR =
+  'relative flex flex-wrap items-center gap-16 border-b border-[#292231] bg-[rgba(12,10,16,0.7)] px-26 py-14 backdrop-blur-[6px] max-shell:px-18'
+export const WAR_MARK =
+  'flex items-center gap-10 text-[13px] font-bold tracking-[0.2em] text-[#e9e2da] uppercase'
+export const WAR_BACK =
+  'inline-flex items-center gap-8 border border-[#39303f] px-14 py-8 text-[11.5px] font-semibold tracking-[0.14em] text-[#a99fb3] uppercase transition-[color,border-color,background-color] duration-150 hover:border-[#b83a09] hover:bg-[rgba(255,106,26,0.1)] hover:text-[#ff6a1a]'
+/** The account, carried into the arena and shown as such. */
+export const WAR_ME = 'ml-auto flex items-center gap-11'
+export const WAR_ME_FACE =
+  'grid size-34 flex-none place-items-center overflow-hidden border border-[#4a3d52] bg-[#251e2f] text-[12px] font-bold text-[#ff6a1a] [&_img]:size-full [&_img]:object-cover'
+export const WAR_ME_NAME =
+  'text-[12.5px] font-semibold text-[#d9d0e0] max-[560px]:hidden'
 
 /** Scanlines, faint enough to be texture rather than pattern. */
 export const WAR_GRAIN =
@@ -3149,3 +3168,23 @@ export const WAR_PLATE_VALUE =
 /** Where the rest of it will go, said plainly rather than faked. */
 export const WAR_NOTE =
   'border-l-2 border-[#3a3143] pl-16 text-[12.5px] leading-[1.7] text-[#7e7488]'
+
+/* ------------------------------------------------- small shared spacing */
+
+/*
+ * These exist because the alternative was `style={{ marginTop: 14 }}` at a
+ * dozen call sites, which this project does not do — class strings live here
+ * so a screen's spacing can be seen and changed in one place.
+ */
+
+/** A row of buttons under a block of prose. Wraps, so two long labels stack
+ *  rather than pushing a dialog wider than the phone it is on. */
+export const ACTION_ROW = 'mt-14 flex flex-wrap items-center gap-10'
+/** The same, with more air above it. */
+export const ACTION_ROW_WIDE = 'mt-16 flex flex-wrap items-center gap-10'
+/** A second paragraph under a first. */
+export const NOTE_AFTER = 'mt-8'
+export const NOTE_AFTER_WIDE = 'mt-12'
+/** A block following a block inside one card. */
+export const BLOCK_AFTER = 'mt-16'
+export const BLOCK_AFTER_WIDE = 'mt-22'

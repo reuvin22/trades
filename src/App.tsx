@@ -249,8 +249,6 @@ function TraderView({
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'community':
       return <Community profile={profile} />
-    case 'competition':
-      return <Competition profile={profile} />
     case 'university':
       return <MyUniversity profile={profile} />
     case 'profile':
@@ -446,6 +444,23 @@ function App() {
     return (
       <Suspense fallback={<PagePending />}>
         <AdminShell route={route} theme={theme} onToggleTheme={toggle} />
+      </Suspense>
+    )
+  }
+
+  /*
+   * Competition takes the whole window, the way the admin terminal does.
+   *
+   * Still the same app on the same route and the same session — the account
+   * carries straight through — but without the sidebar and the top bar around
+   * it. Leaving the journal's chrome in place made it a dark card sitting
+   * inside a pale frame, which is the opposite of arriving somewhere. It
+   * brings its own way back.
+   */
+  if (route === 'competition') {
+    return (
+      <Suspense fallback={<PagePending />}>
+        <Competition profile={profile} />
       </Suspense>
     )
   }

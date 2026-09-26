@@ -6,9 +6,12 @@ import {
   SpinnerIcon,
 } from '../components/Icons'
 import {
+  ACTION_ROW,
   CARD,
   EMPTY_BLOCK,
   MUTED_NOTE,
+  NOTE_AFTER,
+  NOTE_AFTER_WIDE,
   PAGE_HEAD,
   PAGE_SUB,
   PAGE_TITLE,
@@ -208,13 +211,13 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
           <p className={UNI_COACH_ROLE}>
             <CheckCircleIcon size={14} /> {left} of {total} left to sign
           </p>
-          <p className={UNI_INVITE_NOTE} style={{ marginTop: 8 }}>
+          <p className={`${UNI_INVITE_NOTE} ${NOTE_AFTER}`}>
             One step left. {where} asks every member to sign{' '}
             {total === 1 ? 'a document' : `${total} documents`} before joining —
             you are enrolled the moment the last one is signed, with nothing
             further to wait for.
           </p>
-          <p style={{ marginTop: 14 }}>
+          <p className={ACTION_ROW}>
             <button
               type="button"
               className={`${PILL} ${PILL_ACCENT}`}
@@ -239,12 +242,12 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
           <p className={UNI_COACH_ROLE}>
             <ClockIcon size={14} /> Pending approval
           </p>
-          <p className={UNI_INVITE_NOTE} style={{ marginTop: 8 }}>
+          <p className={`${UNI_INVITE_NOTE} ${NOTE_AFTER}`}>
             You have answered the form for {where}. Nothing else is needed from you —
             when your coach approves it, the documents they want signed appear on
             your My University screen.
           </p>
-          <p className={MUTED_NOTE} style={{ marginTop: 12 }}>
+          <p className={`${MUTED_NOTE} ${NOTE_AFTER_WIDE}`}>
             <button
               type="button"
               className={`${PILL} ${PILL_IDLE}`}
@@ -323,7 +326,7 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
           </div>
         )}
 
-        <p style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <p className={ACTION_ROW}>
           <button
             type="button"
             className={`${PILL} ${PILL_ACCENT}`}

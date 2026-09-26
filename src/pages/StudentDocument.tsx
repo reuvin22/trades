@@ -16,6 +16,7 @@ import {
   DOC_PROSE,
   EMPTY_BLOCK,
   MUTED_NOTE,
+  NOTE_AFTER,
   PAGE_HEAD,
   PAGE_SUB,
   PAGE_TITLE,
@@ -186,7 +187,7 @@ export function StudentDocument({
           <span className={`${DOC_FLAG} ${DOC_FLAG_TONE.done}`}>
             Completed {document.submittedAt?.toLocaleDateString('en-GB')}
           </span>
-          <p className={MUTED_NOTE} style={{ marginTop: 10 }}>
+          <p className={`${MUTED_NOTE} ${NOTE_AFTER}`}>
             Sending it again replaces what your coach has, rather than adding to it.
           </p>
         </section>
