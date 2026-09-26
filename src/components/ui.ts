@@ -3282,3 +3282,48 @@ export const WAR_RESULT =
 export const WAR_RESULT_WIN = 'text-[#54c48d]'
 export const WAR_RESULT_LOSS = 'text-[#e0554a]'
 export const WAR_DELTA = 'text-[18px] font-black tabular-nums'
+
+/* ---- the trading desk in the arena ---- */
+
+/** The chart fills the width and keeps a usable height on a phone. */
+export const ARENA_CHART =
+  'h-420 w-full border border-[#2e2733] bg-[#15121a] max-[720px]:h-300'
+
+export const DESK =
+  'grid grid-cols-[minmax(0,1fr)_270px] gap-16 max-[980px]:grid-cols-[minmax(0,1fr)]'
+export const DESK_SIDE = 'flex flex-col gap-14'
+
+/** The indicator switches above the chart. */
+export const DESK_TOOLS = 'flex flex-wrap items-center gap-6 pb-10'
+export const DESK_TOOL =
+  'border border-[#2e2733] px-11 py-6 text-[11px] font-semibold tracking-[0.1em] text-[#867b91] uppercase transition-[color,border-color,background-color] duration-150 hover:border-[#4a3d52] hover:text-[#e9e2da]'
+export const DESK_TOOL_ON = 'border-[#ff6a1a] bg-[rgba(255,106,26,0.12)] text-[#ff6a1a]'
+
+export const DESK_PANEL =
+  'flex flex-col gap-12 border border-[#2e2733] bg-[#1b1622]/80 px-16 pt-16 pb-16'
+export const DESK_LABEL =
+  'text-[9.5px] font-bold tracking-[0.2em] text-[#6f6479] uppercase'
+export const DESK_PRICE =
+  'text-[28px] leading-none font-black tabular-nums tracking-[-0.02em] text-[#ece4dc]'
+export const DESK_PNL = 'text-[22px] font-black tabular-nums'
+export const DESK_UP = 'text-[#54c48d]'
+export const DESK_DOWN = 'text-[#e0554a]'
+
+export const DESK_SIZE = 'flex items-center gap-2'
+export const DESK_SIZE_BTN =
+  'flex-1 border border-[#2e2733] py-8 text-[12px] font-bold text-[#a99fb3] transition-[color,border-color,background-color] duration-150 hover:border-[#4a3d52] hover:text-[#e9e2da] aria-pressed:border-[#ff6a1a] aria-pressed:bg-[rgba(255,106,26,0.12)] aria-pressed:text-[#ff6a1a]'
+
+export const DESK_ACTIONS = 'grid grid-cols-2 gap-8'
+export const DESK_BUY =
+  'border border-[#2f7d5a] bg-[rgba(47,125,90,0.18)] py-14 text-[13px] font-black tracking-[0.14em] text-[#54c48d] uppercase transition-colors duration-150 hover:bg-[rgba(47,125,90,0.3)] disabled:opacity-40'
+export const DESK_SELL =
+  'border border-[#8e3630] bg-[rgba(142,54,48,0.18)] py-14 text-[13px] font-black tracking-[0.14em] text-[#e0554a] uppercase transition-colors duration-150 hover:bg-[rgba(142,54,48,0.3)] disabled:opacity-40'
+export const DESK_FLAT =
+  'col-span-2 border border-[#3b3243] py-10 text-[11.5px] font-bold tracking-[0.14em] text-[#a99fb3] uppercase transition-colors duration-150 hover:border-[#5a4d64] hover:text-[#e9e2da] disabled:opacity-40'
+
+export const DESK_ROW =
+  'flex items-baseline justify-between gap-12 text-[12.5px] text-[#968c9f]'
+export const DESK_ROW_VALUE = 'font-bold tabular-nums text-[#ece4dc]'
+
+/** The match screen: the clock above, the desk below. */
+export const WAR_MATCH = 'flex flex-col gap-16'

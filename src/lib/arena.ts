@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiFetch, date, readableApiError } from './api'
+import type { Fill } from './desk'
 
 /**
  * The arena, through the API.
@@ -56,7 +57,10 @@ export type Tournament = {
 }
 
 export type MyArena = {
-  entered: boolean
+  /** True once a match of theirs has settled. There is no joining step. */
+  played: boolean
+  matches: number
+  wins: number
   rank: Rank
   position: number | null
   /** How the points were earned, so a score is never a black box. */
@@ -131,7 +135,9 @@ export type ArenaState = {
 }
 
 const EMPTY: MyArena = {
-  entered: false,
+  played: false,
+  matches: 0,
+  wins: 0,
   rank: { tier: 'Bronze', division: 1, points: 0, nextAt: null },
   position: null,
   breakdown: {},
@@ -180,7 +186,9 @@ export function useArena(uid: string | null): ArenaState {
     ])
       .then(([mine, board, unis, cups]) => {
         setMe({
-          entered: mine.entered === true,
+          played: mine.played === true,
+          matches: Number(mine.matches ?? 0),
+          wins: Number(mine.wins ?? 0),
           rank: toRank(mine.rank as Wire),
           position:
             mine.position === null || mine.position === undefined
@@ -270,14 +278,6 @@ export function useArena(uid: string | null): ArenaState {
 
 /* ----------------------------------------------------------------- writes */
 
-export function enterArena(): Promise<unknown> {
-  return apiFetch('/api/v1/competition/enter', { method: 'POST' })
-}
-
-export function leaveArena(): Promise<unknown> {
-  return apiFetch('/api/v1/competition/enter', { method: 'DELETE' })
-}
-
 export function enterTournament(id: string, join: boolean): Promise<unknown> {
   return apiFetch(`/api/v1/competition/tournaments/${id}/enter`, {
     method: join ? 'POST' : 'DELETE',
@@ -291,7 +291,12 @@ export type BattleState = 'idle' | 'searching' | 'running' | 'reporting' | 'fini
 export type Battle = {
   state: BattleState
   id: string
+  /** What both sides trade. Chosen by the server, not by either player. */
+  symbol: string
   opponent: { uid: string; displayName: string; rank: Rank } | null
+  /** The real window, from the server — never recomputed from a local clock. */
+  startsAt: Date | null
+  endsAt: Date | null
   secondsLeft: number
   won: boolean | null
   pointsDelta: number
@@ -303,7 +308,10 @@ export type Battle = {
 const NO_BATTLE: Battle = {
   state: 'idle',
   id: '',
+  symbol: '',
   opponent: null,
+  startsAt: null,
+  endsAt: null,
   secondsLeft: 0,
   won: null,
   pointsDelta: 0,
@@ -317,6 +325,7 @@ function toBattle(wire: Wire): Battle {
   return {
     state: (wire.state as BattleState) ?? 'idle',
     id: String(wire.id ?? ''),
+    symbol: String(wire.symbol ?? ''),
     opponent:
       other == null
         ? null
@@ -325,6 +334,8 @@ function toBattle(wire: Wire): Battle {
             displayName: String(other.display_name ?? ''),
             rank: toRank(other.rank as Wire),
           },
+    startsAt: date(wire.starts_at),
+    endsAt: date(wire.ends_at),
     secondsLeft: Number(wire.seconds_left ?? 0),
     won: wire.won === null || wire.won === undefined ? null : wire.won === true,
     pointsDelta: Number(wire.points_delta ?? 0),
@@ -451,4 +462,18 @@ export function useBattle(uid: string | null, onSettled?: () => void) {
 export function clock(seconds: number): string {
   const safe = Math.max(0, seconds)
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, '0')}`
+}
+
+/**
+ * Send what was traded, and let the server price it.
+ *
+ * Times, sides and sizes only. Every price comes from the market data the
+ * service fetches, so what comes back is a verified figure rather than one
+ * this browser chose.
+ */
+export function reportFills(fills: Fill[]): Promise<unknown> {
+  return apiFetch('/api/v1/competition/battle/fills', {
+    method: 'POST',
+    body: { fills: fills.map(({ at, side, size }) => ({ at, side, size })) },
+  })
 }

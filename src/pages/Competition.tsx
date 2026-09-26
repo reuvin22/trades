@@ -44,6 +44,7 @@ import {
   WAR_LEDE,
   WAR_MAIL,
   WAR_MARK,
+  WAR_MATCH,
   WAR_ME,
   WAR_ME_FACE,
   WAR_ME_NAME,
@@ -83,14 +84,14 @@ import {
   WAR_VS,
   WAR_WHO,
 } from '../components/ui'
+import { TradeDesk } from '../components/TradeDesk'
 import { displayNameFor, initialsFor } from '../data/messages'
 import { readableApiError } from '../lib/api'
 import {
   TIER_COLOUR,
-  enterArena,
   clock,
   enterTournament,
-  leaveArena,
+  reportFills,
   rankLabel,
   useArena,
   useBattle,
@@ -129,19 +130,6 @@ export function Competition({ profile }: { profile: Profile | null }) {
   const photo = useImageUrl(profile?.photoURL ?? '')
   const handle = displayNameFor(profile?.displayName ?? '', profile?.email ?? '')
   const initials = initialsFor(handle, profile?.email ?? '')
-
-  async function toggleEntry(join: boolean) {
-    setBusy(true)
-    try {
-      await (join ? enterArena() : leaveArena())
-      toast.success(join ? 'You are on the ladder.' : 'You have left the ladder.')
-      arena.reload()
-    } catch (cause) {
-      toast.error('Could not do that', readableApiError(cause))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function toggleCup(cup: Tournament) {
     setBusy(true)
@@ -264,28 +252,21 @@ export function Competition({ profile }: { profile: Profile | null }) {
               </>
             )}
 
-            <div className={WAR_BADGES}>
-              {me?.entered ? (
-                <button
-                  type="button"
-                  className={`${WAR_BTN} ${WAR_BTN_COLD}`}
-                  disabled={busy}
-                  onClick={() => toggleEntry(false)}
-                >
-                  Leave the ladder
-                </button>
+            {/*
+              No enter button. Playing is what puts somebody on the board, so
+              the only way on is the Battle tab — a roster of people who
+              pressed "join" and never played is not a ranking.
+            */}
+            <p className={WAR_TRACK_NOTE}>
+              {me?.played === true ? (
+                <span>
+                  {me.matches} {me.matches === 1 ? 'match' : 'matches'} played ·{' '}
+                  {me.wins} won
+                </span>
               ) : (
-                <button
-                  type="button"
-                  className={`${WAR_BTN} ${WAR_BTN_HOT}`}
-                  disabled={busy || arena.loading}
-                  onClick={() => toggleEntry(true)}
-                >
-                  {busy && <SpinnerIcon size={14} className="animate-spin" />}
-                  Enter the ladder
-                </button>
+                <span>No matches yet — win one and you are on the board.</span>
               )}
-            </div>
+            </p>
           </div>
         </section>
 
@@ -317,7 +298,7 @@ export function Competition({ profile }: { profile: Profile | null }) {
         {arena.loading ? (
           <p className={WAR_EMPTY}>Reading the ladder…</p>
         ) : board === 'battle' ? (
-          <BattlePanel uid={profile?.uid ?? null} entered={me?.entered === true} onSettled={arena.reload} />
+          <BattlePanel uid={profile?.uid ?? null} onSettled={arena.reload} />
         ) : board === 'ranked' ? (
           <Ranked me={me} />
         ) : board === 'ladder' ? (
@@ -418,7 +399,7 @@ function Ladder({
   if (standings.length === 0) {
     return (
       <p className={WAR_EMPTY}>
-        Nobody on the ladder yet. Enter, and the board starts with you.
+        Nobody has played yet. Win a battle and the board starts with you.
       </p>
     )
   }
@@ -587,11 +568,9 @@ function GlyphFor({ state }: { state: Tournament['state'] }) {
  */
 function BattlePanel({
   uid,
-  entered,
   onSettled,
 }: {
   uid: string | null
-  entered: boolean
   onSettled: () => void
 }) {
   const { battle, busy, start, stop } = useBattle(uid, onSettled)
@@ -605,17 +584,36 @@ function BattlePanel({
     }
   }
 
-  if (!entered) {
+  if (battle.state === 'running') {
     return (
-      <p className={WAR_EMPTY}>
-        Enter the ladder before searching for a match — a battle moves points,
-        and points need somewhere to move.
-      </p>
+      <div className={WAR_MATCH}>
+        <section className={WAR_ARENA}>
+          <span className={WAR_ARENA_LABEL}>Match in progress</span>
+          <span className={WAR_CLOCK}>{clock(battle.secondsLeft)}</span>
+          <Versus opponent={battle.opponent} />
+        </section>
+
+        {/*
+          The window comes from the server, not from this clock. A browser a
+          minute fast would otherwise price its own fills against a window
+          nobody else agreed to.
+        */}
+        <TradeDesk
+          symbol={battle.symbol}
+          startsAt={battle.startsAt?.getTime() ?? 0}
+          endsAt={battle.endsAt?.getTime() ?? 0}
+          onFills={(fills) => {
+            // Sent when the desk unmounts, which is the bell — the server
+            // prices them and that figure, not this one, decides the match.
+            void reportFills(fills).catch(() => undefined)
+          }}
+        />
+      </div>
     )
   }
 
-  if (battle.state === 'running' || battle.state === 'reporting') {
-    const counting = battle.state === 'running'
+  if (battle.state === 'reporting') {
+    const counting = false
 
     return (
       <section className={WAR_ARENA}>
@@ -680,7 +678,7 @@ function BattlePanel({
   return (
     <section className={WAR_ARENA}>
       <span className={WAR_ARENA_LABEL}>
-        {searching ? 'Looking for an opponent' : 'One against one'}
+        {searching ? 'Looking for somebody in your bracket' : 'One against one'}
       </span>
 
       {searching ? (
@@ -692,9 +690,9 @@ function BattlePanel({
       )}
 
       <p className={WAR_LEDE}>
-        Ten minutes against one opponent, best percentage return wins. Beat
-        somebody above your bracket and it is worth +15; lose to them and it
-        costs 5. Inside your own bracket it is +10 and −10.
+        {searching
+          ? 'Your own bracket first. If nobody there is searching after half a minute, the net widens — a tier with one player in it is a tier nobody can play in.'
+          : 'Ten minutes against one opponent, best percentage return wins. Beat somebody above your bracket and it is worth +15; lose to them and it costs 5. Inside your own bracket it is +10 and −10.'}
       </p>
 
       <button
