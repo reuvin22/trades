@@ -6,4 +6,4 @@ Disallow: /health
 Allow: /
 
 # Where the full list of pages lives. Crawlers check here first.
-Sitemap: https://trades-sable-mu.vercel.app/sitemap.xml
+Sitemap: https://trades-eight-vert.vercel.app/sitemap.xml

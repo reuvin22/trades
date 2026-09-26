@@ -20,7 +20,7 @@
  *
  * No trailing slash — every path below adds its own.
  */
-export const SITE_URL = (process.env.SITE_URL ?? 'https://trades-sable-mu.vercel.app').replace(
+export const SITE_URL = (process.env.SITE_URL ?? 'https://trades-eight-vert.vercel.app').replace(
   /\/+$/,
   '',
 )

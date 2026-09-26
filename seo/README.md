@@ -97,7 +97,7 @@ that stops being run.
 
 ### 1. Buy a domain
 
-`trades-sable-mu.vercel.app` cannot rank well. It is a subdomain of a hosting
+`trades-eight-vert.vercel.app` cannot rank well. It is a subdomain of a hosting
 provider shared with millions of other projects, it says nothing about what you
 do, and nobody will type it or link to it.
 

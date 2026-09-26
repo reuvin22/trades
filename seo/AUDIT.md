@@ -64,7 +64,7 @@ See [`KEYWORDS.md`](KEYWORDS.md) for the first ten to write.
 
 ## 🟠 3. The domain is a Vercel subdomain
 
-**What is wrong.** `trades-sable-mu.vercel.app`.
+**What is wrong.** `trades-eight-vert.vercel.app`.
 
 **Why it is costly.** It carries no signal of its own, it is not memorable, it
 is not brandable, and a random-looking hosting subdomain is weak in exactly the
