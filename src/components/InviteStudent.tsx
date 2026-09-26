@@ -30,7 +30,7 @@ type InviteStudentProps = {
 }
 
 /**
- * Invite a trader to your programme.
+ * Invite a trader to your program.
  *
  * By email address, because that is the only thing one trader can know about
  * another — the API takes an address and resolves it to an account itself, so
@@ -149,7 +149,7 @@ export function InviteStudent({ open, onClose, onInvited }: InviteStudentProps) 
             <input
               value={note}
               maxLength={300}
-              placeholder="What the programme is, or where you know them from."
+              placeholder="What the program is, or where you know them from."
               onChange={(event) => setNote(event.target.value)}
             />
             <span className={FIELD_HINT}>

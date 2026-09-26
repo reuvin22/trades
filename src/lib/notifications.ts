@@ -76,13 +76,13 @@ export function buildNotifications(
 ): Notification[] {
   const items: Notification[] = []
 
-  // -- somebody asked you to join their programme ----------------------
+  // -- somebody asked you to join their program ----------------------
   for (const invitation of invitations) {
     const who = invitation.coachName.trim() || invitation.coachEmail
     items.push({
       id: `invite-${invitation.coachUid}`,
       kind: 'invite',
-      title: `${who} invited you to their programme`,
+      title: `${who} invited you to their program`,
       body: invitation.note || 'Open My University to accept or decline.',
       age: ago(invitation.invitedAt),
       route: 'university',

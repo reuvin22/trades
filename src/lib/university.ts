@@ -89,6 +89,8 @@ export type UniversityState = {
   invitations: Invitation[]
   sent: SentInvite[]
   coach: Coach | null
+  /** The University as its coach registered it. Empty until they name it. */
+  settings: Settings
   loading: boolean
   error: string | null
   reload: () => void
@@ -110,6 +112,7 @@ export function useUniversity(uid: string | null): UniversityState {
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [sent, setSent] = useState<SentInvite[]>([])
   const [coach, setCoach] = useState<Coach | null>(null)
+  const [settings, setSettings] = useState<Settings>(EMPTY_SETTINGS)
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [nonce, setNonce] = useState(0)
@@ -135,8 +138,14 @@ export function useUniversity(uid: string | null): UniversityState {
       apiFetch<{ coach: Record<string, unknown> | null }>('/api/v1/university/coach', {
         signal: abort.signal,
       }),
+      // Fetched with the rest so the University's name is on screen in the
+      // same paint as the roster it heads.
+      apiFetch<Record<string, unknown>>('/api/v1/university/settings', {
+        signal: abort.signal,
+      }),
     ])
-      .then(([roster, waiting, outgoing, mine]) => {
+      .then(([roster, waiting, outgoing, mine, programme]) => {
+        setSettings(toSettings(programme))
         setStudents(roster.students.map(toStudent))
         setInvitations(
           waiting.invitations.map((wire) => ({
@@ -207,13 +216,14 @@ export function useUniversity(uid: string | null): UniversityState {
       invitations: [],
       sent: [],
       coach: null,
+      settings: EMPTY_SETTINGS,
       loading: false,
       error: null,
       reload,
     }
   }
 
-  return { students, invitations, sent, coach, loading, error, reload }
+  return { students, invitations, sent, coach, settings, loading, error, reload }
 }
 
 /* ----------------------------------------------------------------- writes */
@@ -326,7 +336,7 @@ export function useInvitations(uid: string | null): Invitation[] {
   return uid === null ? [] : invitations
 }
 
-/* --------------------------------------------- the programme and its mail */
+/* --------------------------------------------- the program and its mail */
 
 export type EmailTemplate = {
   subject: string

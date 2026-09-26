@@ -22,8 +22,10 @@ import {
   SET_SECTION,
   SET_SWATCH,
   SET_TITLE,
-  SET_TOKEN,
-  SET_TOKENS,
+  TOKEN_CHIP,
+  TOKEN_EXAMPLE,
+  TOKEN_SOURCE,
+  TOKEN_TABLE,
   UNI_BACK,
   UNI_LOADING,
 } from '../components/ui'
@@ -39,7 +41,37 @@ import {
 import type { Profile } from '../lib/profile'
 
 /**
- * A coach's programme, and the invitation it sends.
+ * What each placeholder becomes, and where that value comes from.
+ *
+ * Written out because the chips on their own read as fields somebody had
+ * forgotten to fill in. None of these is editable — that is the point of
+ * them — so the screen has to say what fills them instead.
+ */
+const TOKENS: {
+  token: string
+  source: string
+  example: (settings: Settings, profile: Profile | null) => string
+}[] = [
+  {
+    token: '{{coach}}',
+    source: 'Your display name, from your profile',
+    example: (_settings, profile) =>
+      (profile?.displayName ?? '').trim() || 'set a display name on your profile',
+  },
+  {
+    token: '{{student}}',
+    source: "The name on the account you are inviting",
+    example: () => 'Alex Moreno',
+  },
+  {
+    token: '{{note}}',
+    source: 'The note you type in the invite dialog, each time you invite',
+    example: () => 'Saw your journal — come and train with us.',
+  },
+]
+
+/**
+ * A coach's program, and the invitation it sends.
  *
  * The editor here writes the email that goes out when a student is invited.
  * Three sections rather than one document, because the mail shell owns the
@@ -97,7 +129,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
     try {
       // Adopting the response is the point: it is the sanitised version.
       setSettings(await saveSettings(settings))
-      toast.success('Programme saved.', 'New invitations will use this template.')
+      toast.success('Program saved.', 'New invitations will use this template.')
     } catch (cause) {
       toast.error('Could not save that', readableApiError(cause))
     } finally {
@@ -110,7 +142,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
       <>
         <Back />
         <section className={`${CARD} ${EMPTY_BLOCK}`}>
-          <p>Only a Coach account has a programme to configure.</p>
+          <p>Only a Coach account has a program to configure.</p>
           <p className={MUTED_NOTE}>
             Change your account type on the Profile page and this screen opens.
           </p>
@@ -124,7 +156,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
       <>
         <Back />
         <section className={CARD}>
-          <p className={UNI_LOADING}>Loading your programme…</p>
+          <p className={UNI_LOADING}>Loading your program…</p>
         </section>
       </>
     )
@@ -138,7 +170,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
         <div>
           <h2 className={PAGE_TITLE}>University settings</h2>
           <p className={PAGE_SUB}>
-            What your programme is called, and the email a trader gets when you
+            What your program is called, and the email a trader gets when you
             invite them.
           </p>
         </div>
@@ -154,16 +186,19 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
         <div className={SET_SECTION}>
           <div className={SET_HEAD}>
             <div>
-              <h3 className={SET_TITLE}>Your programme</h3>
+              <h3 className={SET_TITLE}>Your University</h3>
               <p className={SET_ABOUT}>
-                The name appears in the invitation and on your roster.
+                What you register here is the name used everywhere else — the
+                heading on your roster, the subject of an invitation, and the line
+                telling a recipient where they were invited to. There is no second
+                Program name anywhere.
               </p>
             </div>
           </div>
 
           <div className={SET_GRID}>
             <label className={FIELD}>
-              <span className={FIELD_LABEL}>Programme name</span>
+              <span className={FIELD_LABEL}>University name</span>
               <input
                 value={settings.name}
                 maxLength={120}
@@ -211,7 +246,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
               <span className={FIELD_HINT}>
                 Left empty, it becomes &ldquo;Your name invited you to
                 {' '}
-                {settings.name.trim() || 'your programme'}&rdquo;.
+                {settings.name.trim() || 'your University'}&rdquo;.
               </span>
             </label>
 
@@ -244,27 +279,44 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
             <div>
               <h3 className={SET_TITLE}>Placeholders</h3>
               <p className={SET_ABOUT}>
-                Click one to copy it, then paste it anywhere in the three sections
-                below. They are filled in per recipient.
+                There is nothing to fill in here — each one is replaced when an
+                invitation is sent, with the value in the middle column. Click a
+                placeholder to copy it, then paste it into any of the three
+                sections below.
               </p>
             </div>
           </div>
 
-          <div className={SET_TOKENS}>
-            {(['{{coach}}', '{{student}}', '{{note}}'] as const).map((token) => (
-              <button
-                key={token}
-                type="button"
-                className={SET_TOKEN}
-                onClick={() => {
-                  void navigator.clipboard?.writeText(token)
-                  toast.info(`${token} copied.`)
-                }}
-              >
-                {token}
-              </button>
-            ))}
-          </div>
+          <table className={TOKEN_TABLE}>
+            <thead>
+              <tr>
+                <th>Placeholder</th>
+                <th>Becomes</th>
+                <th>For example</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TOKENS.map((token) => (
+                <tr key={token.token}>
+                  <td>
+                    <button
+                      type="button"
+                      className={TOKEN_CHIP}
+                      title="Copy"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(token.token)
+                        toast.info(`${token.token} copied.`)
+                      }}
+                    >
+                      {token.token}
+                    </button>
+                  </td>
+                  <td className={TOKEN_SOURCE}>{token.source}</td>
+                  <td className={TOKEN_EXAMPLE}>{token.example(settings, profile)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -280,7 +332,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
         title="Body"
         about="The message itself. Left empty, a sensible default explains what accepting means."
         value={settings.template.bodyHtml}
-        placeholder="Why you are inviting them, and what the programme involves…"
+        placeholder="Why you are inviting them, and what the program involves…"
         onChange={(bodyHtml) => editTemplate({ bodyHtml })}
       />
 
@@ -317,7 +369,7 @@ export function UniversitySettings({ profile }: { profile: Profile | null }) {
               disabled={saving}
             >
               {saving && <SpinnerIcon size={14} className="animate-spin" />}
-              {saving ? 'Saving…' : 'Save programme'}
+              {saving ? 'Saving…' : 'Save program'}
             </button>
             <span className={MUTED_NOTE}>
               Markup that a mail client cannot be trusted with is removed when you
@@ -390,7 +442,7 @@ function Preview({ settings, coach }: { settings: Settings; coach: string }) {
 
   const body =
     settings.template.bodyHtml.trim() ||
-    `<p>${coach} has invited you to join their trading programme on RagDex.</p>`
+    `<p>${coach} has invited you to join their trading program on RagDex.</p>`
 
   return (
     <div className={SET_PREVIEW_PAGE}>
@@ -436,7 +488,7 @@ function Preview({ settings, coach }: { settings: Settings; coach: string }) {
 
       <p style={{ marginTop: 18, color: '#9ca3af', fontSize: 12, lineHeight: 1.55 }}>
         You are reading this because {coach} invited you to{' '}
-        {settings.name.trim() || 'their programme'} on RagDex.
+        {settings.name.trim() || 'their University'} on RagDex.
       </p>
     </div>
   )

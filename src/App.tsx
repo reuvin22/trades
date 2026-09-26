@@ -92,6 +92,16 @@ const UniversitySettings = lazy(() =>
     default: module.UniversitySettings,
   })),
 )
+const UniversityDocuments = lazy(() =>
+  import('./pages/UniversityDocuments').then((module) => ({
+    default: module.UniversityDocuments,
+  })),
+)
+const StudentDocument = lazy(() =>
+  import('./pages/StudentDocument').then((module) => ({
+    default: module.StudentDocument,
+  })),
+)
 const StudentActivity = lazy(() =>
   import('./pages/StudentActivity').then((module) => ({
     default: module.StudentActivity,
@@ -164,6 +174,21 @@ function TraderView({
   // or a coach opening their own settings gets a student page instead.
   if (route === 'university/settings') {
     return <UniversitySettings profile={profile} />
+  }
+
+  if (route === 'university/documents') {
+    return <UniversityDocuments profile={profile} />
+  }
+
+  // One document a student is reading. Prefixed so it cannot be mistaken for
+  // a student uid, which the next branch matches on the same shape.
+  if (route.startsWith('university/doc/')) {
+    return (
+      <StudentDocument
+        id={route.slice('university/doc/'.length)}
+        profile={profile}
+      />
+    )
   }
 
   // One student's record, at `university/<uid>`. Matched before the switch

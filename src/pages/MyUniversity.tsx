@@ -5,6 +5,17 @@ import { accentFor, initialsFor } from '../data/messages'
 import {
   CARD,
   COMM_AVATAR,
+  DOC_BODY,
+  DOC_FLAG,
+  DOC_FLAG_TONE,
+  DOC_GLYPH,
+  DOC_LIST,
+  DOC_ROW,
+  DOC_ROW_LINK,
+  DOC_SUB,
+  DOC_TAIL,
+  PANEL_TITLE,
+  UNI_CARD_HEAD,
   COMM_AVATAR_FACE,
   EMPTY_BLOCK,
   MONO,
@@ -69,6 +80,7 @@ import {
   type Student,
 } from '../lib/university'
 import { readableApiError } from '../lib/api'
+import { useDocuments } from '../lib/documents'
 import type { Profile } from '../lib/profile'
 
 /**
@@ -81,7 +93,7 @@ import type { Profile } from '../lib/profile'
  * in the browser and none of it is sent.
  *
  * Invitations sit above all of it regardless of account type. Being asked to
- * join a programme is not something only students can have happen to them:
+ * join a program is not something only students can have happen to them:
  * an individual account is exactly who a coach invites.
  */
 export function MyUniversity({ profile }: { profile: Profile | null }) {
@@ -92,7 +104,7 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
   async function answer(coachUid: string, accept: boolean) {
     try {
       await (accept ? acceptInvitation(coachUid) : declineInvitation(coachUid))
-      if (accept) toast.success('You have joined the programme.')
+      if (accept) toast.success('You have joined the program.')
       else toast.info('Invitation declined.')
       state.reload()
     } catch (cause) {
@@ -126,6 +138,8 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
           onAnswer={answer}
         />
       ))}
+
+      {accountType !== 'coach' && <Waiting uid={profile?.uid ?? null} />}
 
       {accountType === 'coach' && <CoachView profile={profile} state={state} />}
       {accountType !== 'coach' && <TraderView state={state} />}
@@ -172,13 +186,22 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
     <>
       <section className={`${CARD} ${UNI_BAND}`}>
         <div className={UNI_BAND_BODY}>
+          {/*
+            The University's own name, as the coach registered it in settings —
+            not a label built from their display name. An unnamed University
+            says so and links to where it is named, rather than quietly
+            inventing one that would then differ from the invitation email.
+          */}
           <h3 className={UNI_BAND_NAME}>
-            {nameOf(profile?.displayName ?? '', profile?.email ?? '')}&rsquo;s programme
+            {state.settings.name.trim() || 'Your University'}
           </h3>
           <p className={UNI_BAND_SUB}>
-            {students.length === 0
-              ? 'Nobody enrolled yet. Invite a trader by their email address.'
-              : `${students.length} enrolled${pending > 0 ? `, ${pending} awaiting an answer` : ''}.`}
+            {state.settings.name.trim() === ''
+              ? 'Not named yet — open Program settings to register it.'
+              : state.settings.blurb.trim() ||
+                (students.length === 0
+                  ? 'Nobody enrolled yet. Invite a trader by their email address.'
+                  : `${students.length} enrolled${pending > 0 ? `, ${pending} awaiting an answer` : ''}.`)}
           </p>
         </div>
 
@@ -186,9 +209,16 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
           <button
             type="button"
             className={`${PILL} ${PILL_IDLE}`}
+            onClick={() => navigate('university/documents')}
+          >
+            Documents
+          </button>
+          <button
+            type="button"
+            className={`${PILL} ${PILL_IDLE}`}
             onClick={() => navigate('university/settings')}
           >
-            Programme settings
+            Program settings
           </button>
           <button
             type="button"
@@ -475,7 +505,7 @@ function TraderView({ state }: { state: State }) {
 
   return (
     <section className={`${CARD} ${EMPTY_BLOCK}`}>
-      <p>You are not in a coaching programme.</p>
+      <p>You are not in a coaching program.</p>
       <p className={MUTED_NOTE}>
         A coach invites you by the email address on your account. When one does, the
         invitation appears here for you to accept or decline.
@@ -498,7 +528,7 @@ function InvitationCard({
       <Face uid={invitation.coachUid} name={who} size={46} />
 
       <div className={UNI_INVITE_BODY}>
-        <span className={UNI_INVITE_WHO}>{who} invited you to their programme</span>
+        <span className={UNI_INVITE_WHO}>{who} invited you to their program</span>
         <p className={UNI_INVITE_NOTE}>
           {invitation.note || 'They did not leave a note.'}
         </p>
@@ -555,5 +585,81 @@ function Face({ uid, name, size = 36 }: { uid: string; name: string; size?: numb
         {initialsFor(name, '')}
       </span>
     </span>
+  )
+}
+
+/**
+ * Documents a student has been given, and whether they have done them.
+ *
+ * Above the coach card rather than below it, because this is the only part of
+ * the screen that is asking the reader for something. Completed ones stay on
+ * the list — "I already signed that" is a question people ask, and a list that
+ * hid the answer would not answer it.
+ */
+function Waiting({ uid }: { uid: string | null }) {
+  const { documents, loading } = useDocuments(uid)
+
+  if (loading || documents.length === 0) return null
+
+  const outstanding = documents.filter((entry) => entry.submittedAt === null)
+
+  return (
+    <section className={CARD}>
+      <div className={UNI_CARD_HEAD}>
+        <h3 className={PANEL_TITLE}>
+          {outstanding.length === 0
+            ? 'Documents'
+            : `Waiting on you (${outstanding.length})`}
+        </h3>
+      </div>
+
+      <div className={DOC_LIST}>
+        {documents.map((entry) => (
+          <div
+            key={entry.id}
+            className={`${DOC_ROW} ${DOC_ROW_LINK}`}
+            onClick={() => navigate(`university/doc/${entry.id}`)}
+          >
+            <span className={DOC_GLYPH}>{entry.kind === 'agreement' ? '§' : '?'}</span>
+
+            <span className={DOC_BODY}>
+              <button
+                type="button"
+                className={UNI_NAME_BUTTON}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  navigate(`university/doc/${entry.id}`)
+                }}
+              >
+                {entry.title}
+              </button>
+              <span className={DOC_SUB}>
+                {entry.summary ||
+                  (entry.kind === 'agreement' ? 'An agreement to sign' : 'A form to answer')}
+              </span>
+            </span>
+
+            <span className={DOC_TAIL}>
+              <span
+                className={`${DOC_FLAG} ${
+                  entry.submittedAt !== null
+                    ? DOC_FLAG_TONE.done
+                    : entry.required
+                      ? DOC_FLAG_TONE.waiting
+                      : DOC_FLAG_TONE.draft
+                }`}
+              >
+                {entry.submittedAt !== null
+                  ? 'Done'
+                  : entry.required
+                    ? 'Required'
+                    : 'Optional'}
+              </span>
+              <ChevronRightIcon size={16} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }

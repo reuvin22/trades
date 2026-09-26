@@ -2589,7 +2589,7 @@ export const UNI_STUDENT = 'flex items-center gap-12'
 export const UNI_STUDENT_NAME = 'block text-[13.5px] font-medium text-fg-strong'
 export const UNI_STUDENT_MAIL = 'mt-1 block text-[11.5px] text-fg-muted'
 
-/** Where a student is in the programme. The tone carries the stage. */
+/** Where a student is in the program. The tone carries the stage. */
 export const UNI_LEVEL =
   'inline-block rounded-full px-10 py-3 text-[10.5px] font-semibold tracking-[0.06em]'
 export const UNI_LEVEL_TONE: Record<string, string> = {
@@ -2875,3 +2875,91 @@ export const SET_SWATCH =
 export const SET_PREVIEW = 'overflow-hidden rounded-sm border border-line bg-[#f3f4f6] p-16'
 export const SET_PREVIEW_PAGE =
   'mx-auto max-w-600 rounded-[10px] border border-[#e5e7eb] bg-white px-24 py-22 text-[15px] leading-[1.62] text-[#111827]'
+
+/** Placeholders, as a table of where each value comes from. A chip alone said
+ *  nothing about who fills it in, which read as a field with no value. */
+export const TOKEN_TABLE =
+  'w-full border-collapse text-left [&_th]:border-b [&_th]:border-line [&_th]:pb-8 [&_th]:text-[10.5px] [&_th]:font-medium [&_th]:tracking-[0.12em] [&_th]:text-fg-muted [&_th]:uppercase ' +
+  '[&_td]:border-b [&_td]:border-line [&_td]:py-10 [&_td]:align-top [&_td]:text-[12.5px] [&_td]:text-fg-dim [&_tr:last-child_td]:border-b-0'
+export const TOKEN_CHIP =
+  'inline-flex items-center gap-6 rounded-sm border border-line bg-tint-1 px-9 py-4 font-mono text-[11.5px] text-accent-strong transition-colors duration-150 hover:border-accent hover:bg-tint-2'
+export const TOKEN_SOURCE = 'text-[12.5px] text-fg-dim'
+export const TOKEN_EXAMPLE = 'text-[12px] text-fg-muted italic'
+
+/* ----------------------------------------- agreements and forms */
+
+export const DOC_LIST = 'flex flex-col gap-12'
+export const DOC_ROW =
+  'flex flex-wrap items-center gap-14 px-20 pt-16 pb-16 transition-colors duration-150'
+export const DOC_ROW_LINK = 'cursor-pointer hover:bg-tint-1'
+export const DOC_GLYPH =
+  'grid size-38 flex-none place-items-center rounded-sm border border-line bg-tint-1 text-fg-muted'
+export const DOC_BODY = 'flex min-w-0 flex-col gap-3'
+export const DOC_TITLE = 'text-[14px] font-semibold text-fg-strong'
+export const DOC_SUB = 'text-[12.5px] text-fg-muted'
+export const DOC_TAIL = 'ml-auto flex flex-none flex-wrap items-center gap-8'
+
+/** Draft / published / signed, in one shape with three tones. */
+export const DOC_FLAG =
+  'inline-block rounded-full px-10 py-3 text-[10.5px] font-semibold tracking-[0.06em]'
+export const DOC_FLAG_TONE: Record<string, string> = {
+  draft: 'bg-tint-2 text-fg-muted',
+  published: 'bg-[color-mix(in_srgb,var(--color-cyan)_16%,transparent)] text-cyan',
+  done: 'bg-[color-mix(in_srgb,var(--color-green)_16%,transparent)] text-green',
+  waiting: 'bg-[color-mix(in_srgb,var(--color-amber)_18%,transparent)] text-amber',
+}
+
+/* ---- the builder ---- */
+
+export const Q_CARD = 'flex flex-col gap-12 rounded-sm border border-line bg-tint-1 px-16 pt-14 pb-14'
+export const Q_HEAD = 'flex flex-wrap items-center gap-10'
+export const Q_NUMBER =
+  'grid size-22 flex-none place-items-center rounded-full bg-tint-3 text-[11px] font-semibold text-fg-muted'
+export const Q_TOOLS = 'ml-auto flex items-center gap-4'
+export const Q_TOOL =
+  'grid size-26 place-items-center rounded-sm text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-fg-strong disabled:opacity-35'
+export const Q_CHOICES = 'flex flex-col gap-7'
+export const Q_CHOICE = 'flex items-center gap-9'
+export const Q_CHOICE_DOT =
+  'size-12 flex-none rounded-full border border-line-strong'
+export const Q_CHOICE_BOX = 'size-12 flex-none rounded-[3px] border border-line-strong'
+export const Q_ADD =
+  'self-start rounded-sm border border-dashed border-line-strong px-12 py-8 text-[12px] font-medium text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-accent hover:bg-tint-1 hover:text-accent-strong'
+
+/* ---- answering ---- */
+
+export const ANSWER_LIST = 'flex flex-col gap-20'
+export const ANSWER_BLOCK = 'flex flex-col gap-9'
+export const ANSWER_PROMPT = 'text-[13.5px] font-medium text-fg-strong'
+export const ANSWER_HELP = 'text-[12px] text-fg-muted'
+export const ANSWER_REQUIRED = 'ml-4 text-red'
+export const ANSWER_OPTIONS = 'flex flex-col gap-8'
+export const ANSWER_OPTION =
+  'flex items-center gap-10 rounded-sm border border-line px-13 py-10 text-[13px] text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-line-strong hover:bg-tint-1 aria-pressed:border-accent aria-pressed:bg-tint-1 aria-pressed:text-fg-strong'
+export const ANSWER_SCALE = 'flex flex-wrap gap-8'
+export const ANSWER_SCALE_STEP =
+  'grid size-40 place-items-center rounded-sm border border-line text-[14px] font-semibold text-fg-dim transition-[color,border-color,background-color] duration-150 hover:border-line-strong aria-pressed:border-transparent aria-pressed:bg-accent aria-pressed:text-accent-ink'
+
+/** The signature line on an agreement. Monospaced so a typed name reads as a
+ *  record rather than as another text field. */
+export const SIGN_BOX =
+  'flex flex-col gap-10 rounded-sm border border-line bg-tint-1 px-18 pt-16 pb-16'
+export const SIGN_LABEL =
+  'text-[11px] font-semibold tracking-[0.12em] text-fg-muted uppercase'
+export const SIGN_INPUT =
+  'w-full max-w-360 rounded-sm border border-line bg-panel-solid px-14 py-11 font-mono text-[15px] text-fg-strong outline-none transition-colors duration-150 focus:border-accent'
+export const SIGN_NOTE = 'text-[11.5px] leading-[1.55] text-fg-muted'
+
+/** An agreement's prose, rendered for reading. */
+export const DOC_PROSE =
+  'text-[14px] leading-[1.7] text-fg [&_h1]:mb-10 [&_h1]:text-[21px] [&_h1]:font-semibold [&_h1]:text-fg-strong ' +
+  '[&_h2]:mb-9 [&_h2]:text-[18px] [&_h2]:font-semibold [&_h2]:text-fg-strong ' +
+  '[&_h3]:mb-8 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:text-fg-strong ' +
+  '[&_p+p]:mt-12 [&_ul]:my-12 [&_ul]:list-disc [&_ul]:pl-22 [&_ol]:my-12 [&_ol]:list-decimal [&_ol]:pl-22 ' +
+  '[&_a]:text-accent-strong [&_a]:underline [&_img]:my-12 [&_img]:max-w-full [&_img]:rounded-sm ' +
+  '[&_blockquote]:my-12 [&_blockquote]:border-l-[3px] [&_blockquote]:border-line-strong [&_blockquote]:pl-14 [&_blockquote]:text-fg-muted ' +
+  '[&_hr]:my-18 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-line'
+
+export const SUB_ANSWER = 'flex flex-col gap-4 border-b border-line py-12 last:border-b-0'
+export const SUB_Q = 'text-[12px] font-medium text-fg-muted'
+export const SUB_A = 'text-[13.5px] whitespace-pre-line text-fg'
