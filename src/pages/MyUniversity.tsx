@@ -619,24 +619,22 @@ function TraderView({ state, intake }: { state: State; intake: Inbox['intake'] }
           </span>
           <p className={UNI_INVITE_NOTE}>
             {intake.outstanding === 0
-              ? 'Finishing up — refresh in a moment.'
-              : `Sign ${intake.outstanding} of ${intake.requiredTotal} document${
+              ? 'Everything is complete. Submit it and you are in — nothing has been submitted yet.'
+              : `Complete ${intake.outstanding} of ${intake.requiredTotal} document${
                   intake.requiredTotal === 1 ? '' : 's'
-                } and you are enrolled. Nothing else is waiting on you.`}
+                }. Nothing else is waiting on you.`}
           </p>
         </div>
 
-        {intake.outstanding > 0 && (
-          <div className={UNI_INVITE_ACTIONS}>
-            <button
-              type="button"
-              className={`${PILL} ${PILL_ACCENT}`}
-              onClick={() => navigate('university/next')}
-            >
-              Sign now
-            </button>
-          </div>
-        )}
+        <div className={UNI_INVITE_ACTIONS}>
+          <button
+            type="button"
+            className={`${PILL} ${PILL_ACCENT}`}
+            onClick={() => navigate('university/next')}
+          >
+            {intake.outstanding === 0 ? 'Submit documents' : 'Continue'}
+          </button>
+        </div>
       </section>
     )
   }

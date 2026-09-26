@@ -156,13 +156,17 @@ export function buildNotifications(
           : `${where} approved you — ${left} to sign`,
       body:
         left === 0
-          ? 'Nothing left to do.'
-          : `You are enrolled once the last ${left === 1 ? 'document is' : 'documents are'} signed.`,
+          ? 'Everything is complete — submit it to finish joining.'
+          : `You are enrolled once you have completed and submitted ${
+              left === 1 ? 'it' : 'them'
+            }.`,
       age: '',
       // Straight into the signing run. Landing on My University and leaving
       // somebody to find the documents is what this notification exists to
       // avoid.
-      route: left === 0 ? 'university' : 'university/next',
+      // Both cases go to the run: with work left it opens the next
+      // document, with none it offers the submit button.
+      route: 'university/next',
     })
   }
 

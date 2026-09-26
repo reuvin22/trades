@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircleIcon } from '../components/Icons'
+import { CheckCircleIcon, CheckIcon, SpinnerIcon } from '../components/Icons'
 import {
   CARD,
   EMPTY_BLOCK,
@@ -9,45 +9,72 @@ import {
   PAGE_TITLE,
   PILL,
   PILL_ACCENT,
+  PILL_IDLE,
+  SET_SECTION,
+  STEP_DONE,
+  STEP_KIND,
+  STEP_LIST,
+  STEP_NUMBER,
+  STEP_ROW,
+  STEP_TITLE,
+  UNI_INVITE_NOTE,
   UNI_LOADING,
 } from '../components/ui'
 import { readableApiError } from '../lib/api'
+import { useToast } from '../lib/toast'
 import { navigate } from '../lib/useHashRoute'
-import { fetchNextDocument } from '../lib/university'
+import { fetchIntake, fetchNextDocument, submitDocuments, type Intake } from '../lib/university'
 
 /**
- * The signing run: accepted, now sign what the University asks for.
+ * The signing run: work through what the program asks for, then join.
  *
- * A relay rather than a screen. It asks the API what is next and goes there,
- * and every document sends the reader back here when it is submitted — so a
- * student is walked through the set instead of being handed a list and left
- * to work out what is still outstanding.
+ * A relay for as long as there is something to open — it asks the API what is
+ * next and goes there, and every document comes back here when it is
+ * submitted. When nothing is left it stops being a relay and becomes the last
+ * step: a button that submits the lot.
  *
- * That is also why it exists at all. A student was landing on My University
- * after accepting, where the documents were a section they had to notice; if
- * anything about that list failed to arrive they saw nothing and had no way
- * to tell that something was expected of them. Here, the only thing that can
- * fail is a single lookup, and it says so.
+ * **Finishing the documents does not enrol anybody.** That used to happen on
+ * the last signature, which meant somebody could be enrolled by a submission
+ * they did not realise was the last one — and, worse, by submissions left
+ * over from a previous enrolment, before they had agreed to anything this
+ * time round. Joining is now one deliberate act, taken here.
  */
 export function SigningRun() {
+  const toast = useToast()
+
+  const [ready, setReady] = useState(false)
+  const [enrolled, setEnrolled] = useState(false)
+  const [intake, setIntake] = useState<Intake | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [finished, setFinished] = useState(false)
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     const abort = new AbortController()
 
     fetchNextDocument()
-      .then((next) => {
+      .then(async (next) => {
         if (abort.signal.aborted) return
 
         if (next.documentId !== '') {
-          // Replaces this entry rather than stacking, so Back from a document
-          // does not land on a relay that immediately forwards again.
           navigate(`university/doc/${next.documentId}`)
           return
         }
 
-        setFinished(true)
+        if (next.enrolled) {
+          setEnrolled(true)
+          return
+        }
+
+        if (next.readyToSubmit) {
+          // The list is fetched only at this point, because it is only at
+          // this point that anybody has to read it.
+          setIntake(await fetchIntake())
+          setReady(true)
+          return
+        }
+
+        setEnrolled(false)
+        setReady(false)
       })
       .catch((cause: unknown) => {
         if (!abort.signal.aborted) setError(readableApiError(cause))
@@ -56,33 +83,54 @@ export function SigningRun() {
     return () => abort.abort()
   }, [])
 
+  async function submit() {
+    setSending(true)
+    try {
+      const result = await submitDocuments()
+      toast.success(String(result.message ?? 'You are enrolled.'))
+      setEnrolled(true)
+      setReady(false)
+    } catch (cause) {
+      toast.error('Could not submit those', readableApiError(cause))
+    } finally {
+      setSending(false)
+    }
+  }
+
   if (error !== null) {
     return (
       <>
-        <div className={PAGE_HEAD}>
-          <div>
-            <h2 className={PAGE_TITLE}>Something went wrong</h2>
-            <p className={PAGE_SUB}>We could not work out what to show you next.</p>
-          </div>
-        </div>
-
+        <Head title="Something went wrong" sub="We could not work out what is next." />
         <section className={`${CARD} ${EMPTY_BLOCK}`}>
           <p>{error}</p>
           <p className={MUTED_NOTE}>
-            <button
-              type="button"
-              className={`${PILL} ${PILL_ACCENT}`}
-              onClick={() => navigate('university')}
-            >
-              Go to My University
-            </button>
+            <Go label="Go to My University" />
           </p>
         </section>
       </>
     )
   }
 
-  if (!finished) {
+  if (enrolled) {
+    return (
+      <>
+        <Head title="You are enrolled" sub="Everything is submitted." />
+        <section className={`${CARD} ${EMPTY_BLOCK}`}>
+          <p>
+            <CheckCircleIcon size={18} /> Welcome in.
+          </p>
+          <p className={MUTED_NOTE}>
+            Your coach can now see your journal and review your trades with you.
+          </p>
+          <p className={MUTED_NOTE}>
+            <Go label="Open My University" />
+          </p>
+        </section>
+      </>
+    )
+  }
+
+  if (!ready) {
     return (
       <section className={CARD}>
         <p className={UNI_LOADING}>Finding what is next…</p>
@@ -92,32 +140,80 @@ export function SigningRun() {
 
   return (
     <>
-      <div className={PAGE_HEAD}>
-        <div>
-          <h2 className={PAGE_TITLE}>All done</h2>
-          <p className={PAGE_SUB}>
-            Everything is signed, so your enrolment is complete.
-          </p>
-        </div>
-      </div>
+      <Head
+        title="Everything is complete"
+        sub="One last step — submit them and you are in."
+      />
 
-      <section className={`${CARD} ${EMPTY_BLOCK}`}>
-        <p>
-          <CheckCircleIcon size={18} /> You are enrolled.
+      <section className={`${CARD} ${SET_SECTION}`}>
+        <p className={UNI_INVITE_NOTE}>
+          You have finished everything{' '}
+          {intake?.universityName.trim() || 'the program'} asks for. Nothing has been
+          submitted yet, and you are not enrolled until you do.
         </p>
-        <p className={MUTED_NOTE}>
-          Your coach can now see your journal and review your trades with you.
-        </p>
-        <p className={MUTED_NOTE}>
+
+        {intake !== null && intake.steps.length > 0 && (
+          <div className={STEP_LIST}>
+            {intake.steps.map((step) => (
+              <div key={step.id} className={STEP_ROW}>
+                <span className={`${STEP_NUMBER} ${STEP_DONE}`}>
+                  <CheckIcon size={12} />
+                </span>
+                <span className={STEP_TITLE}>{step.title}</span>
+                <span className={STEP_KIND}>Done</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
             type="button"
             className={`${PILL} ${PILL_ACCENT}`}
-            onClick={() => navigate('university')}
+            onClick={submit}
+            disabled={sending}
           >
-            Open My University
+            {sending ? (
+              <SpinnerIcon size={14} className="animate-spin" />
+            ) : (
+              <CheckCircleIcon size={15} />
+            )}
+            {sending ? 'Submitting…' : 'Submit documents'}
+          </button>
+
+          <button
+            type="button"
+            className={`${PILL} ${PILL_IDLE}`}
+            onClick={() => navigate('university')}
+            disabled={sending}
+          >
+            Not yet
           </button>
         </p>
       </section>
     </>
+  )
+}
+
+function Head({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className={PAGE_HEAD}>
+      <div>
+        <h2 className={PAGE_TITLE}>{title}</h2>
+        <p className={PAGE_SUB}>{sub}</p>
+      </div>
+    </div>
+  )
+}
+
+function Go({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className={`${PILL} ${PILL_ACCENT}`}
+      onClick={() => navigate('university')}
+    >
+      {label}
+    </button>
   )
 }

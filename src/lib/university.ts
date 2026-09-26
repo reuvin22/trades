@@ -607,11 +607,20 @@ export function useInbox(uid: string | null): Inbox {
 /* ------------------------------------------------------ the signing run */
 
 export type NextDocument = {
-  /** Empty when there is nothing left to sign. */
+  /** Empty when there is nothing left to open. */
   documentId: string
   remaining: number
   total: number
   done: boolean
+  /**
+   * Everything is complete and waiting on the student to submit it.
+   *
+   * Separate from `done` because finishing the documents and joining the
+   * program are two acts, and only the second enrols anybody.
+   */
+  readyToSubmit: boolean
+  /** Already enrolled. */
+  enrolled: boolean
 }
 
 /**
@@ -627,5 +636,17 @@ export function fetchNextDocument(): Promise<NextDocument> {
     remaining: Number(wire.remaining ?? 0),
     total: Number(wire.total ?? 0),
     done: wire.done === true,
+    readyToSubmit: wire.ready_to_submit === true,
+    enrolled: wire.enrolled === true,
   }))
+}
+
+/**
+ * Submit the completed documents and join.
+ *
+ * Takes nothing: what is outstanding is worked out from the session and the
+ * program, so there is no body here that could claim to have finished.
+ */
+export function submitDocuments(): Promise<{ message?: string }> {
+  return apiFetch('/api/v1/university/submit', { method: 'POST' })
 }

@@ -1802,6 +1802,28 @@ export const SECTION_EMPTY =
 export const CONNECT_NOTE =
   'mb-16 rounded-sm border border-line bg-tint-1 px-14 py-12 text-[12.5px] leading-[1.6] text-fg-dim [&_strong]:font-medium [&_strong]:text-fg'
 
+/* ---- a connected broker account ---- */
+
+/** Marks the connection as simulation. Deliberately prominent. */
+export const BROKER_BADGE =
+  'inline-flex items-center rounded-full border border-amber/40 bg-[color-mix(in_srgb,var(--color-amber)_14%,transparent)] px-9 py-3 text-[10px] font-semibold tracking-[0.08em] text-amber uppercase'
+
+export const BROKER_PANEL =
+  'rounded-sm border border-line bg-tint-1 px-14 py-14'
+export const BROKER_PANEL_HEAD = 'flex flex-wrap items-center gap-10'
+export const BROKER_WHO = 'text-[13.5px] font-medium text-fg-strong'
+export const BROKER_META = 'mt-4 text-[11.5px] leading-[1.55] text-fg-muted'
+
+/** The accounts behind the connection, as proof it is really connected. */
+export const BROKER_ACCOUNTS = 'mt-12 flex flex-col gap-6'
+export const BROKER_ACCOUNT =
+  'flex items-baseline justify-between gap-12 rounded-sm border border-line bg-panel-inset px-11 py-8 text-[12px]'
+export const BROKER_ACCOUNT_NAME = 'font-medium text-fg'
+export const BROKER_ACCOUNT_ID = 'tabular-nums text-[11px] text-fg-muted'
+
+export const BROKER_ACTIONS = 'mt-14 flex flex-wrap gap-8'
+export const BROKER_ERROR = 'mt-12 text-[12px] leading-[1.5] text-red'
+
 /* --------------------------------------------------------- csv importer */
 
 /**

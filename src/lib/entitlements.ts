@@ -194,6 +194,10 @@ const PATH_FEATURE: [prefix: string, feature: Feature][] = [
   // invitation can reach any account, and a free trader who has been invited
   // has to be able to answer it.
   ['/api/v1/community', 'messages'],
+  // The broker connection is the front half of broker import, and it is the
+  // half that hands over a credential — so a plan without the feature does
+  // not get to reach the endpoint that would store one.
+  ['/api/v1/brokers', 'brokerImport'],
 ]
 
 export function pathAllowed(path: string, plan: PlanId = active): boolean {
