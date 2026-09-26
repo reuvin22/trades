@@ -9,6 +9,8 @@ import {
   ClockIcon,
   ScalesIcon,
   UserPlusIcon,
+  UsersIcon,
+  XCircleIcon,
 } from './Icons'
 import type { Profile } from '../lib/profile'
 import type { StoredTrade } from '../lib/trades'
@@ -32,6 +34,8 @@ import {
 const GLYPHS: Record<NotificationKind, typeof AlertIcon> = {
   invite: UserPlusIcon,
   approved: CheckCircleIcon,
+  application: UsersIcon,
+  declined: XCircleIcon,
   risk: AlertIcon,
   rules: ScalesIcon,
   streak: AlertIcon,

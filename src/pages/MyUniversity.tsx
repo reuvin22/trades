@@ -70,7 +70,6 @@ import { moneyIn } from '../lib/journalStats'
 import { useToast } from '../lib/toast'
 import { navigate } from '../lib/useHashRoute'
 import {
-  acceptInvitation,
   declineInvitation,
   decideApplication,
   fetchApplications,
@@ -84,6 +83,7 @@ import {
 } from '../lib/university'
 import { readableApiError } from '../lib/api'
 import { useDocuments } from '../lib/documents'
+import { useInbox } from '../lib/university'
 import type { Profile } from '../lib/profile'
 
 /**
@@ -104,14 +104,19 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
   const state = useUniversity(profile?.uid ?? null)
   const toast = useToast()
 
+  /** Declining only. Joining goes through the join screen. */
   async function answer(coachUid: string, accept: boolean) {
+    if (accept) {
+      navigate('university/join')
+      return
+    }
+
     try {
-      await (accept ? acceptInvitation(coachUid) : declineInvitation(coachUid))
-      if (accept) toast.success('You have joined the program.')
-      else toast.info('Invitation declined.')
+      await declineInvitation(coachUid)
+      toast.info('Invitation declined.')
       state.reload()
     } catch (cause) {
-      toast.error('Could not answer that invitation', readableApiError(cause))
+      toast.error('Could not decline that invitation', readableApiError(cause))
     }
   }
 
@@ -157,6 +162,7 @@ type State = ReturnType<typeof useUniversity>
 function CoachView({ profile, state }: { profile: Profile | null; state: State }) {
   const [tab, setTab] = useState<'students' | 'applications' | 'invites'>('students')
   const [applications, setApplications] = useState<Application[]>([])
+  const inbox = useInbox(profile?.uid ?? null)
   const [inviting, setInviting] = useState(false)
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
   const toast = useToast()
@@ -276,6 +282,12 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
         <Figure label="Students" value={String(students.length)} />
         <Figure label="Awaiting an answer" value={String(pending)} />
         <Figure label="To approve" value={String(applications.length)} />
+        {/*
+          Approved but not enrolled. Without this they vanish: off the
+          applications tab, not yet on the roster, and the coach has no way to
+          tell whether anything happened.
+        */}
+        <Figure label="Signing" value={String(inbox.signing.length)} />
         <Figure
           label="Trades logged"
           value={String(students.reduce((total, s) => total + s.tradeCount, 0))}
@@ -593,12 +605,20 @@ function InvitationCard({
         >
           Decline
         </button>
+        {/*
+          Opens the join flow rather than accepting here.
+          
+          This button used to call accept directly, which walked straight past
+          the coach's intake form and their approval — the invited trader
+          landed on the roster without answering or being reviewed. The join
+          screen is the one place that knows which of those apply.
+        */}
         <button
           type="button"
           className={`${PILL} ${PILL_ACCENT}`}
-          onClick={() => onAnswer(invitation.coachUid, true)}
+          onClick={() => navigate('university/join')}
         >
-          Accept
+          Open invitation
         </button>
       </div>
     </section>

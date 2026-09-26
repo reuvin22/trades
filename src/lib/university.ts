@@ -47,6 +47,8 @@ export type SentInvite = {
   status: 'pending' | 'active' | 'declined'
   note: string
   invitedAt: Date | null
+  /** When they answered — so a refusal from months ago is not news. */
+  respondedAt: Date | null
 }
 
 export type Coach = {
@@ -166,6 +168,7 @@ export function useUniversity(uid: string | null): UniversityState {
             status: wire.status === 'declined' ? 'declined' : 'pending',
             note: String(wire.note ?? ''),
             invitedAt: date(wire.invited_at),
+            respondedAt: date(wire.responded_at),
           })),
         )
         setCoach(
@@ -295,47 +298,6 @@ export function useStudentJournal(uid: string | null): StudentJournal {
   return { trades, loading: loadedFor !== uid, error }
 }
 
-/**
- * Just the invitations, for the notification bell.
- *
- * A second, smaller hook rather than reusing `useUniversity`: the bell is on
- * every screen, and making it fetch a roster with a journal summary per
- * student would put that cost on every page load in the product.
- */
-export function useInvitations(uid: string | null): Invitation[] {
-  const [invitations, setInvitations] = useState<Invitation[]>([])
-
-  useEffect(() => {
-    if (uid === null) return
-
-    const abort = new AbortController()
-
-    apiFetch<{ invitations: Record<string, unknown>[] }>(
-      '/api/v1/university/invitations',
-      { signal: abort.signal },
-    )
-      .then((body) =>
-        setInvitations(
-          body.invitations.map((wire) => ({
-            coachUid: String(wire.coach_uid ?? ''),
-            coachName: String(wire.coach_name ?? ''),
-            coachEmail: String(wire.coach_email ?? ''),
-            coachPhoto: String(wire.coach_photo ?? ''),
-            note: String(wire.note ?? ''),
-            invitedAt: date(wire.invited_at),
-          })),
-        ),
-      )
-      // Silent: a bell that cannot reach the API should be empty, not an
-      // error message on every screen in the product.
-      .catch(() => setInvitations([]))
-
-    return () => abort.abort()
-  }, [uid])
-
-  return uid === null ? [] : invitations
-}
-
 /* --------------------------------------------- the program and its mail */
 
 export type EmailTemplate = {
@@ -435,8 +397,8 @@ export type Application = {
   documentId: string
 }
 
-export function fetchIntake(): Promise<Intake> {
-  return apiFetch<Record<string, unknown>>('/api/v1/university/intake').then((wire) => ({
+function toIntake(wire: Record<string, unknown>): Intake {
+  return {
     status: (wire.status as EnrolmentStatus | null) ?? null,
     coachUid: String(wire.coach_uid ?? ''),
     coachName: String(wire.coach_name ?? ''),
@@ -446,7 +408,11 @@ export function fetchIntake(): Promise<Intake> {
     documentId: String(wire.document_id ?? ''),
     outstanding: Number(wire.outstanding ?? 0),
     requiredTotal: Number(wire.required_total ?? 0),
-  }))
+  }
+}
+
+export function fetchIntake(): Promise<Intake> {
+  return apiFetch<Record<string, unknown>>('/api/v1/university/intake').then(toIntake)
 }
 
 export function fetchApplications(): Promise<Application[]> {
@@ -497,4 +463,104 @@ export function useIntake(uid: string | null): Intake | null {
   }, [uid])
 
   return uid === null ? null : intake
+}
+
+/* ------------------------------------------------------------ the bell */
+
+export type Inbox = {
+  /** Student side. */
+  invitations: Invitation[]
+  intake: Intake
+  /** Coach side. */
+  applications: Application[]
+  /** Approved, still signing. Not on the roster until they finish. */
+  signing: Application[]
+  declined: SentInvite[]
+}
+
+export const EMPTY_INBOX: Inbox = {
+  invitations: [],
+  intake: {
+    status: null,
+    coachUid: '',
+    coachName: '',
+    coachEmail: '',
+    universityName: '',
+    note: '',
+    documentId: '',
+    outstanding: 0,
+    requiredTotal: 0,
+  },
+  applications: [],
+  signing: [],
+  declined: [],
+}
+
+/**
+ * One call for the notification bell.
+ *
+ * Replaces the two hooks this grew — the bell sits on every screen, and each
+ * one it accumulated was another round trip on every page load. Both sides
+ * come back because one account can be both a coach and somebody's student.
+ */
+export function useInbox(uid: string | null): Inbox {
+  const [inbox, setInbox] = useState<Inbox>(EMPTY_INBOX)
+
+  useEffect(() => {
+    if (uid === null) return
+
+    const abort = new AbortController()
+
+    apiFetch<Record<string, unknown>>('/api/v1/university/inbox', {
+      signal: abort.signal,
+    })
+      .then((wire) => {
+        if (abort.signal.aborted) return
+
+        setInbox({
+          invitations: (wire.invitations as Record<string, unknown>[]).map((entry) => ({
+            coachUid: String(entry.coach_uid ?? ''),
+            coachName: String(entry.coach_name ?? ''),
+            coachEmail: String(entry.coach_email ?? ''),
+            coachPhoto: String(entry.coach_photo ?? ''),
+            note: String(entry.note ?? ''),
+            invitedAt: date(entry.invited_at),
+          })),
+          intake: toIntake(wire.intake as Record<string, unknown>),
+          applications: (wire.applications as Record<string, unknown>[]).map(
+            (entry) => ({
+              studentUid: String(entry.student_uid ?? ''),
+              studentName: String(entry.student_name ?? ''),
+              studentEmail: String(entry.student_email ?? ''),
+              appliedAt: date(entry.applied_at),
+              documentId: String(entry.document_id ?? ''),
+            }),
+          ),
+          signing: (wire.signing as Record<string, unknown>[]).map((entry) => ({
+            studentUid: String(entry.student_uid ?? ''),
+            studentName: String(entry.student_name ?? ''),
+            studentEmail: String(entry.student_email ?? ''),
+            appliedAt: date(entry.applied_at),
+            documentId: String(entry.document_id ?? ''),
+          })),
+          declined: (wire.declined as Record<string, unknown>[]).map((entry) => ({
+            studentUid: String(entry.student_uid ?? ''),
+            studentName: String(entry.student_name ?? ''),
+            studentEmail: String(entry.student_email ?? ''),
+            studentPhoto: String(entry.student_photo ?? ''),
+            status: 'declined' as const,
+            note: String(entry.note ?? ''),
+            invitedAt: date(entry.invited_at),
+            respondedAt: date(entry.responded_at),
+          })),
+        })
+      })
+      // Silent: a bell that cannot reach the API should be empty rather than
+      // an error message on every screen in the product.
+      .catch(() => undefined)
+
+    return () => abort.abort()
+  }, [uid])
+
+  return uid === null ? EMPTY_INBOX : inbox
 }

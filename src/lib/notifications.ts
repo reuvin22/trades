@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { dayKey, tradeDate } from './stats'
-import { useIntake, useInvitations, type Intake, type Invitation } from './university'
+import { EMPTY_INBOX, useInbox, type Inbox } from './university'
 import type { Profile } from './profile'
 import type { StoredTrade } from './trades'
 
@@ -25,6 +25,10 @@ import type { StoredTrade } from './trades'
 export type NotificationKind =
   | 'invite'
   | 'approved'
+  /** Somebody answered a coach's invitation and is waiting on a decision. */
+  | 'application'
+  /** Somebody turned a coach's invitation down. */
+  | 'declined'
   | 'risk'
   | 'rules'
   | 'streak'
@@ -74,24 +78,72 @@ function moneyish(value: number): string {
  * from inside a render. That keeps the hook below pure with respect to its
  * arguments, and makes this testable without mocking the clock globally.
  */
+/** How long a refusal is still news. After this it is just history. */
+const DECLINE_WINDOW_DAYS = 14
+
 export function buildNotifications(
   profile: Profile | null,
   trades: StoredTrade[],
-  invitations: Invitation[],
-  intake: Intake | null = null,
+  inbox: Inbox = EMPTY_INBOX,
   // Last, and defaulted, so the hook below never has to name it — reading the
   // clock during render is the impurity the React lint rules object to, and
   // rightly: it makes a render's output depend on when it happened.
   now: number = Date.now(),
 ): Notification[] {
   const items: Notification[] = []
+  const { invitations, intake } = inbox
+
+  /* ---------------------------------------------------------- coach side */
+
+  // -- somebody answered your invitation ---------------------------------
+  //
+  // The half that was missing. A coach sent an invitation, the trader
+  // answered the form, and nothing anywhere told the coach — the application
+  // sat in a tab they had no reason to open.
+  for (const application of inbox.applications) {
+    const who = application.studentName.trim() || application.studentEmail
+
+    items.push({
+      id: `application-${application.studentUid}`,
+      kind: 'application',
+      title: `${who} answered your form`,
+      body: 'They are waiting on your approval before they can join.',
+      age: ago(application.appliedAt),
+      route: 'university',
+    })
+  }
+
+  // -- somebody turned you down ------------------------------------------
+  //
+  // Bounded by recency, because there is no store of what has been read
+  // across sessions: an unbounded list would resurface every refusal ever
+  // received on every reload, which trains people to ignore the bell.
+  const freshEnough = now - DECLINE_WINDOW_DAYS * 86_400_000
+
+  for (const invite of inbox.declined) {
+    const when = invite.respondedAt
+    if (when === null || when.getTime() < freshEnough) continue
+
+    const who = invite.studentName.trim() || invite.studentEmail
+
+    items.push({
+      id: `declined-${invite.studentUid}`,
+      kind: 'declined',
+      title: `${who} declined your invitation`,
+      body: 'They are not joining. You can invite them again if that changes.',
+      age: ago(when),
+      route: 'university',
+    })
+  }
+
+  /* -------------------------------------------------------- student side */
 
   // -- your coach approved you, and something is waiting -----------------
   //
   // The second notification in the joining flow. Approval is not the end of
   // it: the documents have to be signed before the enrolment completes, so
   // this says what is left rather than just congratulating somebody.
-  if (intake !== null && intake.status === 'documents') {
+  if (intake.status === 'documents') {
     const left = intake.outstanding
     const where = intake.universityName.trim() || 'your coach'
 
@@ -224,11 +276,10 @@ export function useNotifications(
   profile: Profile | null,
   trades: StoredTrade[],
 ): Notification[] {
-  const invitations = useInvitations(profile?.uid ?? null)
-  const intake = useIntake(profile?.uid ?? null)
+  const inbox = useInbox(profile?.uid ?? null)
 
   return useMemo(
-    () => buildNotifications(profile, trades, invitations, intake),
-    [invitations, intake, profile, trades],
+    () => buildNotifications(profile, trades, inbox),
+    [inbox, profile, trades],
   )
 }
