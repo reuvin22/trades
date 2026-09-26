@@ -101,6 +101,9 @@ const UniversitySettings = lazy(() =>
 const SigningRun = lazy(() =>
   import('./pages/SigningRun').then((module) => ({ default: module.SigningRun })),
 )
+const Competition = lazy(() =>
+  import('./pages/Competition').then((module) => ({ default: module.Competition })),
+)
 const JoinUniversity = lazy(() =>
   import('./pages/JoinUniversity').then((module) => ({
     default: module.JoinUniversity,
@@ -246,6 +249,8 @@ function TraderView({
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'community':
       return <Community profile={profile} />
+    case 'competition':
+      return <Competition profile={profile} />
     case 'university':
       return <MyUniversity profile={profile} />
     case 'profile':

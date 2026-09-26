@@ -777,3 +777,48 @@ export function RuleIcon({ size = 20, className }: IconProps) {
     </svg>
   )
 }
+
+/* ---- competition ---- */
+
+/** Crossed blades. The nav item that leads somewhere other than the journal. */
+export function CompetitionIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M4 4h3l10.5 10.5" />
+      <path d="M20 4h-3L6.5 14.5" />
+      <path d="M14.5 17.5 17 20l3-3-2.5-2.5" />
+      <path d="M9.5 17.5 7 20l-3-3 2.5-2.5" />
+    </svg>
+  )
+}
+
+/** An anvil. The forge. */
+export function AnvilIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M3 8h8l2.5 3H19a2 2 0 0 0 2-2V8" />
+      <path d="M11 11v3H8l-1 5h10l-1-5h-3v-3" />
+    </svg>
+  )
+}
+
+/** A laurel-free trophy: a cup on a plinth, for a ladder. */
+export function TrophyIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11" />
+      <path d="M12 14v3M8.5 20h7l-.7-3h-5.6l-.7 3Z" />
+    </svg>
+  )
+}
+
+/** A storm, for the chaos bracket. */
+export function StormIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M7 15H5.5A3.5 3.5 0 0 1 6 8.1 5 5 0 0 1 15.8 7 3.6 3.6 0 0 1 19 13.6" />
+      <path d="m12 12-2.5 4.5h3L10 21" />
+    </svg>
+  )
+}

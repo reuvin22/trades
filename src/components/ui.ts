@@ -3019,3 +3019,133 @@ export const STEP_DONE =
   'bg-[color-mix(in_srgb,var(--color-green)_20%,transparent)] text-green'
 export const STEP_TITLE = 'text-[13.5px] font-medium text-fg-strong'
 export const STEP_KIND = 'ml-auto flex-none text-[11.5px] text-fg-muted'
+
+/* ================================================================ arena */
+
+/*
+ * The competition page, and nothing else, uses these.
+ *
+ * Fixed hex rather than the theme tokens every other screen is built from —
+ * and that is the point. The journal is a quiet, pale instrument whose palette
+ * the trader picks; this is meant to read as somewhere else entirely, the way
+ * walking from an office into a workshop does. A competitive scene that
+ * shifted colour with a user preference would not be a scene, it would be
+ * another panel.
+ *
+ * Forge, not neon. Molten orange against cold iron, corners cut rather than
+ * rounded, type set heavy and wide — the visual language of something
+ * hammered into shape.
+ *
+ * The palette, written out because it cannot be interpolated:
+ *
+ *     #ff6a1a  ember       the only warm thing here, so it means something
+ *     #b83a09  ember deep  the cooling edge of it
+ *     #15121a  iron        the ground
+ *     #1b1622  slab        a panel standing on the ground
+ *     #e9e2da  bone        text
+ *
+ * Every one is spelled out at each use. Tailwind finds utilities by scanning
+ * source as text, so `bg-[${IRON}]` is a class that never gets generated —
+ * the same trap `layout.ts` documents for the shell's column widths.
+ */
+
+/**
+ * The whole surface, broken out of the page's pale wash.
+ *
+ * Negative margins cancel the content column's padding so the dark reaches
+ * the edges. Without them this is a dark rectangle sitting on a pink page,
+ * which reads as a broken card rather than as a different place.
+ */
+export const WAR_PAGE =
+  '-mx-26 -mt-8 -mb-40 min-h-[calc(100vh-72px)] max-shell:-mx-18 text-[#e9e2da] ' +
+  'bg-[radial-gradient(1200px_520px_at_50%_-10%,rgba(255,106,26,0.18),transparent_70%),radial-gradient(760px_400px_at_88%_16%,rgba(159,18,57,0.16),transparent_66%),linear-gradient(180deg,#1a1520_0%,#15121a_46%,#0c0a10_100%)]'
+
+/** Scanlines, faint enough to be texture rather than pattern. */
+export const WAR_GRAIN =
+  'pointer-events-none absolute inset-0 opacity-50 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.028)_0px,rgba(255,255,255,0.028)_1px,transparent_1px,transparent_3px)]'
+
+export const WAR_INNER =
+  'relative mx-auto flex w-full max-w-[1180px] flex-col gap-24 px-26 pt-34 pb-44 max-shell:px-18'
+
+/* ------------------------------------------------------------ the banner */
+
+export const WAR_HERO = 'relative flex flex-col gap-14'
+export const WAR_KICKER =
+  'flex items-center gap-10 text-[11px] font-semibold tracking-[0.34em] text-[#ff6a1a] uppercase'
+/** The rule beside the kicker, fading out like cooling metal. */
+export const WAR_RULE = 'h-px flex-1 bg-[linear-gradient(90deg,#b83a09,transparent)]'
+
+export const WAR_TITLE =
+  'text-[64px] leading-[0.92] font-black tracking-[-0.03em] text-[#f5efe8] uppercase max-[720px]:text-[42px] [text-shadow:0_0_42px_rgba(255,106,26,0.28)]'
+/** The struck word, poured rather than painted. */
+export const WAR_TITLE_HOT =
+  'bg-[linear-gradient(180deg,#ffb066,#ff6a1a_52%,#b83a09)] bg-clip-text text-transparent'
+
+export const WAR_LEDE = 'max-w-[62ch] text-[14.5px] leading-[1.7] text-[#a79db0]'
+
+/* -------------------------------------------------------- the four pits */
+
+export const WAR_PITS =
+  'grid grid-cols-4 gap-14 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1'
+
+/**
+ * One arena. Corners cut rather than rounded — a radius is the language of
+ * the rest of the product, and this is not meant to feel like the rest of
+ * the product.
+ */
+export const WAR_PIT =
+  'group relative flex flex-col gap-10 border border-[#2e2733] bg-[#1b1622]/80 px-20 pt-20 pb-20 backdrop-blur-[2px] transition-[border-color,transform,background-color] duration-200 hover:-translate-y-2 hover:border-[#4a3d52] hover:bg-[#221b2b]/90 [clip-path:polygon(0_16px,16px_0,100%_0,100%_calc(100%-16px),calc(100%-16px)_100%,0_100%)]'
+export const WAR_PIT_GLYPH =
+  'grid size-42 place-items-center border border-[#39303f] bg-[#241d2d] text-[#ff6a1a]'
+export const WAR_PIT_NAME =
+  'text-[15px] font-bold tracking-[0.14em] text-[#efe7de] uppercase'
+export const WAR_PIT_TEXT = 'text-[12.5px] leading-[1.6] text-[#968c9f]'
+/** Says the pit is not open yet, rather than pretending it is. */
+export const WAR_PIT_SOON =
+  'mt-auto pt-4 text-[10px] font-semibold tracking-[0.2em] text-[#6a5f74] uppercase'
+
+/* ----------------------------------------------------- the fighter card */
+
+/**
+ * The profile, dressed for where it is standing.
+ *
+ * Same account, same name, same photo as everywhere else in the product.
+ * Nothing here is invented: every value comes off the profile the API already
+ * serves, which is what "your account is synced" has to mean if it is to mean
+ * anything.
+ */
+export const WAR_CARD =
+  'relative grid grid-cols-[auto_1fr] items-start gap-26 border border-[#332b3a] bg-[#1c1724]/90 px-28 pt-26 pb-26 max-[720px]:grid-cols-1 [clip-path:polygon(0_22px,22px_0,100%_0,100%_calc(100%-22px),calc(100%-22px)_100%,0_100%)]'
+/** An ember hairline along the top edge, like a hot seam. */
+export const WAR_CARD_SEAM =
+  'pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,#ff6a1a,transparent)]'
+
+export const WAR_AVATAR =
+  'relative grid size-96 flex-none place-items-center overflow-hidden border border-[#4a3d52] bg-[#251e2f] [clip-path:polygon(0_14px,14px_0,100%_0,100%_calc(100%-14px),calc(100%-14px)_100%,0_100%)] [&_img]:size-full [&_img]:object-cover'
+export const WAR_AVATAR_LETTERS =
+  'text-[34px] font-black tracking-[-0.02em] text-[#ff6a1a]'
+
+export const WAR_WHO = 'flex min-w-0 flex-col gap-10'
+export const WAR_HANDLE =
+  'text-[30px] leading-[1.05] font-bold tracking-[-0.02em] text-[#f3ece4] max-[720px]:text-[24px]'
+export const WAR_MAIL = 'text-[12.5px] text-[#8b8194]'
+
+export const WAR_BADGES = 'mt-2 flex flex-wrap gap-8'
+export const WAR_BADGE =
+  'border border-[#3b3243] bg-[#241d2e] px-11 py-5 text-[10.5px] font-semibold tracking-[0.16em] text-[#b6aabf] uppercase'
+/** The one badge that gets the ember, so the eye lands on it. */
+export const WAR_BADGE_HOT =
+  'border-[#b83a09] bg-[rgba(255,106,26,0.12)] text-[#ff6a1a]'
+
+/** Account facts, on plates. Not statistics — this page computes nothing. */
+export const WAR_PLATES =
+  'mt-18 grid grid-cols-3 gap-px border border-[#2c2534] bg-[#2c2534] max-[560px]:grid-cols-1'
+export const WAR_PLATE = 'flex flex-col gap-6 bg-[#1a1522] px-18 py-16'
+export const WAR_PLATE_LABEL =
+  'text-[9.5px] font-semibold tracking-[0.22em] text-[#6f6479] uppercase'
+export const WAR_PLATE_VALUE =
+  'text-[17px] font-bold tracking-[-0.01em] text-[#ece4dc]'
+
+/** Where the rest of it will go, said plainly rather than faked. */
+export const WAR_NOTE =
+  'border-l-2 border-[#3a3143] pl-16 text-[12.5px] leading-[1.7] text-[#7e7488]'

@@ -6,6 +6,7 @@ import {
   CalendarIcon,
   CoachIcon,
   CommunityIcon,
+  CompetitionIcon,
   DashboardIcon,
   JournalIcon,
   OrgIcon,
@@ -104,6 +105,14 @@ const TRADER_TREE: NavEntry[] = [
       { route: 'university', label: 'My University', icon: UniversityIcon },
     ],
   },
+  /*
+   * Top level, and on purpose.
+   *
+   * Competition is not a facet of the journal the way Analytics is — it is a
+   * different place with a different look that the account travels to. A
+   * category would file it under something; it belongs beside Dashboard.
+   */
+  { route: 'competition', label: 'Competition', icon: CompetitionIcon },
   {
     id: 'workspace',
     label: 'Workspace',
