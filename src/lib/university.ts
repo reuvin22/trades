@@ -401,3 +401,61 @@ export function saveSettings(settings: Settings): Promise<Settings> {
     },
   }).then(toSettings)
 }
+
+/* --------------------------------------------------- joining, and approval */
+
+export type EnrolmentStatus = 'pending' | 'applied' | 'active' | 'declined'
+
+export type Intake = {
+  /** Null when nothing is waiting on this account. */
+  status: EnrolmentStatus | null
+  coachUid: string
+  coachName: string
+  coachEmail: string
+  universityName: string
+  note: string
+  /** Empty when the coach has not set an intake form. */
+  documentId: string
+}
+
+export type Application = {
+  studentUid: string
+  studentName: string
+  studentEmail: string
+  appliedAt: Date | null
+  documentId: string
+}
+
+export function fetchIntake(): Promise<Intake> {
+  return apiFetch<Record<string, unknown>>('/api/v1/university/intake').then((wire) => ({
+    status: (wire.status as EnrolmentStatus | null) ?? null,
+    coachUid: String(wire.coach_uid ?? ''),
+    coachName: String(wire.coach_name ?? ''),
+    coachEmail: String(wire.coach_email ?? ''),
+    universityName: String(wire.university_name ?? ''),
+    note: String(wire.note ?? ''),
+    documentId: String(wire.document_id ?? ''),
+  }))
+}
+
+export function fetchApplications(): Promise<Application[]> {
+  return apiFetch<{ applications: Record<string, unknown>[] }>(
+    '/api/v1/university/applications',
+  ).then((page) =>
+    page.applications.map((wire) => ({
+      studentUid: String(wire.student_uid ?? ''),
+      studentName: String(wire.student_name ?? ''),
+      studentEmail: String(wire.student_email ?? ''),
+      appliedAt: date(wire.applied_at),
+      documentId: String(wire.document_id ?? ''),
+    })),
+  )
+}
+
+/** `uid` names the student who applied. */
+export function decideApplication(uid: string, approve: boolean): Promise<unknown> {
+  return apiFetch(
+    `/api/v1/university/applications/${uid}/${approve ? 'approve' : 'reject'}`,
+    { method: 'POST' },
+  )
+}

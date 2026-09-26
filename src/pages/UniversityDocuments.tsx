@@ -175,6 +175,7 @@ export function UniversityDocuments({ profile }: { profile: Profile | null }) {
                       ? 'Agreement'
                       : `Form · ${document.questions.length} question${document.questions.length === 1 ? '' : 's'}`}
                     {document.required ? ' · required' : ' · optional'}
+                    {document.isIntake && ' · intake form'}
                   </span>
                 </span>
 
@@ -324,6 +325,15 @@ function Editor({
               on={draft.published}
               onToggle={() => edit({ published: !draft.published })}
             />
+
+            {draft.kind === 'form' && (
+              <Switch
+                label="Use as the intake form"
+                hint="The form an invited trader fills in before joining. Answering it puts them in your approval queue. Only one form can be the intake form — setting this clears it on any other."
+                on={draft.isIntake}
+                onToggle={() => edit({ isIntake: !draft.isIntake })}
+              />
+            )}
           </div>
         </div>
       </section>

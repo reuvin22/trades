@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChatIcon, ChevronRightIcon, UserPlusIcon } from '../components/Icons'
 import { InviteStudent } from '../components/InviteStudent'
 import { accentFor, initialsFor } from '../data/messages'
@@ -72,9 +72,12 @@ import { navigate } from '../lib/useHashRoute'
 import {
   acceptInvitation,
   declineInvitation,
+  decideApplication,
+  fetchApplications,
   endEnrolment,
   nameOf,
   useUniversity,
+  type Application,
   type Invitation,
   type SentInvite,
   type Student,
@@ -152,12 +155,50 @@ type State = ReturnType<typeof useUniversity>
 /* ------------------------------------------------------------- coach view */
 
 function CoachView({ profile, state }: { profile: Profile | null; state: State }) {
-  const [tab, setTab] = useState<'students' | 'invites'>('students')
+  const [tab, setTab] = useState<'students' | 'applications' | 'invites'>('students')
+  const [applications, setApplications] = useState<Application[]>([])
   const [inviting, setInviting] = useState(false)
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
   const toast = useToast()
 
   const { students, sent } = state
+
+  /*
+   * Fetched here rather than in `useUniversity`, because only a coach has an
+   * approval queue — putting it in the shared hook would make every student's
+   * My University call an endpoint that always answers empty for them.
+   */
+  useEffect(() => {
+    const abort = new AbortController()
+
+    fetchApplications()
+      .then((found) => {
+        if (!abort.signal.aborted) setApplications(found)
+      })
+      // Silent: a failed queue should not replace a working roster with an
+      // error. It reappears on the next load.
+      .catch(() => undefined)
+
+    return () => abort.abort()
+  }, [state.students])
+
+  async function decide(application: Application, approve: boolean) {
+    try {
+      await decideApplication(application.studentUid, approve)
+      toast.success(
+        approve
+          ? `${nameOf(application.studentName, application.studentEmail)} is enrolled.`
+          : 'Application turned down.',
+        approve ? 'Your required documents are now waiting for them.' : undefined,
+      )
+      setApplications((current) =>
+        current.filter((entry) => entry.studentUid !== application.studentUid),
+      )
+      state.reload()
+    } catch (cause) {
+      toast.error('Could not do that', readableApiError(cause))
+    }
+  }
 
   const graded = students.filter((student) => student.ruleScore !== null)
   const meanDiscipline =
@@ -234,6 +275,7 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
       <div className={STAT_ROW}>
         <Figure label="Students" value={String(students.length)} />
         <Figure label="Awaiting an answer" value={String(pending)} />
+        <Figure label="To approve" value={String(applications.length)} />
         <Figure
           label="Trades logged"
           value={String(students.reduce((total, s) => total + s.tradeCount, 0))}
@@ -259,6 +301,13 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
         </button>
         <button
           type="button"
+          className={`${UNI_TAB} ${tab === 'applications' ? UNI_TAB_ACTIVE : ''}`}
+          onClick={() => setTab('applications')}
+        >
+          Applications ({applications.length})
+        </button>
+        <button
+          type="button"
           className={`${UNI_TAB} ${tab === 'invites' ? UNI_TAB_ACTIVE : ''}`}
           onClick={() => setTab('invites')}
         >
@@ -272,6 +321,8 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
         </section>
       ) : tab === 'students' ? (
         <Roster students={students} money={money} onDrop={drop} />
+      ) : tab === 'applications' ? (
+        <Applications applications={applications} onDecide={decide} />
       ) : (
         <SentInvites invites={sent} />
       )}
@@ -661,5 +712,85 @@ function Waiting({ uid }: { uid: string | null }) {
         ))}
       </div>
     </section>
+  )
+}
+
+/**
+ * Students who answered the intake form and are waiting on a decision.
+ *
+ * Approving is the single act that enrols them — and because every document
+ * read is gated on an active enrolment, it is also what puts the coach's
+ * required documents in front of them. There is no second "send the
+ * documents" step that could be forgotten.
+ */
+function Applications({
+  applications,
+  onDecide,
+}: {
+  applications: Application[]
+  onDecide: (application: Application, approve: boolean) => void
+}) {
+  if (applications.length === 0) {
+    return (
+      <section className={`${CARD} ${EMPTY_BLOCK}`}>
+        <p>Nobody waiting.</p>
+        <p className={MUTED_NOTE}>
+          When an invited trader answers your intake form, they appear here until
+          you approve or turn them down.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <div className={DOC_LIST}>
+      {applications.map((application) => (
+        <section key={application.studentUid} className={CARD}>
+          <div className={DOC_ROW}>
+            <Face
+              uid={application.studentUid}
+              name={nameOf(application.studentName, application.studentEmail)}
+            />
+
+            <span className={DOC_BODY}>
+              <span className={UNI_STUDENT_NAME}>
+                {nameOf(application.studentName, application.studentEmail)}
+              </span>
+              <span className={UNI_STUDENT_MAIL}>
+                {application.studentEmail}
+                {application.appliedAt !== null &&
+                  ` · applied ${application.appliedAt.toLocaleDateString('en-GB')}`}
+              </span>
+            </span>
+
+            <span className={DOC_TAIL}>
+              {application.documentId !== '' && (
+                <button
+                  type="button"
+                  className={UNI_GHOST}
+                  onClick={() => navigate('university/documents')}
+                >
+                  Read their answers
+                </button>
+              )}
+              <button
+                type="button"
+                className={`${PILL} ${PILL_IDLE}`}
+                onClick={() => onDecide(application, false)}
+              >
+                Turn down
+              </button>
+              <button
+                type="button"
+                className={`${PILL} ${PILL_ACCENT}`}
+                onClick={() => onDecide(application, true)}
+              >
+                Approve
+              </button>
+            </span>
+          </div>
+        </section>
+      ))}
+    </div>
   )
 }

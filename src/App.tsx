@@ -11,7 +11,13 @@ import { appShell, CONTENT, WORKSPACE } from './components/layout'
 import { PAGE_PENDING, PAGE_PENDING_BAR } from './components/ui'
 import { useNavDrawer } from './lib/useNavDrawer'
 import { useCollapsedNav } from './lib/useCollapsedNav'
-import { navigate, useHashRoute, PUBLIC_ROUTES } from './lib/useHashRoute'
+import {
+  navigate,
+  rememberDestination,
+  takeDestination,
+  useHashRoute,
+  PUBLIC_ROUTES,
+} from './lib/useHashRoute'
 import { useAuth } from './lib/useAuth'
 import {
   accountTypeLabel,
@@ -90,6 +96,11 @@ const MyUniversity = lazy(() =>
 const UniversitySettings = lazy(() =>
   import('./pages/UniversitySettings').then((module) => ({
     default: module.UniversitySettings,
+  })),
+)
+const JoinUniversity = lazy(() =>
+  import('./pages/JoinUniversity').then((module) => ({
+    default: module.JoinUniversity,
   })),
 )
 const UniversityDocuments = lazy(() =>
@@ -172,6 +183,12 @@ function TraderView({
   // `university/settings` before `university/<uid>`: "settings" matches the
   // uid pattern perfectly well, so the specific route has to be tried first
   // or a coach opening their own settings gets a student page instead.
+  // Where the invitation email lands. Before the uid branch, which would
+  // otherwise read "join" as a student id.
+  if (route === 'university/join') {
+    return <JoinUniversity profile={profile} />
+  }
+
   if (route === 'university/settings') {
     return <UniversitySettings profile={profile} />
   }
@@ -351,13 +368,20 @@ function App() {
       settled.current = true
       wasSignedIn.current = signedIn
       if (signedIn && PUBLIC_ROUTES.has(route)) navigate(HOME_ROUTE)
-      if (!signedIn && !PUBLIC_ROUTES.has(route)) navigate('landing')
+      if (!signedIn && !PUBLIC_ROUTES.has(route)) {
+        // Held so signing in returns here rather than to the dashboard.
+        rememberDestination(route)
+        navigate('landing')
+      }
       return
     }
 
-    if (signedIn && !wasSignedIn.current) navigate(HOME_ROUTE)
+    if (signedIn && !wasSignedIn.current) navigate(takeDestination() ?? HOME_ROUTE)
     if (!signedIn && wasSignedIn.current) navigate('landing')
-    if (!signedIn && !PUBLIC_ROUTES.has(route)) navigate('landing')
+    if (!signedIn && !PUBLIC_ROUTES.has(route)) {
+      rememberDestination(route)
+      navigate('landing')
+    }
 
     wasSignedIn.current = signedIn
   }, [pending, signedIn, route])

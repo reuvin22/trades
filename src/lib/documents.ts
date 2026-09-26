@@ -53,6 +53,8 @@ export type UniversityDocument = {
   questions: Question[]
   required: boolean
   published: boolean
+  /** The form an invited trader answers before joining. At most one per coach. */
+  isIntake: boolean
   createdAt: Date | null
   updatedAt: Date | null
   /** Coach only: how many students have completed it. */
@@ -106,6 +108,7 @@ function toDocument(wire: Wire): UniversityDocument {
       : [],
     required: wire.required !== false,
     published: wire.published === true,
+    isIntake: wire.is_intake === true,
     createdAt: date(wire.created_at),
     updatedAt: date(wire.updated_at),
     submissionCount:
@@ -153,6 +156,7 @@ export function blankDocument(kind: DocumentKind): UniversityDocument {
     questions: [],
     required: true,
     published: false,
+    isIntake: false,
     createdAt: null,
     updatedAt: null,
     submissionCount: null,
@@ -189,6 +193,7 @@ function body(document: UniversityDocument) {
     })),
     required: document.required,
     published: document.published,
+    is_intake: document.isIntake,
   }
 }
 
