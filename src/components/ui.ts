@@ -2987,3 +2987,13 @@ export const ASK_CONSEQUENCE =
  *  a modal over a modal buries what is being confirmed. */
 export const ASK_ROW = 'ml-auto flex flex-none items-center gap-8'
 export const ASK_ROW_TEXT = 'text-[12px] font-medium text-red'
+
+/** The steps a program asks for, listed on the review screen before starting. */
+export const STEP_LIST = 'mt-14 flex flex-col gap-2'
+export const STEP_ROW = 'flex items-center gap-12 rounded-sm bg-tint-1 px-14 py-11'
+export const STEP_NUMBER =
+  'grid size-24 flex-none place-items-center rounded-full bg-tint-3 text-[11px] font-semibold text-fg-muted'
+export const STEP_DONE =
+  'bg-[color-mix(in_srgb,var(--color-green)_20%,transparent)] text-green'
+export const STEP_TITLE = 'text-[13.5px] font-medium text-fg-strong'
+export const STEP_KIND = 'ml-auto flex-none text-[11.5px] text-fg-muted'

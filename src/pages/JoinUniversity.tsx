@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CheckCircleIcon, ClockIcon, SpinnerIcon } from '../components/Icons'
+import {
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  SpinnerIcon,
+} from '../components/Icons'
 import {
   CARD,
   EMPTY_BLOCK,
@@ -11,6 +16,12 @@ import {
   PILL_ACCENT,
   PILL_IDLE,
   SET_SECTION,
+  STEP_DONE,
+  STEP_KIND,
+  STEP_LIST,
+  STEP_NUMBER,
+  STEP_ROW,
+  STEP_TITLE,
   UNI_COACH_BODY,
   UNI_COACH_CARD,
   UNI_COACH_NAME,
@@ -279,9 +290,38 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
       <section className={`${CARD} ${SET_SECTION}`}>
         <p className={UNI_INVITE_NOTE}>
           {intake.documentId !== ''
-            ? `${nameOf(intake.coachName, intake.coachEmail)} asks everyone a few questions first. Your answers go to them for review — you join once they have approved you and you have signed what ${where} asks for.`
-            : `${where} asks every member to sign a few documents. You join the moment the last one is signed.`}
+            ? `${nameOf(intake.coachName, intake.coachEmail)} asks everyone a few questions first. Your answers go to them for review — you join once they have approved you and signed what ${where} asks for.`
+            : `Here is what ${where} asks for. You are not joined until the last one is done, and you can stop at any point.`}
         </p>
+
+        {/*
+          What "Review" actually reviews.
+          
+          The screen used to show a coach's name and a button, which is not a
+          review of anything. This lists what the program asks for, in the
+          order it will be asked — forms first, then the agreements — so
+          somebody deciding whether to join can see what joining involves
+          before they start rather than discovering it one page at a time.
+        */}
+        {intake.steps.length > 0 && (
+          <div className={STEP_LIST}>
+            {intake.steps.map((step, index) => (
+              <div key={step.id} className={STEP_ROW}>
+                <span className={`${STEP_NUMBER} ${step.done ? STEP_DONE : ''}`}>
+                  {step.done ? <CheckIcon size={12} /> : index + 1}
+                </span>
+                <span className={STEP_TITLE}>{step.title}</span>
+                <span className={STEP_KIND}>
+                  {step.done
+                    ? 'Done'
+                    : step.kind === 'form'
+                      ? 'Answer'
+                      : 'Sign'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <p style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button

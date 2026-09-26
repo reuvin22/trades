@@ -408,6 +408,15 @@ export type Intake = {
   /** In the `documents` state: how many are left, out of how many. */
   outstanding: number
   requiredTotal: number
+  /** Everything the program asks for, in the order it will be asked. */
+  steps: IntakeStep[]
+}
+
+export type IntakeStep = {
+  id: string
+  kind: 'agreement' | 'form'
+  title: string
+  done: boolean
 }
 
 export type Application = {
@@ -429,6 +438,14 @@ function toIntake(wire: Record<string, unknown>): Intake {
     documentId: String(wire.document_id ?? ''),
     outstanding: Number(wire.outstanding ?? 0),
     requiredTotal: Number(wire.required_total ?? 0),
+    steps: Array.isArray(wire.steps)
+      ? (wire.steps as Record<string, unknown>[]).map((step) => ({
+          id: String(step.id ?? ''),
+          kind: step.kind === 'form' ? ('form' as const) : ('agreement' as const),
+          title: String(step.title ?? ''),
+          done: step.done === true,
+        }))
+      : [],
   }
 }
 
@@ -511,6 +528,7 @@ export const EMPTY_INBOX: Inbox = {
     documentId: '',
     outstanding: 0,
     requiredTotal: 0,
+    steps: [],
   },
   applications: [],
   signing: [],
