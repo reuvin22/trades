@@ -622,9 +622,21 @@ function TraderView({ state, intake }: { state: State; intake: Inbox['intake'] }
               ? 'Finishing up — refresh in a moment.'
               : `Sign ${intake.outstanding} of ${intake.requiredTotal} document${
                   intake.requiredTotal === 1 ? '' : 's'
-                } below and you are enrolled. Nothing else is waiting on you.`}
+                } and you are enrolled. Nothing else is waiting on you.`}
           </p>
         </div>
+
+        {intake.outstanding > 0 && (
+          <div className={UNI_INVITE_ACTIONS}>
+            <button
+              type="button"
+              className={`${PILL} ${PILL_ACCENT}`}
+              onClick={() => navigate('university/next')}
+            >
+              Sign now
+            </button>
+          </div>
+        )}
       </section>
     )
   }

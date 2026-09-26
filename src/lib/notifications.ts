@@ -159,7 +159,10 @@ export function buildNotifications(
           ? 'Nothing left to do.'
           : `You are enrolled once the last ${left === 1 ? 'document is' : 'documents are'} signed.`,
       age: '',
-      route: 'university',
+      // Straight into the signing run. Landing on My University and leaving
+      // somebody to find the documents is what this notification exists to
+      // avoid.
+      route: left === 0 ? 'university' : 'university/next',
     })
   }
 

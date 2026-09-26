@@ -246,9 +246,16 @@ export function inviteStudent(email: string, note: string): Promise<unknown> {
   })
 }
 
-/** `uid` names the coach who invited you — the API derives the row from that
- *  plus your own session, so it can only ever answer your own invitation. */
-export function acceptInvitation(coachUid: string): Promise<unknown> {
+/**
+ * `uid` names the coach who invited you — the API derives the row from that
+ * plus your own session, so it can only ever answer your own invitation.
+ *
+ * Answers with a message, because what accepting *did* depends on the
+ * program: with documents outstanding it is "approved, now sign these", and
+ * without any it is "you have joined". The caller shows what came back rather
+ * than guessing which.
+ */
+export function acceptInvitation(coachUid: string): Promise<{ message?: string }> {
   return apiFetch(`/api/v1/university/invitations/${coachUid}/accept`, {
     method: 'POST',
   })
@@ -571,4 +578,30 @@ export function useInbox(uid: string | null): Inbox {
   }, [uid])
 
   return uid === null ? EMPTY_INBOX : inbox
+}
+
+/* ------------------------------------------------------ the signing run */
+
+export type NextDocument = {
+  /** Empty when there is nothing left to sign. */
+  documentId: string
+  remaining: number
+  total: number
+  done: boolean
+}
+
+/**
+ * Where to send a student next.
+ *
+ * Asked after accepting and after every signature, rather than fetching the
+ * whole list and choosing here — so the order is the same on every device,
+ * and somebody who stopped half way resumes instead of starting again.
+ */
+export function fetchNextDocument(): Promise<NextDocument> {
+  return apiFetch<Record<string, unknown>>('/api/v1/university/next').then((wire) => ({
+    documentId: String(wire.document_id ?? ''),
+    remaining: Number(wire.remaining ?? 0),
+    total: Number(wire.total ?? 0),
+    done: wire.done === true,
+  }))
 }

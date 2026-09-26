@@ -112,11 +112,25 @@ export function StudentDocument({
     setSending(true)
     try {
       await submitDocument(document.id, signed, Object.values(answers))
+
+      /*
+       * Back to the relay, which finds the next one.
+       *
+       * Except for the intake form: answering that is the application, and
+       * what follows is the coach's decision rather than another document —
+       * so it goes back to the join screen, which says so.
+       */
+      if (document.isIntake) {
+        toast.success('Answers sent.', 'Your coach reviews them before you join.')
+        navigate('university/join')
+        return
+      }
+
       toast.success(
         document.kind === 'agreement' ? 'Signed.' : 'Answers sent.',
         'Your coach can see it now.',
       )
-      navigate('university')
+      navigate('university/next')
     } catch (cause) {
       toast.error('Could not send that', readableApiError(cause))
     } finally {

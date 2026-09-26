@@ -98,6 +98,9 @@ const UniversitySettings = lazy(() =>
     default: module.UniversitySettings,
   })),
 )
+const SigningRun = lazy(() =>
+  import('./pages/SigningRun').then((module) => ({ default: module.SigningRun })),
+)
 const JoinUniversity = lazy(() =>
   import('./pages/JoinUniversity').then((module) => ({
     default: module.JoinUniversity,
@@ -187,6 +190,11 @@ function TraderView({
   // otherwise read "join" as a student id.
   if (route === 'university/join') {
     return <JoinUniversity profile={profile} />
+  }
+
+  // The relay that walks a student through the documents, one at a time.
+  if (route === 'university/next') {
+    return <SigningRun />
   }
 
   if (route === 'university/settings') {

@@ -81,11 +81,25 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
 
     setBusy(true)
     try {
-      await (accept
-        ? acceptInvitation(intake.coachUid)
-        : declineInvitation(intake.coachUid))
-      toast.success(accept ? 'You have joined.' : 'Invitation declined.')
-      navigate('university')
+      if (!accept) {
+        await declineInvitation(intake.coachUid)
+        toast.info('Invitation declined.')
+        navigate('university')
+        return
+      }
+
+      /*
+       * The API decides what accepting meant and says so.
+       *
+       * This used to announce "You have joined" and drop the reader on My
+       * University — which was wrong whenever documents were outstanding, and
+       * left them looking for something nobody had told them to find. The
+       * message comes back from the same call that settled the enrolment, and
+       * the signing run takes it from there.
+       */
+      const result = await acceptInvitation(intake.coachUid)
+      toast.success(String(result.message ?? 'Accepted.'))
+      navigate('university/next')
     } catch (cause) {
       toast.error('Could not answer that', readableApiError(cause))
     } finally {
