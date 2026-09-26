@@ -2820,3 +2820,58 @@ export const UNI_STATUS_TONE: Record<string, string> = {
 /** While the first fetch is in flight. A line, not a spinner — the screen
  *  below it is a table, and a spinner where a table goes reads as a fault. */
 export const UNI_LOADING = 'px-10 py-26 text-center text-[13px] text-fg-muted'
+
+/* ------------------------------------------------ rich text, for email */
+
+export const RTE = 'flex flex-col overflow-hidden rounded-sm border border-line bg-panel-inset focus-within:border-accent'
+/** The toolbar wraps rather than scrolls: a hidden button is a missing one. */
+export const RTE_BAR =
+  'flex flex-wrap items-center gap-2 border-b border-line bg-tint-1 px-8 py-6'
+export const RTE_GROUP = 'flex items-center gap-1 pr-6 [&+&]:border-l [&+&]:border-line [&+&]:pl-6'
+export const RTE_BUTTON =
+  'grid size-26 place-items-center rounded-sm text-[12px] font-semibold text-fg-dim transition-[color,background-color] duration-150 hover:bg-tint-3 hover:text-fg-strong aria-pressed:bg-accent aria-pressed:text-accent-ink disabled:opacity-40'
+export const RTE_WIDE = 'w-auto px-9 text-[11.5px] font-medium'
+
+/**
+ * The writing surface.
+ *
+ * Styled to look like the email it becomes rather than like the app: a white
+ * page, serif-free, 15px — the same as the mail shell. Editing something that
+ * looks nothing like the result is how people are surprised by what sends.
+ */
+export const RTE_PAGE =
+  'min-h-140 overflow-y-auto bg-white px-16 py-14 text-[15px] leading-[1.62] text-[#111827] outline-none ' +
+  '[&_h1]:mt-0 [&_h1]:mb-8 [&_h1]:text-[24px] [&_h1]:font-semibold ' +
+  '[&_h2]:mt-0 [&_h2]:mb-7 [&_h2]:text-[19px] [&_h2]:font-semibold ' +
+  '[&_h3]:mt-0 [&_h3]:mb-6 [&_h3]:text-[16px] [&_h3]:font-semibold ' +
+  '[&_p]:my-0 [&_p+p]:mt-10 ' +
+  '[&_ul]:my-8 [&_ul]:list-disc [&_ul]:pl-22 [&_ol]:my-8 [&_ol]:list-decimal [&_ol]:pl-22 ' +
+  '[&_a]:text-[#2563eb] [&_a]:underline ' +
+  '[&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[6px] ' +
+  '[&_blockquote]:my-8 [&_blockquote]:border-l-[3px] [&_blockquote]:border-[#d1d5db] [&_blockquote]:pl-12 [&_blockquote]:text-[#4b5563] ' +
+  '[&_hr]:my-14 [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-[#e5e7eb] ' +
+  'empty:before:text-[#9ca3af] empty:before:content-[attr(data-placeholder)]'
+
+export const RTE_FOOT =
+  'flex flex-wrap items-center justify-between gap-10 border-t border-line bg-tint-1 px-10 py-6 text-[11px] text-fg-muted'
+
+/* ---- the settings screen ---- */
+
+export const SET_SECTION = 'px-24 pt-20 pb-22'
+export const SET_HEAD = 'mb-16 flex flex-wrap items-baseline justify-between gap-12'
+export const SET_TITLE = 'text-[15px] font-semibold text-fg-strong'
+export const SET_ABOUT = 'mt-3 max-w-[64ch] text-[12.5px] leading-[1.55] text-fg-muted'
+export const SET_GRID = 'grid grid-cols-2 gap-16 max-[760px]:grid-cols-1'
+
+/** The tokens an author can drop into a template. */
+export const SET_TOKENS = 'flex flex-wrap gap-6'
+export const SET_TOKEN =
+  'rounded-full border border-line bg-tint-1 px-10 py-4 font-mono text-[11px] text-fg-dim transition-colors duration-150 hover:border-accent hover:text-accent-strong'
+
+/** A colour well beside the accent field. */
+export const SET_SWATCH =
+  'size-32 flex-none cursor-pointer rounded-sm border border-line bg-transparent p-0'
+
+export const SET_PREVIEW = 'overflow-hidden rounded-sm border border-line bg-[#f3f4f6] p-16'
+export const SET_PREVIEW_PAGE =
+  'mx-auto max-w-600 rounded-[10px] border border-[#e5e7eb] bg-white px-24 py-22 text-[15px] leading-[1.62] text-[#111827]'

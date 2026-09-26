@@ -87,6 +87,11 @@ const Community = lazy(() =>
 const MyUniversity = lazy(() =>
   import('./pages/MyUniversity').then((module) => ({ default: module.MyUniversity })),
 )
+const UniversitySettings = lazy(() =>
+  import('./pages/UniversitySettings').then((module) => ({
+    default: module.UniversitySettings,
+  })),
+)
 const StudentActivity = lazy(() =>
   import('./pages/StudentActivity').then((module) => ({
     default: module.StudentActivity,
@@ -153,6 +158,13 @@ function TraderView({
   // A screen the plan does not include never mounts, so nothing on it fetches
   // in the moment before the redirect lands.
   if (!routeAllowed(route)) return null
+
+  // `university/settings` before `university/<uid>`: "settings" matches the
+  // uid pattern perfectly well, so the specific route has to be tried first
+  // or a coach opening their own settings gets a student page instead.
+  if (route === 'university/settings') {
+    return <UniversitySettings profile={profile} />
+  }
 
   // One student's record, at `university/<uid>`. Matched before the switch
   // because the uid is part of the route — the only screen in the trader app

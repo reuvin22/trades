@@ -185,6 +185,13 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
         <div className={UNI_BAND_ACTIONS}>
           <button
             type="button"
+            className={`${PILL} ${PILL_IDLE}`}
+            onClick={() => navigate('university/settings')}
+          >
+            Programme settings
+          </button>
+          <button
+            type="button"
             className={`${PILL} ${PILL_ACCENT}`}
             onClick={() => setInviting(true)}
           >

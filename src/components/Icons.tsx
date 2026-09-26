@@ -705,3 +705,75 @@ export function GroupChatIcon({ size = 20, className }: IconProps) {
     </svg>
   )
 }
+
+/* ---- rich text toolbar ---- */
+
+export function BoldIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={2.2}>
+      <path d="M7 4h6.2a3.5 3.5 0 0 1 0 7H7Zm0 7h7a3.5 3.5 0 0 1 0 7H7Z" />
+    </svg>
+  )
+}
+
+export function ItalicIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={2}>
+      <path d="M15 4H9.5M14.5 20H9M13.5 4 10 20" />
+    </svg>
+  )
+}
+
+export function UnderlineIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} strokeWidth={2}>
+      <path d="M6.5 4v6.5a5.5 5.5 0 0 0 11 0V4M5 20h14" />
+    </svg>
+  )
+}
+
+export function BulletListIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <circle cx="4.6" cy="6" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="4.6" cy="12" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="4.6" cy="18" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function NumberListIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <path d="M4 4.6 5.2 4v3.4M3.6 11.2c.3-.6 1.7-.8 1.9 0 .2.7-1.7 1.4-1.9 2.3h2M3.6 16.4c.6-.6 1.9-.3 1.9.5s-1 .8-1 .8.9 0 1 .8-1.3 1.2-1.9.6" />
+    </svg>
+  )
+}
+
+export function QuoteIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M9 6.5c-2.6 0-4.3 1.8-4.3 4.2 0 1.9 1.3 3.2 2.9 3.2 1.4 0 2.4-1 2.4-2.3 0-1.2-.9-2.1-2-2.1-.2 0-.5 0-.6.1.2-.9 1-1.6 2.1-1.7Zm8.5 0c-2.6 0-4.3 1.8-4.3 4.2 0 1.9 1.3 3.2 2.9 3.2 1.4 0 2.4-1 2.4-2.3 0-1.2-.9-2.1-2-2.1-.2 0-.5 0-.6.1.2-.9 1-1.6 2.1-1.7Z" />
+    </svg>
+  )
+}
+
+export function LinkIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.4 1.4" />
+      <path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.4-1.4" />
+    </svg>
+  )
+}
+
+export function RuleIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M4 12h16M7 7h10M7 17h10" strokeOpacity="0.45" />
+      <path d="M4 12h16" />
+    </svg>
+  )
+}

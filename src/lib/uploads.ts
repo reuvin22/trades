@@ -17,8 +17,8 @@ import { uploadAllowed } from './entitlements'
  * works for ten minutes and then quietly does not.
  */
 
-/** The four folders the bucket has. Mirrors UploadKind on the API. */
-export type UploadKind = 'profile' | 'charts' | 'ai' | 'messages'
+/** The five folders the bucket has. Mirrors UploadKind on the API. */
+export type UploadKind = 'profile' | 'charts' | 'ai' | 'messages' | 'university'
 
 /**
  * Whether a stored value is a link someone pasted rather than a key of ours.
@@ -45,7 +45,20 @@ const BUDGETS: Record<UploadKind, { maxEdge: number; maxCharacters: number }> = 
   charts: { maxEdge: 1_600, maxCharacters: 2_000_000 },
   ai: { maxEdge: 1_400, maxCharacters: 170_000 },
   messages: { maxEdge: 1_000, maxCharacters: 120_000 },
+  // Email images are read on a phone in a mail client. Wider than the others
+  // because a header banner spans the full 600px shell on a retina screen.
+  university: { maxEdge: 1_200, maxCharacters: 900_000 },
 }
+
+/**
+ * Types that must not go through the canvas.
+ *
+ * `prepareImage` redraws into a canvas and re-encodes, which is exactly what
+ * makes a 4000px photo cheap to store — and exactly what turns an animated
+ * GIF into its first frame. A coach putting a GIF in an invitation means the
+ * animation, so these are uploaded as they arrived.
+ */
+const VERBATIM = new Set(['image/gif'])
 
 /** A data URL back to the bytes it stands for. */
 function toBlob(dataUrl: string): Blob {
@@ -76,8 +89,12 @@ export async function uploadImage(
 ): Promise<string> {
   if (!uploadAllowed(kind)) throw new Error('Your plan does not include this upload.')
   onProgress?.('preparing')
-  const shrunk = await prepareImage(file, BUDGETS[kind])
-  const blob = toBlob(shrunk)
+
+  // A GIF is sent as it arrived, so it still moves when it lands. That makes
+  // the size cap the only thing bounding it, which the API enforces anyway.
+  const blob = VERBATIM.has(file.type)
+    ? file
+    : toBlob(await prepareImage(file, BUDGETS[kind]))
 
   onProgress?.('uploading')
   const slot = await apiFetch<Slot>('/api/v1/uploads', {

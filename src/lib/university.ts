@@ -325,3 +325,69 @@ export function useInvitations(uid: string | null): Invitation[] {
 
   return uid === null ? [] : invitations
 }
+
+/* --------------------------------------------- the programme and its mail */
+
+export type EmailTemplate = {
+  subject: string
+  headerHtml: string
+  bodyHtml: string
+  footerHtml: string
+  accent: string
+}
+
+export type Settings = {
+  name: string
+  blurb: string
+  template: EmailTemplate
+}
+
+export const EMPTY_SETTINGS: Settings = {
+  name: '',
+  blurb: '',
+  template: { subject: '', headerHtml: '', bodyHtml: '', footerHtml: '', accent: '#6353e8' },
+}
+
+function toSettings(wire: Record<string, unknown>): Settings {
+  const raw = (wire.template ?? {}) as Record<string, unknown>
+
+  return {
+    name: String(wire.name ?? ''),
+    blurb: String(wire.blurb ?? ''),
+    template: {
+      subject: String(raw.subject ?? ''),
+      headerHtml: String(raw.header_html ?? ''),
+      bodyHtml: String(raw.body_html ?? ''),
+      footerHtml: String(raw.footer_html ?? ''),
+      accent: String(raw.accent ?? '') || EMPTY_SETTINGS.template.accent,
+    },
+  }
+}
+
+export function fetchSettings(): Promise<Settings> {
+  return apiFetch<Record<string, unknown>>('/api/v1/university/settings').then(toSettings)
+}
+
+/**
+ * Save, and take back what the server kept.
+ *
+ * The response is the sanitised template, not the one that was sent. Adopting
+ * it means a tag the allowlist dropped disappears from the editor there and
+ * then, rather than at send time when nobody is looking.
+ */
+export function saveSettings(settings: Settings): Promise<Settings> {
+  return apiFetch<Record<string, unknown>>('/api/v1/university/settings', {
+    method: 'PUT',
+    body: {
+      name: settings.name,
+      blurb: settings.blurb,
+      template: {
+        subject: settings.template.subject,
+        header_html: settings.template.headerHtml,
+        body_html: settings.template.bodyHtml,
+        footer_html: settings.template.footerHtml,
+        accent: settings.template.accent,
+      },
+    },
+  }).then(toSettings)
+}
