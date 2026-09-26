@@ -404,7 +404,13 @@ export function saveSettings(settings: Settings): Promise<Settings> {
 
 /* --------------------------------------------------- joining, and approval */
 
-export type EnrolmentStatus = 'pending' | 'applied' | 'active' | 'declined'
+export type EnrolmentStatus =
+  | 'pending'
+  | 'applied'
+  /** Approved, but not enrolled until the required documents are signed. */
+  | 'documents'
+  | 'active'
+  | 'declined'
 
 export type Intake = {
   /** Null when nothing is waiting on this account. */
@@ -416,6 +422,9 @@ export type Intake = {
   note: string
   /** Empty when the coach has not set an intake form. */
   documentId: string
+  /** In the `documents` state: how many are left, out of how many. */
+  outstanding: number
+  requiredTotal: number
 }
 
 export type Application = {
@@ -435,6 +444,8 @@ export function fetchIntake(): Promise<Intake> {
     universityName: String(wire.university_name ?? ''),
     note: String(wire.note ?? ''),
     documentId: String(wire.document_id ?? ''),
+    outstanding: Number(wire.outstanding ?? 0),
+    requiredTotal: Number(wire.required_total ?? 0),
   }))
 }
 
@@ -458,4 +469,32 @@ export function decideApplication(uid: string, approve: boolean): Promise<unknow
     `/api/v1/university/applications/${uid}/${approve ? 'approve' : 'reject'}`,
     { method: 'POST' },
   )
+}
+
+/**
+ * Where this account is in the joining flow, for the notification bell.
+ *
+ * Small and separate for the same reason `useInvitations` is: the bell is on
+ * every screen, and it must not drag a roster behind it.
+ */
+export function useIntake(uid: string | null): Intake | null {
+  const [intake, setIntake] = useState<Intake | null>(null)
+
+  useEffect(() => {
+    if (uid === null) return
+
+    const abort = new AbortController()
+
+    fetchIntake()
+      .then((found) => {
+        if (!abort.signal.aborted) setIntake(found)
+      })
+      // Silent, like the invitations hook: a bell that cannot reach the API
+      // should be empty rather than an error on every screen.
+      .catch(() => undefined)
+
+    return () => abort.abort()
+  }, [uid])
+
+  return uid === null ? null : intake
 }

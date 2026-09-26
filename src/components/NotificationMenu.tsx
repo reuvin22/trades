@@ -5,6 +5,7 @@ import {
   AlertIcon,
   BellIcon,
   BellOffIcon,
+  CheckCircleIcon,
   ClockIcon,
   ScalesIcon,
   UserPlusIcon,
@@ -30,6 +31,7 @@ import {
 
 const GLYPHS: Record<NotificationKind, typeof AlertIcon> = {
   invite: UserPlusIcon,
+  approved: CheckCircleIcon,
   risk: AlertIcon,
   rules: ScalesIcon,
   streak: AlertIcon,

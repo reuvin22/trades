@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { dayKey, tradeDate } from './stats'
-import { useInvitations, type Invitation } from './university'
+import { useIntake, useInvitations, type Intake, type Invitation } from './university'
 import type { Profile } from './profile'
 import type { StoredTrade } from './trades'
 
@@ -22,7 +22,13 @@ import type { StoredTrade } from './trades'
  * marking one read holds.
  */
 
-export type NotificationKind = 'invite' | 'risk' | 'rules' | 'streak' | 'quiet'
+export type NotificationKind =
+  | 'invite'
+  | 'approved'
+  | 'risk'
+  | 'rules'
+  | 'streak'
+  | 'quiet'
 
 export type Notification = {
   id: string
@@ -72,9 +78,38 @@ export function buildNotifications(
   profile: Profile | null,
   trades: StoredTrade[],
   invitations: Invitation[],
+  intake: Intake | null = null,
+  // Last, and defaulted, so the hook below never has to name it — reading the
+  // clock during render is the impurity the React lint rules object to, and
+  // rightly: it makes a render's output depend on when it happened.
   now: number = Date.now(),
 ): Notification[] {
   const items: Notification[] = []
+
+  // -- your coach approved you, and something is waiting -----------------
+  //
+  // The second notification in the joining flow. Approval is not the end of
+  // it: the documents have to be signed before the enrolment completes, so
+  // this says what is left rather than just congratulating somebody.
+  if (intake !== null && intake.status === 'documents') {
+    const left = intake.outstanding
+    const where = intake.universityName.trim() || 'your coach'
+
+    items.push({
+      id: `approved-${intake.coachUid}-${left}`,
+      kind: 'approved',
+      title:
+        left === 0
+          ? `${where} approved you`
+          : `${where} approved you — ${left} to sign`,
+      body:
+        left === 0
+          ? 'Nothing left to do.'
+          : `You are enrolled once the last ${left === 1 ? 'document is' : 'documents are'} signed.`,
+      age: '',
+      route: 'university',
+    })
+  }
 
   // -- somebody asked you to join their program ----------------------
   for (const invitation of invitations) {
@@ -190,9 +225,10 @@ export function useNotifications(
   trades: StoredTrade[],
 ): Notification[] {
   const invitations = useInvitations(profile?.uid ?? null)
+  const intake = useIntake(profile?.uid ?? null)
 
   return useMemo(
-    () => buildNotifications(profile, trades, invitations),
-    [invitations, profile, trades],
+    () => buildNotifications(profile, trades, invitations, intake),
+    [invitations, intake, profile, trades],
   )
 }

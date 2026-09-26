@@ -156,6 +156,40 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
     )
   }
 
+  if (intake.status === 'documents') {
+    const left = intake.outstanding
+    const total = intake.requiredTotal
+
+    return (
+      <>
+        <Head
+          title="You are approved"
+          sub={`${nameOf(intake.coachName, intake.coachEmail)} accepted your application.`}
+        />
+        <section className={`${CARD} ${SET_SECTION}`}>
+          <p className={UNI_COACH_ROLE}>
+            <CheckCircleIcon size={14} /> {left} of {total} left to sign
+          </p>
+          <p className={UNI_INVITE_NOTE} style={{ marginTop: 8 }}>
+            One step left. {where} asks every member to sign{' '}
+            {total === 1 ? 'a document' : `${total} documents`} before joining —
+            you are enrolled the moment the last one is signed, with nothing
+            further to wait for.
+          </p>
+          <p style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              className={`${PILL} ${PILL_ACCENT}`}
+              onClick={() => navigate('university')}
+            >
+              Open the documents
+            </button>
+          </p>
+        </section>
+      </>
+    )
+  }
+
   if (intake.status === 'applied') {
     return (
       <>
