@@ -44,7 +44,7 @@ export type StoredTrade = {
 }
 
 /** The wire shape: snake_case, with numbers that may arrive as strings. */
-type TradeWire = Record<string, unknown>
+export type TradeWire = Record<string, unknown>
 
 type TradePage = {
   items: TradeWire[]
@@ -108,7 +108,8 @@ function screenshotsOf(wire: TradeWire): string[] {
   return raw.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
 }
 
-function toStored(wire: TradeWire): StoredTrade {
+/** Exported so a coach reading a student's journal parses it the same way. */
+export function toStored(wire: TradeWire): StoredTrade {
   const entryAt = fromIso(wire.entry_at)
   const exitAt = fromIso(wire.exit_at)
 

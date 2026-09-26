@@ -1,0 +1,327 @@
+import { useCallback, useEffect, useState } from 'react'
+import { apiFetch, date, readableApiError } from './api'
+import { toStored, type StoredTrade, type TradeWire } from './trades'
+
+/**
+ * Coaching, through the API.
+ *
+ * Every figure on a student — trade count, win rate, P&L, rule score — is
+ * computed by the service from their journal and arrives on the wire. None of
+ * it is derived here, and none of it is sent: a coach who could post a
+ * student's win rate could post any number they liked.
+ *
+ * The one call that names another person, `studentJournal`, is refused by the
+ * API unless that student accepted an invitation from this caller. The check
+ * lives there, not here — this is the convenience, that is the guarantee.
+ */
+
+export type Student = {
+  uid: string
+  displayName: string
+  email: string
+  photoURL: string
+  since: Date | null
+  tradeCount: number
+  closedCount: number
+  winRate: number
+  netPl: number
+  /** Null when nothing on their journal has been graded against their rules. */
+  ruleScore: number | null
+  lastTradeAt: Date | null
+}
+
+export type Invitation = {
+  coachUid: string
+  coachName: string
+  coachEmail: string
+  coachPhoto: string
+  note: string
+  invitedAt: Date | null
+}
+
+export type SentInvite = {
+  studentUid: string
+  studentName: string
+  studentEmail: string
+  studentPhoto: string
+  status: 'pending' | 'active' | 'declined'
+  note: string
+  invitedAt: Date | null
+}
+
+export type Coach = {
+  uid: string
+  displayName: string
+  email: string
+  photoURL: string
+  since: Date | null
+}
+
+type StudentWire = Record<string, unknown>
+
+function toStudent(wire: StudentWire): Student {
+  return {
+    uid: String(wire.uid ?? ''),
+    displayName: String(wire.display_name ?? ''),
+    email: String(wire.email ?? ''),
+    photoURL: String(wire.photo_url ?? ''),
+    since: date(wire.since),
+    tradeCount: Number(wire.trade_count ?? 0),
+    closedCount: Number(wire.closed_count ?? 0),
+    winRate: Number(wire.win_rate ?? 0),
+    netPl: Number(wire.net_pl ?? 0),
+    ruleScore: wire.rule_score === null || wire.rule_score === undefined
+      ? null
+      : Number(wire.rule_score),
+    lastTradeAt: date(wire.last_trade_at),
+  }
+}
+
+/** The display name an account may not have set yet. */
+export function nameOf(displayName: string, email: string): string {
+  return displayName.trim() || email.split('@')[0] || 'Trader'
+}
+
+/* ------------------------------------------------------------------ reads */
+
+export type UniversityState = {
+  students: Student[]
+  invitations: Invitation[]
+  sent: SentInvite[]
+  coach: Coach | null
+  loading: boolean
+  error: string | null
+  reload: () => void
+}
+
+/**
+ * Everything the screen needs, in one hook.
+ *
+ * Four calls rather than one endpoint that returns all of it, because they are
+ * four different questions with four different audiences — and a coach who is
+ * also somebody's student is an ordinary case, not a special one.
+ *
+ * A failure on any of them shows as one error. They are fetched together and
+ * are useless apart: a roster with no invitations beside it is a screen that
+ * quietly lost half its content.
+ */
+export function useUniversity(uid: string | null): UniversityState {
+  const [students, setStudents] = useState<Student[]>([])
+  const [invitations, setInvitations] = useState<Invitation[]>([])
+  const [sent, setSent] = useState<SentInvite[]>([])
+  const [coach, setCoach] = useState<Coach | null>(null)
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [nonce, setNonce] = useState(0)
+
+  const reload = useCallback(() => setNonce((current) => current + 1), [])
+
+  useEffect(() => {
+    if (uid === null) return
+
+    const abort = new AbortController()
+
+    Promise.all([
+      apiFetch<{ students: StudentWire[] }>('/api/v1/university/students', {
+        signal: abort.signal,
+      }),
+      apiFetch<{ invitations: Record<string, unknown>[] }>(
+        '/api/v1/university/invitations',
+        { signal: abort.signal },
+      ),
+      apiFetch<{ invites: Record<string, unknown>[] }>('/api/v1/university/invites', {
+        signal: abort.signal,
+      }),
+      apiFetch<{ coach: Record<string, unknown> | null }>('/api/v1/university/coach', {
+        signal: abort.signal,
+      }),
+    ])
+      .then(([roster, waiting, outgoing, mine]) => {
+        setStudents(roster.students.map(toStudent))
+        setInvitations(
+          waiting.invitations.map((wire) => ({
+            coachUid: String(wire.coach_uid ?? ''),
+            coachName: String(wire.coach_name ?? ''),
+            coachEmail: String(wire.coach_email ?? ''),
+            coachPhoto: String(wire.coach_photo ?? ''),
+            note: String(wire.note ?? ''),
+            invitedAt: date(wire.invited_at),
+          })),
+        )
+        setSent(
+          outgoing.invites.map((wire) => ({
+            studentUid: String(wire.student_uid ?? ''),
+            studentName: String(wire.student_name ?? ''),
+            studentEmail: String(wire.student_email ?? ''),
+            studentPhoto: String(wire.student_photo ?? ''),
+            status: wire.status === 'declined' ? 'declined' : 'pending',
+            note: String(wire.note ?? ''),
+            invitedAt: date(wire.invited_at),
+          })),
+        )
+        setCoach(
+          mine.coach === null
+            ? null
+            : {
+                uid: String(mine.coach.uid ?? ''),
+                displayName: String(mine.coach.display_name ?? ''),
+                email: String(mine.coach.email ?? ''),
+                photoURL: String(mine.coach.photo_url ?? ''),
+                since: date(mine.coach.since),
+              },
+        )
+        setError(null)
+        setLoadedFor(uid)
+      })
+      .catch((cause: unknown) => {
+        if (abort.signal.aborted) return
+        setError(readableApiError(cause))
+        setLoadedFor(uid)
+      })
+
+    return () => abort.abort()
+  }, [uid, nonce])
+
+  /*
+   * Loading is derived, not stored.
+   *
+   * `setLoading(true)` in an effect body is a render triggered by a render —
+   * the same thing `useTrades` avoids. Instead the hook records which uid the
+   * data it holds belongs to, and "loading" is simply: what we have is not for
+   * the uid being asked about yet. A reload keeps the old rows on screen,
+   * which is what a background refresh should do.
+   */
+  const loading = loadedFor !== uid
+
+  /*
+   * Emptied here rather than in the effect.
+   *
+   * Resetting four pieces of state the moment `uid` goes null is a render
+   * triggered by a render, which is what `set-state-in-effect` is about. The
+   * signed-out answer is simply "nothing", and that is something to derive,
+   * not to store.
+   */
+  if (uid === null) {
+    return {
+      students: [],
+      invitations: [],
+      sent: [],
+      coach: null,
+      loading: false,
+      error: null,
+      reload,
+    }
+  }
+
+  return { students, invitations, sent, coach, loading, error, reload }
+}
+
+/* ----------------------------------------------------------------- writes */
+
+export function inviteStudent(email: string, note: string): Promise<unknown> {
+  return apiFetch('/api/v1/university/invites', {
+    method: 'POST',
+    body: { email, note },
+  })
+}
+
+/** `uid` names the coach who invited you — the API derives the row from that
+ *  plus your own session, so it can only ever answer your own invitation. */
+export function acceptInvitation(coachUid: string): Promise<unknown> {
+  return apiFetch(`/api/v1/university/invitations/${coachUid}/accept`, {
+    method: 'POST',
+  })
+}
+
+export function declineInvitation(coachUid: string): Promise<unknown> {
+  return apiFetch(`/api/v1/university/invitations/${coachUid}/decline`, {
+    method: 'POST',
+  })
+}
+
+export function endEnrolment(uid: string): Promise<unknown> {
+  return apiFetch(`/api/v1/university/students/${uid}`, { method: 'DELETE' })
+}
+
+/* -------------------------------------------------- one student's journal */
+
+export type StudentJournal = {
+  trades: StoredTrade[]
+  loading: boolean
+  /** Set when the caller is not this student's coach, among other reasons. */
+  error: string | null
+}
+
+export function useStudentJournal(uid: string | null): StudentJournal {
+  const [trades, setTrades] = useState<StoredTrade[]>([])
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (uid === null || uid === '') return
+
+    const abort = new AbortController()
+
+    apiFetch<{ items: TradeWire[] }>(`/api/v1/university/students/${uid}/journal`, {
+      signal: abort.signal,
+    })
+      .then((body) => {
+        setTrades(body.items.map(toStored))
+        setError(null)
+        setLoadedFor(uid)
+      })
+      .catch((cause: unknown) => {
+        if (abort.signal.aborted) return
+        setTrades([])
+        setError(readableApiError(cause))
+        setLoadedFor(uid)
+      })
+
+    return () => abort.abort()
+  }, [uid])
+
+  if (uid === null || uid === '') return { trades: [], loading: false, error: null }
+
+  return { trades, loading: loadedFor !== uid, error }
+}
+
+/**
+ * Just the invitations, for the notification bell.
+ *
+ * A second, smaller hook rather than reusing `useUniversity`: the bell is on
+ * every screen, and making it fetch a roster with a journal summary per
+ * student would put that cost on every page load in the product.
+ */
+export function useInvitations(uid: string | null): Invitation[] {
+  const [invitations, setInvitations] = useState<Invitation[]>([])
+
+  useEffect(() => {
+    if (uid === null) return
+
+    const abort = new AbortController()
+
+    apiFetch<{ invitations: Record<string, unknown>[] }>(
+      '/api/v1/university/invitations',
+      { signal: abort.signal },
+    )
+      .then((body) =>
+        setInvitations(
+          body.invitations.map((wire) => ({
+            coachUid: String(wire.coach_uid ?? ''),
+            coachName: String(wire.coach_name ?? ''),
+            coachEmail: String(wire.coach_email ?? ''),
+            coachPhoto: String(wire.coach_photo ?? ''),
+            note: String(wire.note ?? ''),
+            invitedAt: date(wire.invited_at),
+          })),
+        ),
+      )
+      // Silent: a bell that cannot reach the API should be empty, not an
+      // error message on every screen in the product.
+      .catch(() => setInvitations([]))
+
+    return () => abort.abort()
+  }, [uid])
+
+  return uid === null ? [] : invitations
+}

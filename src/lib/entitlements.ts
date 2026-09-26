@@ -190,6 +190,10 @@ const PATH_FEATURE: [prefix: string, feature: Feature][] = [
   ['/api/v1/coach', 'coach'],
   ['/api/v1/insights', 'leakDetection'],
   ['/api/v1/chat', 'messages'],
+  // The feed belongs to the same promise as chat. University is absent: an
+  // invitation can reach any account, and a free trader who has been invited
+  // has to be able to answer it.
+  ['/api/v1/community', 'messages'],
 ]
 
 export function pathAllowed(path: string, plan: PlanId = active): boolean {

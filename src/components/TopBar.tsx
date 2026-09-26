@@ -3,6 +3,8 @@ import { AccountMenu } from './AccountMenu'
 import type { Theme } from '../lib/useTheme'
 import { CollapseIcon, ContrastIcon, MenuIcon } from './Icons'
 import { NotificationMenu } from './NotificationMenu'
+import type { Profile } from '../lib/profile'
+import type { StoredTrade } from '../lib/trades'
 
 type TopBarProps = {
   theme: Theme
@@ -11,6 +13,10 @@ type TopBarProps = {
   onToggleNav: () => void
   /** The profile photo, so the avatar changes as soon as one is saved. */
   photoURL?: string
+  /* The bell reads both: its notifications are derived from the journal and
+     the plan, not fetched from a store that does not exist yet. */
+  profile?: Profile | null
+  trades?: StoredTrade[]
   /** Desktop only: the sidebar narrowed to a rail. */
 }
 
@@ -87,6 +93,8 @@ export function TopBar({
   navOpen,
   onToggleNav,
   photoURL,
+  profile,
+  trades,
 }: TopBarProps) {
   const { user } = useAuth()
 
@@ -97,7 +105,7 @@ export function TopBar({
       <MenuButton open={navOpen} onToggle={onToggleNav} />
 
       <div className="ml-auto flex items-center gap-16">
-        <NotificationMenu />
+        <NotificationMenu profile={profile} trades={trades} />
         <span data-tour="theme" className="contents">
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </span>

@@ -395,6 +395,8 @@ function App() {
           navOpen={nav.open}
           onToggleNav={nav.toggle}
           photoURL={profile?.photoURL}
+          profile={profile}
+          trades={trades}
         />
         <main className={CONTENT} key={route}>
           {/*

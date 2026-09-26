@@ -1,22 +1,12 @@
 import { useMemo, useState } from 'react'
 import { ChatIcon, ChevronRightIcon, UserPlusIcon } from '../components/Icons'
+import { InviteStudent } from '../components/InviteStudent'
 import { accentFor, initialsFor } from '../data/messages'
-import { journalFor } from '../data/studentJournal'
-import {
-  CLASSMATES,
-  LEVEL_LABEL,
-  MY_COACH,
-  REQUESTS,
-  STUDENTS,
-  UNIVERSITY,
-  type Student,
-} from '../data/university'
 import {
   CARD,
   COMM_AVATAR,
   COMM_AVATAR_FACE,
   EMPTY_BLOCK,
-  METER_FILL,
   MONO,
   MUTED_NOTE,
   NEG,
@@ -28,7 +18,6 @@ import {
   PILL_IDLE,
   POS,
   ROW,
-  SOON_BADGE,
   STAT_CARD,
   STAT_LABEL,
   STAT_ROW,
@@ -48,16 +37,17 @@ import {
   UNI_COACH_NOTE,
   UNI_COACH_ROLE,
   UNI_GHOST,
-  UNI_LEVEL,
-  UNI_LEVEL_TONE,
+  UNI_INVITE,
+  UNI_INVITE_ACTIONS,
+  UNI_INVITE_BODY,
+  UNI_INVITE_NOTE,
+  UNI_INVITE_WHO,
+  UNI_LOADING,
   UNI_NAME_BUTTON,
-  UNI_PEER,
-  UNI_PEER_GRID,
-  UNI_PROGRESS,
-  UNI_PROGRESS_CELL,
-  UNI_PROGRESS_PCT,
   UNI_ROW_ACTIONS,
   UNI_ROW_LINK,
+  UNI_STATUS,
+  UNI_STATUS_TONE,
   UNI_STUDENT,
   UNI_STUDENT_MAIL,
   UNI_STUDENT_NAME,
@@ -65,28 +55,50 @@ import {
   UNI_TAB_ACTIVE,
   UNI_TABS,
 } from '../components/ui'
-import { disciplineScore } from '../lib/dashboardStats'
 import { moneyIn } from '../lib/journalStats'
-import { deriveStats } from '../lib/stats'
+import { useToast } from '../lib/toast'
 import { navigate } from '../lib/useHashRoute'
+import {
+  acceptInvitation,
+  declineInvitation,
+  endEnrolment,
+  nameOf,
+  useUniversity,
+  type Invitation,
+  type SentInvite,
+  type Student,
+} from '../lib/university'
+import { readableApiError } from '../lib/api'
 import type { Profile } from '../lib/profile'
 
 /**
- * The teaching side of the account.
+ * The teaching side of the account, on real data.
  *
- * Which screen this is depends on `account_type`, not on the plan — the two
- * answer different questions. The plan is what somebody is billed as; the
- * account type is what they are here as, and only the second decides whether
- * you have students or a coach.
+ * Which screen this is still depends on `account_type` — the plan is what
+ * somebody is billed as, the account type is what they are here as — but the
+ * contents now come from `/api/v1/university`. Every figure on a student is
+ * computed by the service from that student's journal; none of it is derived
+ * in the browser and none of it is sent.
  *
- * **Nothing here is connected.** There is no enrolment anywhere in the API
- * yet: no collection joining a coach to a student, no endpoint listing one.
- * The roster is fixtures, and every number on it is derived from the sample
- * journals in `data/studentJournal.ts` by the same functions the trader's own
- * dashboard uses — so a row and the page it opens can never disagree.
+ * Invitations sit above all of it regardless of account type. Being asked to
+ * join a programme is not something only students can have happen to them:
+ * an individual account is exactly who a coach invites.
  */
 export function MyUniversity({ profile }: { profile: Profile | null }) {
   const accountType = profile?.accountType ?? 'individual'
+  const state = useUniversity(profile?.uid ?? null)
+  const toast = useToast()
+
+  async function answer(coachUid: string, accept: boolean) {
+    try {
+      await (accept ? acceptInvitation(coachUid) : declineInvitation(coachUid))
+      if (accept) toast.success('You have joined the programme.')
+      else toast.info('Invitation declined.')
+      state.reload()
+    } catch (cause) {
+      toast.error('Could not answer that invitation', readableApiError(cause))
+    }
+  }
 
   return (
     <>
@@ -95,88 +107,87 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
           <h2 className={PAGE_TITLE}>My University</h2>
           <p className={PAGE_SUB}>
             {accountType === 'coach'
-              ? 'The traders you are teaching, what they have logged, and who is waiting on a review. Open anyone to see their whole record.'
-              : 'Who is teaching you, and who is learning alongside you.'}
+              ? 'The traders you are teaching, what they have logged, and who has yet to answer. Open anyone to see their whole record.'
+              : 'Who is teaching you, and anything waiting on your answer.'}
           </p>
         </div>
       </div>
 
-      {accountType === 'coach' && <CoachView profile={profile} />}
-      {accountType === 'student' && <StudentView />}
-      {accountType === 'individual' && <UnaffiliatedView />}
+      {state.error !== null && (
+        <section className={`${CARD} ${EMPTY_BLOCK}`}>
+          <p>{state.error}</p>
+        </section>
+      )}
+
+      {state.invitations.map((invitation) => (
+        <InvitationCard
+          key={invitation.coachUid}
+          invitation={invitation}
+          onAnswer={answer}
+        />
+      ))}
+
+      {accountType === 'coach' && <CoachView profile={profile} state={state} />}
+      {accountType !== 'coach' && <TraderView state={state} />}
     </>
   )
 }
 
-/* --------------------------------------------------------- derived roster */
-
-type RosterRow = {
-  student: Student
-  trades: number
-  winRate: number
-  netPl: number
-  discipline: number | null
-}
-
-/**
- * One pass over every student's journal.
- *
- * Memoised because it is the whole roster's arithmetic, and the tab switch
- * above it re-renders this component. `journalFor` caches per uid, so the
- * generation itself only ever happens once.
- */
-function useRoster(): RosterRow[] {
-  return useMemo(
-    () =>
-      STUDENTS.map((student) => {
-        const trades = journalFor(student.uid)
-        const stats = deriveStats(trades)
-        return {
-          student,
-          trades: stats.tradeCount,
-          winRate: stats.winRate,
-          netPl: stats.netPl,
-          discipline: disciplineScore(trades).score,
-        }
-      }),
-    [],
-  )
-}
+type State = ReturnType<typeof useUniversity>
 
 /* ------------------------------------------------------------- coach view */
 
-function CoachView({ profile }: { profile: Profile | null }) {
-  const [tab, setTab] = useState<'students' | 'requests'>('students')
-  const roster = useRoster()
+function CoachView({ profile, state }: { profile: Profile | null; state: State }) {
+  const [tab, setTab] = useState<'students' | 'invites'>('students')
+  const [inviting, setInviting] = useState(false)
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
+  const toast = useToast()
 
-  const active = STUDENTS.filter((student) => student.lastActive.endsWith('h')).length
-  const awaiting = STUDENTS.filter((student) => student.awaitingReview === true).length
+  const { students, sent } = state
 
-  const graded = roster.filter((row) => row.discipline !== null)
+  const graded = students.filter((student) => student.ruleScore !== null)
   const meanDiscipline =
     graded.length === 0
       ? null
       : Math.round(
-          graded.reduce((total, row) => total + (row.discipline ?? 0), 0) / graded.length,
+          graded.reduce((total, student) => total + (student.ruleScore ?? 0), 0) /
+            graded.length,
         )
-  const cohortPl = roster.reduce((total, row) => total + row.netPl, 0)
+  const cohortPl = students.reduce((total, student) => total + student.netPl, 0)
+  const pending = sent.filter((invite) => invite.status === 'pending').length
+
+  async function drop(student: Student) {
+    try {
+      await endEnrolment(student.uid)
+      toast.success(
+        `${nameOf(student.displayName, student.email)} is no longer enrolled.`,
+      )
+      state.reload()
+    } catch (cause) {
+      toast.error('Could not end that enrolment', readableApiError(cause))
+    }
+  }
 
   return (
     <>
       <section className={`${CARD} ${UNI_BAND}`}>
         <div className={UNI_BAND_BODY}>
-          <h3 className={UNI_BAND_NAME}>{UNIVERSITY.name}</h3>
+          <h3 className={UNI_BAND_NAME}>
+            {nameOf(profile?.displayName ?? '', profile?.email ?? '')}&rsquo;s programme
+          </h3>
           <p className={UNI_BAND_SUB}>
-            {UNIVERSITY.cohort} · {UNIVERSITY.blurb}
+            {students.length === 0
+              ? 'Nobody enrolled yet. Invite a trader by their email address.'
+              : `${students.length} enrolled${pending > 0 ? `, ${pending} awaiting an answer` : ''}.`}
           </p>
         </div>
 
         <div className={UNI_BAND_ACTIONS}>
-          <button type="button" className={`${PILL} ${PILL_IDLE}`} disabled>
-            Programme settings
-          </button>
-          <button type="button" className={`${PILL} ${PILL_ACCENT}`} disabled>
+          <button
+            type="button"
+            className={`${PILL} ${PILL_ACCENT}`}
+            onClick={() => setInviting(true)}
+          >
             <UserPlusIcon size={15} />
             Invite a student
           </button>
@@ -184,9 +195,12 @@ function CoachView({ profile }: { profile: Profile | null }) {
       </section>
 
       <div className={STAT_ROW}>
-        <Figure label="Students" value={String(STUDENTS.length)} />
-        <Figure label="Active today" value={String(active)} />
-        <Figure label="Awaiting review" value={String(awaiting)} />
+        <Figure label="Students" value={String(students.length)} />
+        <Figure label="Awaiting an answer" value={String(pending)} />
+        <Figure
+          label="Trades logged"
+          value={String(students.reduce((total, s) => total + s.tradeCount, 0))}
+        />
         <Figure
           label="Mean discipline"
           value={meanDiscipline === null ? '—' : `${meanDiscipline}%`}
@@ -204,36 +218,58 @@ function CoachView({ profile }: { profile: Profile | null }) {
           className={`${UNI_TAB} ${tab === 'students' ? UNI_TAB_ACTIVE : ''}`}
           onClick={() => setTab('students')}
         >
-          Students ({STUDENTS.length})
+          Students ({students.length})
         </button>
         <button
           type="button"
-          className={`${UNI_TAB} ${tab === 'requests' ? UNI_TAB_ACTIVE : ''}`}
-          onClick={() => setTab('requests')}
+          className={`${UNI_TAB} ${tab === 'invites' ? UNI_TAB_ACTIVE : ''}`}
+          onClick={() => setTab('invites')}
         >
-          Requests ({REQUESTS.length})
+          Invitations ({sent.length})
         </button>
       </div>
 
-      {tab === 'students' ? <Roster roster={roster} money={money} /> : <Requests />}
+      {state.loading && students.length === 0 ? (
+        <section className={CARD}>
+          <p className={UNI_LOADING}>Loading your roster…</p>
+        </section>
+      ) : tab === 'students' ? (
+        <Roster students={students} money={money} onDrop={drop} />
+      ) : (
+        <SentInvites invites={sent} />
+      )}
 
-      <p className={MUTED_NOTE}>
-        Sample roster. Enrolment is not built yet — no part of the API joins a coach
-        to a student, so nothing on this screen is your own data.
-      </p>
+      <InviteStudent
+        open={inviting}
+        onClose={() => setInviting(false)}
+        onInvited={() => {
+          setInviting(false)
+          state.reload()
+        }}
+      />
     </>
   )
 }
 
 function Roster({
-  roster,
+  students,
   money,
+  onDrop,
 }: {
-  roster: RosterRow[]
+  students: Student[]
   money: (value: number) => string
+  onDrop: (student: Student) => void
 }) {
-  function open(uid: string) {
-    navigate(`university/${uid}`)
+  if (students.length === 0) {
+    return (
+      <section className={`${CARD} ${EMPTY_BLOCK}`}>
+        <p>No students yet.</p>
+        <p className={MUTED_NOTE}>
+          An invitation stays pending until the trader accepts it — they will see it
+          on their own My University screen.
+        </p>
+      </section>
+    )
   }
 
   return (
@@ -243,79 +279,81 @@ function Roster({
           <thead>
             <tr>
               <th className={TH}>Student</th>
-              <th className={TH}>Stage</th>
               <th className={TH}>Trades</th>
               <th className={TH}>Win rate</th>
               <th className={TH}>Net P&amp;L</th>
               <th className={TH}>Discipline</th>
-              <th className={TH}>Progress</th>
-              <th className={TH}>Last active</th>
+              <th className={TH}>Last trade</th>
               <th className={TH} />
             </tr>
           </thead>
           <tbody>
-            {roster.map(({ student, trades, winRate, netPl, discipline }) => (
-              /*
-               * The row is clickable for convenience; the name inside it is
-               * the real activator, because a click handler on a <tr> is
-               * unreachable from a keyboard. The inner button stops the event
-               * so one press is not handled twice.
-               */
-              <tr
-                key={student.uid}
-                className={`${ROW} ${UNI_ROW_LINK}`}
-                onClick={() => open(student.uid)}
-              >
-                <td className={TD}>
-                  <span className={UNI_STUDENT}>
-                    <Face uid={student.uid} name={student.name} email={student.email} />
-                    <span>
+            {students.map((student) => {
+              const open = () => navigate(`university/${student.uid}`)
+
+              return (
+                <tr
+                  key={student.uid}
+                  className={`${ROW} ${UNI_ROW_LINK}`}
+                  onClick={open}
+                >
+                  <td className={TD}>
+                    <span className={UNI_STUDENT}>
+                      <Face
+                        uid={student.uid}
+                        name={nameOf(student.displayName, student.email)}
+                      />
+                      <span>
+                        <button
+                          type="button"
+                          className={UNI_NAME_BUTTON}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            open()
+                          }}
+                        >
+                          {nameOf(student.displayName, student.email)}
+                        </button>
+                        <span className={UNI_STUDENT_MAIL}>{student.email}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td className={TD}>{student.tradeCount}</td>
+                  <td className={TD}>
+                    {student.closedCount === 0 ? '—' : `${Math.round(student.winRate)}%`}
+                  </td>
+                  <td className={`${TD} ${MONO} ${student.netPl >= 0 ? POS : NEG}`}>
+                    {money(student.netPl)}
+                  </td>
+                  <td className={TD}>
+                    {student.ruleScore === null ? '—' : `${student.ruleScore}%`}
+                  </td>
+                  <td className={TD}>
+                    {student.lastTradeAt === null
+                      ? 'Nothing yet'
+                      : student.lastTradeAt.toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                        })}
+                  </td>
+                  <td className={TD}>
+                    <span className={UNI_ROW_ACTIONS}>
                       <button
                         type="button"
-                        className={UNI_NAME_BUTTON}
+                        className={UNI_GHOST}
                         onClick={(event) => {
                           event.stopPropagation()
-                          open(student.uid)
+                          onDrop(student)
                         }}
                       >
-                        {student.name}
+                        Remove
                       </button>
-                      <span className={UNI_STUDENT_MAIL}>{student.email}</span>
+                      <ChevronRightIcon size={16} />
                     </span>
-                  </span>
-                </td>
-                <td className={TD}>
-                  <span className={`${UNI_LEVEL} ${UNI_LEVEL_TONE[student.level]}`}>
-                    {LEVEL_LABEL[student.level]}
-                  </span>
-                </td>
-                <td className={TD}>{trades}</td>
-                <td className={TD}>{Math.round(winRate)}%</td>
-                <td className={`${TD} ${MONO} ${netPl >= 0 ? POS : NEG}`}>
-                  {money(netPl)}
-                </td>
-                <td className={TD}>
-                  {discipline === null ? '—' : `${Math.round(discipline)}%`}
-                </td>
-                <td className={TD}>
-                  <span className={UNI_PROGRESS_CELL}>
-                    <span className={UNI_PROGRESS}>
-                      <span
-                        className={METER_FILL}
-                        style={{ width: `${student.progress}%` }}
-                      />
-                    </span>
-                    <span className={UNI_PROGRESS_PCT}>{student.progress}%</span>
-                  </span>
-                </td>
-                <td className={TD}>{student.lastActive} ago</td>
-                <td className={TD}>
-                  <span className={UNI_ROW_ACTIONS}>
-                    <ChevronRightIcon size={16} />
-                  </span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -323,7 +361,18 @@ function Roster({
   )
 }
 
-function Requests() {
+function SentInvites({ invites }: { invites: SentInvite[] }) {
+  if (invites.length === 0) {
+    return (
+      <section className={`${CARD} ${EMPTY_BLOCK}`}>
+        <p>Nothing outstanding.</p>
+        <p className={MUTED_NOTE}>
+          Invitations that were accepted are on the Students tab.
+        </p>
+      </section>
+    )
+  }
+
   return (
     <section className={CARD}>
       <div className={TABLE_WRAP}>
@@ -331,34 +380,41 @@ function Requests() {
           <thead>
             <tr>
               <th className={TH}>Trader</th>
-              <th className={TH}>Why they are asking</th>
-              <th className={TH}>Waiting</th>
-              <th className={TH} />
+              <th className={TH}>What you said</th>
+              <th className={TH}>Status</th>
+              <th className={TH}>Sent</th>
             </tr>
           </thead>
           <tbody>
-            {REQUESTS.map((request) => (
-              <tr key={request.uid} className={ROW}>
+            {invites.map((invite) => (
+              <tr key={invite.studentUid} className={ROW}>
                 <td className={TD}>
                   <span className={UNI_STUDENT}>
-                    <Face uid={request.uid} name={request.name} email={request.email} />
+                    <Face
+                      uid={invite.studentUid}
+                      name={nameOf(invite.studentName, invite.studentEmail)}
+                    />
                     <span>
-                      <span className={UNI_STUDENT_NAME}>{request.name}</span>
-                      <span className={UNI_STUDENT_MAIL}>{request.email}</span>
+                      <span className={UNI_STUDENT_NAME}>
+                        {nameOf(invite.studentName, invite.studentEmail)}
+                      </span>
+                      <span className={UNI_STUDENT_MAIL}>{invite.studentEmail}</span>
                     </span>
                   </span>
                 </td>
-                <td className={TD}>{request.note}</td>
-                <td className={TD}>{request.age}</td>
+                <td className={TD}>{invite.note || '—'}</td>
                 <td className={TD}>
-                  <span className={UNI_ROW_ACTIONS}>
-                    <button type="button" className={UNI_GHOST} disabled>
-                      Decline
-                    </button>
-                    <button type="button" className={`${PILL} ${PILL_ACCENT}`} disabled>
-                      Accept
-                    </button>
+                  <span className={`${UNI_STATUS} ${UNI_STATUS_TONE[invite.status]}`}>
+                    {invite.status === 'pending' ? 'Waiting' : 'Declined'}
                   </span>
+                </td>
+                <td className={TD}>
+                  {invite.invitedAt === null
+                    ? '—'
+                    : invite.invitedAt.toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                      })}
                 </td>
               </tr>
             ))}
@@ -369,80 +425,94 @@ function Requests() {
   )
 }
 
-/* ----------------------------------------------------------- student view */
+/* ------------------------------------------------ student and solo traders */
 
-function StudentView() {
-  const peers = useMemo(
-    () =>
-      CLASSMATES.map((peer) => ({
-        peer,
-        trades: journalFor(peer.uid).length,
-      })),
-    [],
-  )
+function TraderView({ state }: { state: State }) {
+  const { coach, loading, invitations } = state
 
-  return (
-    <>
+  if (loading && coach === null) {
+    return (
+      <section className={CARD}>
+        <p className={UNI_LOADING}>Loading…</p>
+      </section>
+    )
+  }
+
+  if (coach !== null) {
+    return (
       <section className={`${CARD} ${UNI_COACH_CARD}`}>
-        <Face uid={MY_COACH.uid} name={MY_COACH.name} email={MY_COACH.email} size={56} />
+        <Face uid={coach.uid} name={nameOf(coach.displayName, coach.email)} size={56} />
         <div className={UNI_COACH_BODY}>
           <span className={UNI_COACH_ROLE}>Your coach</span>
-          <h3 className={UNI_COACH_NAME}>{MY_COACH.name}</h3>
-          <p className={UNI_COACH_NOTE}>{MY_COACH.note}</p>
+          <h3 className={UNI_COACH_NAME}>{nameOf(coach.displayName, coach.email)}</h3>
+          <p className={UNI_COACH_NOTE}>
+            {coach.email}
+            {coach.since !== null &&
+              ` · since ${coach.since.toLocaleDateString('en-GB', {
+                month: 'long',
+                year: 'numeric',
+              })}`}
+          </p>
         </div>
         <div className={UNI_BAND_ACTIONS}>
-          <button type="button" className={`${PILL} ${PILL_ACCENT}`} disabled>
+          <button type="button" className={`${PILL} ${PILL_IDLE}`} disabled>
             <ChatIcon size={15} />
             Message
           </button>
         </div>
       </section>
+    )
+  }
 
-      <section className={CARD}>
-        <div className={UNI_COACH_CARD}>
-          <div className={UNI_BAND_BODY}>
-            <h3 className={UNI_BAND_NAME}>
-              Your cohort <span className={SOON_BADGE}>Preview</span>
-            </h3>
-            <p className={UNI_BAND_SUB}>{UNIVERSITY.cohort}</p>
-          </div>
-        </div>
+  if (invitations.length > 0) return null
 
-        <div className={UNI_PEER_GRID}>
-          {peers.map(({ peer, trades }) => (
-            <div key={peer.uid} className={`${CARD} ${UNI_PEER}`}>
-              <Face uid={peer.uid} name={peer.name} email={peer.email} />
-              <span>
-                <span className={UNI_STUDENT_NAME}>{peer.name}</span>
-                <span className={UNI_STUDENT_MAIL}>
-                  {LEVEL_LABEL[peer.level]} · {trades} trades
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-    </>
+  return (
+    <section className={`${CARD} ${EMPTY_BLOCK}`}>
+      <p>You are not in a coaching programme.</p>
+      <p className={MUTED_NOTE}>
+        A coach invites you by the email address on your account. When one does, the
+        invitation appears here for you to accept or decline.
+      </p>
+    </section>
   )
 }
 
-/* ----------------------------------------------------- everyone else view */
+function InvitationCard({
+  invitation,
+  onAnswer,
+}: {
+  invitation: Invitation
+  onAnswer: (coachUid: string, accept: boolean) => void
+}) {
+  const who = nameOf(invitation.coachName, invitation.coachEmail)
 
-/**
- * What an individual account sees.
- *
- * Shown rather than hidden from the sidebar, because "you are not in a
- * programme" is a useful answer and a missing menu item is not one. It is also
- * where joining one will go when there is something to join.
- */
-function UnaffiliatedView() {
   return (
-    <section className={`${CARD} ${EMPTY_BLOCK}`}>
-      <p>You are trading on your own account, so there is no cohort here yet.</p>
-      <p className={MUTED_NOTE}>
-        Switch your account type to Student or Coach on the Profile page, and this
-        screen becomes your cohort or your roster.
-      </p>
+    <section className={`${CARD} ${UNI_INVITE}`}>
+      <Face uid={invitation.coachUid} name={who} size={46} />
+
+      <div className={UNI_INVITE_BODY}>
+        <span className={UNI_INVITE_WHO}>{who} invited you to their programme</span>
+        <p className={UNI_INVITE_NOTE}>
+          {invitation.note || 'They did not leave a note.'}
+        </p>
+      </div>
+
+      <div className={UNI_INVITE_ACTIONS}>
+        <button
+          type="button"
+          className={`${PILL} ${PILL_IDLE}`}
+          onClick={() => onAnswer(invitation.coachUid, false)}
+        >
+          Decline
+        </button>
+        <button
+          type="button"
+          className={`${PILL} ${PILL_ACCENT}`}
+          onClick={() => onAnswer(invitation.coachUid, true)}
+        >
+          Accept
+        </button>
+      </div>
     </section>
   )
 }
@@ -468,24 +538,14 @@ function Figure({
   )
 }
 
-function Face({
-  uid,
-  name,
-  email,
-  size = 36,
-}: {
-  uid: string
-  name: string
-  email: string
-  size?: number
-}) {
+function Face({ uid, name, size = 36 }: { uid: string; name: string; size?: number }) {
   return (
     <span className={COMM_AVATAR} style={{ width: size, height: size }}>
       <span
         className={COMM_AVATAR_FACE}
         style={{ background: accentFor(uid), fontSize: size * 0.34 }}
       >
-        {initialsFor(name, email)}
+        {initialsFor(name, '')}
       </span>
     </span>
   )

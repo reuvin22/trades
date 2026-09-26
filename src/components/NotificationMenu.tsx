@@ -1,13 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { NOTIFICATIONS, type NotificationKind } from '../data/notifications'
+import { useNotifications, type NotificationKind } from '../lib/notifications'
+import { navigate } from '../lib/useHashRoute'
 import {
   AlertIcon,
   BellIcon,
   BellOffIcon,
-  CheckCircleIcon,
-  MonitorIcon,
-  SparkleIcon,
+  ClockIcon,
+  ScalesIcon,
+  UserPlusIcon,
 } from './Icons'
+import type { Profile } from '../lib/profile'
+import type { StoredTrade } from '../lib/trades'
 import { BADGE, ICON_BUTTON } from './TopBar'
 import {
   NOTIFY_ACTION,
@@ -26,28 +29,43 @@ import {
 } from './ui'
 
 const GLYPHS: Record<NotificationKind, typeof AlertIcon> = {
-  fill: CheckCircleIcon,
+  invite: UserPlusIcon,
   risk: AlertIcon,
-  coach: SparkleIcon,
-  system: MonitorIcon,
+  rules: ScalesIcon,
+  streak: AlertIcon,
+  quiet: ClockIcon,
 }
 
 /**
- * The bell, which until now opened nothing.
+ * The bell, on things that actually happened.
+ *
+ * Everything in it is derived from the trader's own journal, the plan they
+ * wrote down, or an invitation somebody really sent — see `lib/notifications`.
+ * Nothing is a placeholder, so an empty bell means a quiet week rather than a
+ * feature that was never wired up.
  *
  * Read state is per session: there is no notification store behind this yet,
  * so marking one read keeps it read until reload. The dot on the bell is
  * driven by the unread count rather than being always-on, so it means
  * something.
  */
-export function NotificationMenu() {
+export function NotificationMenu({
+  profile = null,
+  trades = [],
+}: {
+  /* Optional because the admin terminal mounts the same bar and has no
+     trader behind it. An admin sees an empty bell, which is the truth. */
+  profile?: Profile | null
+  trades?: StoredTrade[]
+}) {
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState(NOTIFICATIONS)
+  const [read, setRead] = useState<string[]>([])
+  const items = useNotifications(profile, trades)
   const wrapper = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const menuId = useId()
 
-  const unread = items.filter((item) => item.unread).length
+  const unread = items.filter((item) => !read.includes(item.id)).length
 
   useEffect(() => {
     if (!open) return
@@ -71,10 +89,14 @@ export function NotificationMenu() {
     }
   }, [open])
 
-  function markRead(id: string) {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, unread: false } : item)),
-    )
+  /** Marking read is local and keyed by id, so a notification that is still
+   *  true on the next render does not come back unread. */
+  function open_(id: string, route?: string) {
+    setRead((current) => (current.includes(id) ? current : [...current, id]))
+    if (route !== undefined) {
+      navigate(route)
+      setOpen(false)
+    }
   }
 
   return (
@@ -105,9 +127,7 @@ export function NotificationMenu() {
               type="button"
               className={NOTIFY_ACTION}
               disabled={unread === 0}
-              onClick={() =>
-                setItems((current) => current.map((item) => ({ ...item, unread: false })))
-              }
+              onClick={() => setRead(items.map((item) => item.id))}
             >
               Mark all read
             </button>
@@ -129,7 +149,7 @@ export function NotificationMenu() {
                     type="button"
                     role="menuitem"
                     className={NOTIFY_ITEM}
-                    onClick={() => markRead(item.id)}
+                    onClick={() => open_(item.id, item.route)}
                   >
                     <span className={`${NOTIFY_GLYPH} ${NOTIFY_GLYPH_TONE[item.kind]}`}>
                       <Glyph size={14} />
@@ -143,7 +163,7 @@ export function NotificationMenu() {
                       <span className={`${NOTIFY_ITEM_BODY} block`}>{item.body}</span>
                     </span>
 
-                    {item.unread && <span className={NOTIFY_UNREAD} />}
+                    {!read.includes(item.id) && <span className={NOTIFY_UNREAD} />}
                   </button>
                 )
               })}

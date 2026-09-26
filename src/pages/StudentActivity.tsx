@@ -5,20 +5,10 @@ import {
   AlertIcon,
   ArrowDownIcon,
   ArrowUpIcon,
-  ChatIcon,
   CheckCircleIcon,
   ChevronLeftIcon,
-  SparkleIcon,
 } from '../components/Icons'
 import { accentFor, initialsFor } from '../data/messages'
-import { journalFor } from '../data/studentJournal'
-import {
-  COACHING_EVENTS,
-  EVENT_LABEL,
-  LEVEL_LABEL,
-  STUDENT_BY_UID,
-  type CoachingEventKind,
-} from '../data/university'
 import {
   CARD,
   COMM_AVATAR,
@@ -59,11 +49,8 @@ import {
   UNI_EVENT_TEXT,
   UNI_EVENT_TITLE,
   UNI_EVENT_TONE,
-  UNI_LEVEL,
-  UNI_LEVEL_TONE,
+  UNI_LOADING,
   UNI_PROGRESS,
-  UNI_PROGRESS_CELL,
-  UNI_PROGRESS_PCT,
   UNI_RULE,
   UNI_RULE_HEAD,
   UNI_RULE_PCT,
@@ -81,6 +68,7 @@ import { disciplineScore } from '../lib/dashboardStats'
 import { moneyIn } from '../lib/journalStats'
 import { deriveStats, formatFactor, formatHold, startingCapital } from '../lib/stats'
 import { navigate } from '../lib/useHashRoute'
+import { nameOf, useStudentJournal, useUniversity } from '../lib/university'
 import type { Profile } from '../lib/profile'
 import type { StoredTrade } from '../lib/trades'
 
@@ -88,20 +76,18 @@ import type { StoredTrade } from '../lib/trades'
 const RECENT_TRADES = 12
 
 /**
- * Everything one student has done.
+ * Everything one student has done, from their own journal.
  *
- * Reached from the roster, at `#/university/<uid>`. None of the figures here
- * are written down anywhere — the page runs `deriveStats` and
- * `disciplineScore`, the same functions behind the trader's own dashboard,
- * over the student's journal. That is the point: a coach reading this is
- * reading the arithmetic the student sees, so the two can argue about one set
- * of numbers rather than two.
+ * Reached from the roster, at `#/university/<uid>`. The trades come from
+ * `GET /api/v1/university/students/{uid}/journal`, which is the only read in
+ * the service that crosses accounts — and it is refused unless that student
+ * accepted an invitation from this caller. A 403 here is not a bug; it is the
+ * grant doing its job, and the screen says so rather than showing an empty
+ * journal that looks like a student who never traded.
  *
- * **Still scaffolding.** The journal comes from `data/studentJournal.ts`, and
- * no endpoint serves another trader's trades — deliberately. Every route in
- * the API reads the caller's own uid and no other, so the version of this that
- * ships needs an explicit coach-student grant on the server, not a uid in a
- * path.
+ * The figures are computed in the browser by `deriveStats` — the same
+ * functions behind the trader's own dashboard — from trades the server
+ * already derived the P&L on. Nothing on this page is a number anybody typed.
  */
 export function StudentActivity({
   uid,
@@ -110,30 +96,47 @@ export function StudentActivity({
   uid: string
   profile: Profile | null
 }) {
-  const student = STUDENT_BY_UID[uid]
+  // The roster is what says who this is and when they enrolled; the journal
+  // call answers what they have done.
+  const { students, loading: rosterLoading } = useUniversity(profile?.uid ?? null)
+  const journal = useStudentJournal(uid)
 
-  const trades = useMemo(
-    () => (student === undefined ? [] : journalFor(uid)),
-    [student, uid],
-  )
+  const student = students.find((entry) => entry.uid === uid) ?? null
+
   const opening = startingCapital(profile)
-  const stats = useMemo(() => deriveStats(trades, opening), [trades, opening])
-  const rules = useMemo(() => disciplineScore(trades), [trades])
+  const stats = useMemo(
+    () => deriveStats(journal.trades, opening),
+    [journal.trades, opening],
+  )
+  const rules = useMemo(() => disciplineScore(journal.trades), [journal.trades])
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
 
-  if (student === undefined) {
+  if (journal.error !== null) {
     return (
       <>
         <BackLink />
         <section className={`${CARD} ${EMPTY_BLOCK}`}>
-          <p>No student with that id.</p>
+          <p>{journal.error}</p>
           <p className={MUTED_NOTE}>
-            They may have left the programme, or the link may be stale.
+            You can only read the journal of a trader who accepted your invitation.
           </p>
         </section>
       </>
     )
   }
+
+  if (journal.loading || (rosterLoading && student === null)) {
+    return (
+      <>
+        <BackLink />
+        <section className={CARD}>
+          <p className={UNI_LOADING}>Loading their record…</p>
+        </section>
+      </>
+    )
+  }
+
+  const who = student === null ? 'This student' : nameOf(student.displayName, student.email)
 
   const setupBars: Bar[] = stats.setups.slice(0, 6).map((slice) => ({
     label: slice.label,
@@ -147,10 +150,10 @@ export function StudentActivity({
 
       <div className={PAGE_HEAD}>
         <div>
-          <h2 className={PAGE_TITLE}>{student.name}</h2>
+          <h2 className={PAGE_TITLE}>{who}</h2>
           <p className={PAGE_SUB}>
-            Everything logged since {student.enrolled}. Every figure below is derived
-            from the journal rather than entered by hand.
+            Everything they have logged. Every figure is derived from the journal
+            itself — nothing here was entered by hand.
           </p>
         </div>
       </div>
@@ -159,140 +162,150 @@ export function StudentActivity({
         <span className={COMM_AVATAR} style={{ width: 62, height: 62 }}>
           <span
             className={COMM_AVATAR_FACE}
-            style={{ background: accentFor(student.uid), fontSize: 21 }}
+            style={{ background: accentFor(uid), fontSize: 21 }}
           >
-            {initialsFor(student.name, student.email)}
+            {initialsFor(who, '')}
           </span>
         </span>
 
         <div className={UNI_WHO_BODY}>
-          <span className={UNI_WHO_NAME}>
-            {student.name}
-            <span className={`${UNI_LEVEL} ${UNI_LEVEL_TONE[student.level]}`}>
-              {LEVEL_LABEL[student.level]}
-            </span>
-          </span>
-          <span className={UNI_WHO_MAIL}>{student.email}</span>
+          <span className={UNI_WHO_NAME}>{who}</span>
+          <span className={UNI_WHO_MAIL}>{student?.email ?? ''}</span>
           <span className={UNI_WHO_FACTS}>
-            <span>Enrolled {student.enrolled}</span>
-            <span>Last active {student.lastActive} ago</span>
+            {student?.since != null && (
+              <span>
+                Enrolled{' '}
+                {student.since.toLocaleDateString('en-GB', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </span>
+            )}
             <span>{stats.tradeCount} trades logged</span>
-            {student.awaitingReview === true && <span>Awaiting a review</span>}
+            {student?.lastTradeAt != null && (
+              <span>
+                Last traded{' '}
+                {student.lastTradeAt.toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                })}
+              </span>
+            )}
           </span>
-        </div>
-
-        <div className={UNI_PROGRESS_CELL}>
-          <span className={UNI_PROGRESS}>
-            <span className={METER_FILL} style={{ width: `${student.progress}%` }} />
-          </span>
-          <span className={UNI_PROGRESS_PCT}>{student.progress}% of programme</span>
         </div>
       </section>
 
-      <div className={STAT_ROW}>
-        <Figure
-          label="Net P&L"
-          value={money(stats.netPl)}
-          tone={stats.netPl >= 0 ? 'pos' : 'neg'}
-        />
-        <Figure label="Win rate" value={`${Math.round(stats.winRate)}%`} />
-        <Figure label="Profit factor" value={formatFactor(stats.profitFactor)} />
-        <Figure label="Expectancy" value={money(stats.expectancy)} />
-        <Figure
-          label="Max drawdown"
-          value={`${stats.maxDrawdownPct.toFixed(1)}%`}
-          tone={stats.maxDrawdownPct > 20 ? 'neg' : undefined}
-        />
-        <Figure label="Avg hold" value={formatHold(stats.avgHoldMinutes)} />
-      </div>
+      {stats.tradeCount === 0 ? (
+        <section className={`${CARD} ${EMPTY_BLOCK}`}>
+          <p>Nothing logged yet.</p>
+          <p className={MUTED_NOTE}>
+            They have joined but have not written a trade. There is nothing to read
+            until they do.
+          </p>
+        </section>
+      ) : (
+        <>
+          <div className={STAT_ROW}>
+            <Figure
+              label="Net P&L"
+              value={money(stats.netPl)}
+              tone={stats.netPl >= 0 ? 'pos' : 'neg'}
+            />
+            <Figure label="Win rate" value={`${Math.round(stats.winRate)}%`} />
+            <Figure label="Profit factor" value={formatFactor(stats.profitFactor)} />
+            <Figure label="Expectancy" value={money(stats.expectancy)} />
+            <Figure
+              label="Max drawdown"
+              value={`${stats.maxDrawdownPct.toFixed(1)}%`}
+              tone={stats.maxDrawdownPct > 20 ? 'neg' : undefined}
+            />
+            <Figure label="Avg hold" value={formatHold(stats.avgHoldMinutes)} />
+          </div>
 
-      <div className={UNI_SPLIT}>
-        {/* EquityChart draws its own card, so this only gives it a height. */}
-        <div className={UNI_CHART_WRAP}>
-          <EquityChart
-            equity={stats.equity}
-            opening={opening}
-            spanLabel={`${stats.closedCount} closed trades`}
-          />
-        </div>
+          <div className={UNI_SPLIT}>
+            {/* EquityChart draws its own card, so this only gives it a height. */}
+            <div className={UNI_CHART_WRAP}>
+              <EquityChart
+                equity={stats.equity}
+                opening={opening}
+                spanLabel={`${stats.closedCount} closed trades`}
+              />
+            </div>
 
-        <div className={UNI_SPLIT_STACK}>
-          <section className={CARD}>
-            <div className={PANEL}>
-              <div className={PANEL_HEAD}>
-                <h3 className={PANEL_TITLE}>Rules followed</h3>
-                {rules.score !== null && (
-                  <span className={PANEL_NOTE}>{Math.round(rules.score)}%</span>
-                )}
-              </div>
+            <div className={UNI_SPLIT_STACK}>
+              <section className={CARD}>
+                <div className={PANEL}>
+                  <div className={PANEL_HEAD}>
+                    <h3 className={PANEL_TITLE}>Rules followed</h3>
+                    {rules.score !== null && (
+                      <span className={PANEL_NOTE}>{Math.round(rules.score)}%</span>
+                    )}
+                  </div>
 
-              {rules.score === null ? (
-                <p className={MUTED_NOTE}>
-                  Nothing graded yet — the rule questions are blank on every entry.
-                </p>
-              ) : (
-                <div className={UNI_RULES}>
-                  <Rule label="Entry" value={rules.entry} />
-                  <Rule label="Exit" value={rules.exit} />
-                  <Rule label="Management" value={rules.management} />
+                  {rules.score === null ? (
+                    <p className={MUTED_NOTE}>
+                      Nothing graded yet — the rule questions are blank on every entry.
+                    </p>
+                  ) : (
+                    <div className={UNI_RULES}>
+                      <Rule label="Entry" value={rules.entry} />
+                      <Rule label="Exit" value={rules.exit} />
+                      <Rule label="Management" value={rules.management} />
+                    </div>
+                  )}
                 </div>
-              )}
+              </section>
+
+              <BarList
+                title="Setups traded"
+                bars={setupBars}
+                format={(value) => String(value)}
+                note={`${stats.setups.length} in use`}
+                empty="No setups labelled yet."
+              />
+            </div>
+          </div>
+
+          <section className={CARD}>
+            <div className={UNI_CARD_HEAD}>
+              <h3 className={PANEL_TITLE}>Recent trades</h3>
+              <span className={PANEL_NOTE}>
+                {Math.min(RECENT_TRADES, journal.trades.length)} of{' '}
+                {journal.trades.length}
+              </span>
+            </div>
+
+            <div className={TABLE_WRAP}>
+              <table className={TABLE}>
+                <thead>
+                  <tr>
+                    <th className={TH}>Instrument</th>
+                    <th className={TH}>Side</th>
+                    <th className={TH}>Setup</th>
+                    <th className={TH}>Opened</th>
+                    <th className={TH}>Held</th>
+                    <th className={TH}>R:R</th>
+                    <th className={TH}>Rules</th>
+                    <th className={TH}>P&amp;L</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {journal.trades.slice(0, RECENT_TRADES).map((trade) => (
+                    <TradeRow key={trade.id} trade={trade} money={money} />
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
 
-          <BarList
-            title="Setups traded"
-            bars={setupBars}
-            format={(value) => String(value)}
-            note={`${stats.setups.length} in use`}
-            empty="No setups labelled yet."
-          />
-        </div>
-      </div>
-
-      <section className={CARD}>
-        <div className={UNI_CARD_HEAD}>
-          <h3 className={PANEL_TITLE}>Recent trades</h3>
-          <span className={PANEL_NOTE}>
-            {Math.min(RECENT_TRADES, trades.length)} of {trades.length}
-          </span>
-        </div>
-
-        <div className={TABLE_WRAP}>
-          <table className={TABLE}>
-            <thead>
-              <tr>
-                <th className={TH}>Instrument</th>
-                <th className={TH}>Side</th>
-                <th className={TH}>Setup</th>
-                <th className={TH}>Opened</th>
-                <th className={TH}>Held</th>
-                <th className={TH}>R:R</th>
-                <th className={TH}>Rules</th>
-                <th className={TH}>P&amp;L</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trades.slice(0, RECENT_TRADES).map((trade) => (
-                <TradeRow key={trade.id} trade={trade} money={money} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className={CARD}>
-        <div className={UNI_CARD_HEAD}>
-          <h3 className={PANEL_TITLE}>Activity</h3>
-        </div>
-        <Timeline uid={uid} trades={trades} money={money} />
-      </section>
-
-      <p className={MUTED_NOTE}>
-        Sample journal. No endpoint serves another trader&rsquo;s trades — every API
-        route reads the caller&rsquo;s own uid and no other — so this needs an explicit
-        coach-student grant on the server before it can show real data.
-      </p>
+          <section className={CARD}>
+            <div className={UNI_CARD_HEAD}>
+              <h3 className={PANEL_TITLE}>Notable</h3>
+            </div>
+            <Timeline trades={journal.trades} money={money} />
+          </section>
+        </>
+      )}
     </>
   )
 }
@@ -377,7 +390,7 @@ function TradeRow({
           {trade.direction}
         </span>
       </td>
-      <td className={TD}>{trade.setup}</td>
+      <td className={TD}>{trade.setup || '—'}</td>
       <td className={TD}>
         {opened === null
           ? '—'
@@ -397,36 +410,32 @@ function TradeRow({
   )
 }
 
-type TimelineKind = CoachingEventKind | 'win' | 'loss'
-
 type TimelineEntry = {
   id: string
-  kind: TimelineKind
+  kind: 'win' | 'loss'
   title: string
   body: string
   age: string
 }
 
 /**
- * What the coach did, and what the journal did, in one column.
+ * The two trades worth opening the conversation with.
  *
- * The coaching events are fixtures — a journal cannot know what was said in a
- * review. The trading events are read off the journal, so the best trade on
- * this list is the same trade that made the step in the curve above it.
+ * Read off the journal rather than written anywhere, so the best trade in this
+ * list is the same trade that made the step in the curve above it. There is no
+ * coaching log yet — notes a coach wrote about a student would be a store of
+ * their own, and one with real privacy questions attached.
  */
 function Timeline({
-  uid,
   trades,
   money,
 }: {
-  uid: string
   trades: StoredTrade[]
   money: (value: number) => string
 }) {
   const entries = useMemo<TimelineEntry[]>(() => {
-    const coaching = COACHING_EVENTS[uid] ?? []
     const closed = trades.filter((trade) => trade.netPl !== null)
-    if (closed.length === 0) return coaching
+    if (closed.length === 0) return []
 
     const best = closed.reduce((top, trade) =>
       (trade.netPl ?? 0) > (top.netPl ?? 0) ? trade : top,
@@ -435,29 +444,33 @@ function Timeline({
       (trade.netPl ?? 0) < (low.netPl ?? 0) ? trade : low,
     )
 
+    const describe = (trade: StoredTrade) =>
+      `${trade.setup || 'No setup labelled'}, ${trade.direction.toLowerCase()}. ${money(
+        trade.netPl ?? 0,
+      )}.`
+
     return [
-      ...coaching,
       {
         id: `${best.id}-best`,
         kind: 'win',
         title: `Best trade — ${best.ticker}`,
-        body: `${best.setup}, ${best.direction.toLowerCase()}. ${money(best.netPl ?? 0)}.`,
+        body: describe(best),
         age: relative(best.entryAt),
       },
       {
         id: `${worst.id}-worst`,
         kind: 'loss',
         title: `Worst trade — ${worst.ticker}`,
-        body: `${worst.setup}, ${worst.direction.toLowerCase()}. ${money(worst.netPl ?? 0)}.`,
+        body: describe(worst),
         age: relative(worst.entryAt),
       },
     ]
-  }, [uid, trades, money])
+  }, [trades, money])
 
   if (entries.length === 0) {
     return (
       <div className={EMPTY_BLOCK}>
-        <p>Nothing logged yet.</p>
+        <p>Nothing closed yet.</p>
       </div>
     )
   }
@@ -467,12 +480,16 @@ function Timeline({
       {entries.map((entry) => (
         <div key={entry.id} className={UNI_EVENT}>
           <span className={`${UNI_EVENT_GLYPH} ${UNI_EVENT_TONE[entry.kind]}`}>
-            <EventGlyph kind={entry.kind} />
+            {entry.kind === 'win' ? (
+              <ArrowUpIcon size={14} />
+            ) : (
+              <ArrowDownIcon size={14} />
+            )}
           </span>
           <span className={UNI_EVENT_BODY}>
             <span className={UNI_EVENT_TITLE}>
               {entry.title}
-              <span className={UNI_EVENT_KIND}>{kindLabel(entry.kind)}</span>
+              <span className={UNI_EVENT_KIND}>Trade</span>
             </span>
             <span className={UNI_EVENT_TEXT}>{entry.body}</span>
           </span>
@@ -483,20 +500,7 @@ function Timeline({
   )
 }
 
-function kindLabel(kind: TimelineKind): string {
-  return kind === 'win' || kind === 'loss' ? 'Trade' : EVENT_LABEL[kind]
-}
-
-function EventGlyph({ kind }: { kind: TimelineKind }) {
-  if (kind === 'win') return <ArrowUpIcon size={14} />
-  if (kind === 'loss') return <ArrowDownIcon size={14} />
-  if (kind === 'flag') return <AlertIcon size={14} />
-  if (kind === 'milestone') return <SparkleIcon size={14} />
-  if (kind === 'review') return <ChatIcon size={14} />
-  return <CheckCircleIcon size={14} />
-}
-
-/** Rough age of an ISO timestamp, in the same voice the fixtures use. */
+/** Rough age of an ISO timestamp, in the compact form the product uses. */
 function relative(iso: string): string {
   const when = new Date(iso)
   if (Number.isNaN(when.getTime())) return ''

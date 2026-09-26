@@ -2797,3 +2797,26 @@ export const MEMBER_NOTE =
  */
 export const DOCK_ROOM_NOTICE =
   'shrink-0 border-t border-line bg-[color-mix(in_srgb,var(--color-amber)_10%,transparent)] px-14 py-10 text-[11px] leading-[1.6] text-fg-dim'
+
+/* ------------------------------------------- invitations, on real data */
+
+/** An invitation waiting on you. Sits above whatever else the screen holds —
+ *  it is the only thing on it that expects an answer. */
+export const UNI_INVITE = 'flex flex-wrap items-center gap-16 px-22 pt-18 pb-18'
+export const UNI_INVITE_BODY = 'flex min-w-0 flex-col gap-4'
+export const UNI_INVITE_WHO = 'text-[14px] font-semibold text-fg-strong'
+export const UNI_INVITE_NOTE =
+  'max-w-[60ch] text-[12.5px] leading-[1.55] text-fg-muted'
+export const UNI_INVITE_ACTIONS = 'ml-auto flex flex-wrap gap-10 max-[620px]:ml-0'
+
+/** Pending and declined invitations a coach has sent. */
+export const UNI_STATUS =
+  'inline-block rounded-full px-10 py-3 text-[10.5px] font-semibold tracking-[0.06em]'
+export const UNI_STATUS_TONE: Record<string, string> = {
+  pending: 'bg-[color-mix(in_srgb,var(--color-amber)_18%,transparent)] text-amber',
+  declined: 'bg-[color-mix(in_srgb,var(--color-red)_14%,transparent)] text-red',
+}
+
+/** While the first fetch is in flight. A line, not a spinner — the screen
+ *  below it is a table, and a spinner where a table goes reads as a fault. */
+export const UNI_LOADING = 'px-10 py-26 text-center text-[13px] text-fg-muted'
