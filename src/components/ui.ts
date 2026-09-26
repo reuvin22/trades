@@ -3188,3 +3188,97 @@ export const NOTE_AFTER_WIDE = 'mt-12'
 /** A block following a block inside one card. */
 export const BLOCK_AFTER = 'mt-16'
 export const BLOCK_AFTER_WIDE = 'mt-22'
+
+/* ---- the arena's boards ---- */
+
+/** The tabs across the arena. Wrap rather than scroll on a phone. */
+export const WAR_TABS = 'flex flex-wrap gap-2 border-b border-[#2a2331]'
+export const WAR_TAB =
+  'relative -mb-px px-16 py-11 text-[12px] font-bold tracking-[0.16em] text-[#867b91] uppercase transition-colors duration-150 hover:text-[#e9e2da]'
+export const WAR_TAB_ON =
+  'text-[#ff6a1a] after:absolute after:inset-x-3 after:-bottom-px after:h-2 after:bg-[#ff6a1a] after:content-[""]'
+
+/** A rank badge: the tier colour is set from the call site. */
+export const WAR_BADGE_RANK =
+  'inline-flex items-center gap-7 border px-11 py-5 text-[11px] font-bold tracking-[0.12em] uppercase'
+
+export const WAR_BOARD = 'flex flex-col'
+export const WAR_ROW =
+  'grid grid-cols-[46px_auto_1fr_auto] items-center gap-14 border-b border-[#241e2c] px-16 py-13 transition-colors duration-150 hover:bg-[#1f1928] max-[520px]:grid-cols-[34px_auto_1fr] max-[520px]:gap-10'
+/** The caller's own row, so it is findable without reading every line. */
+export const WAR_ROW_ME = 'bg-[rgba(255,106,26,0.08)] hover:bg-[rgba(255,106,26,0.12)]'
+export const WAR_POS =
+  'text-[15px] font-black tabular-nums text-[#6f6479] max-[520px]:text-[13px]'
+export const WAR_POS_TOP = 'text-[#ff6a1a]'
+export const WAR_ROW_FACE =
+  'grid size-34 flex-none place-items-center overflow-hidden border border-[#4a3d52] bg-[#251e2f] text-[12px] font-bold text-[#ff6a1a] [&_img]:size-full [&_img]:object-cover'
+export const WAR_ROW_NAME =
+  'overflow-hidden text-[13.5px] font-semibold text-ellipsis whitespace-nowrap text-[#ece4dc]'
+export const WAR_ROW_SUB = 'mt-1 text-[11px] text-[#7e7488]'
+/** Points, right-aligned. Hidden on the narrowest screens, where the badge
+ *  under the name already says where somebody stands. */
+export const WAR_ROW_POINTS =
+  'text-[15px] font-black tabular-nums text-[#ece4dc] max-[520px]:hidden'
+
+/** The progress bar toward the next division. */
+export const WAR_TRACK = 'mt-12 h-6 w-full overflow-hidden bg-[#241e2c]'
+export const WAR_FILL =
+  'block h-full bg-[linear-gradient(90deg,#b83a09,#ff6a1a)] transition-[width] duration-500'
+export const WAR_TRACK_NOTE =
+  'mt-7 flex flex-wrap items-baseline justify-between gap-8 text-[11.5px] text-[#867b91]'
+
+/** How the points were earned. A score nobody can account for is not trusted. */
+export const WAR_BREAKDOWN = 'mt-16 flex flex-col gap-1'
+export const WAR_PART =
+  'flex items-baseline justify-between gap-12 border-b border-[#241e2c] py-8 text-[12.5px] last:border-b-0'
+export const WAR_PART_NAME = 'text-[#968c9f]'
+export const WAR_PART_VALUE = 'font-bold tabular-nums text-[#ece4dc]'
+export const WAR_PART_DOWN = 'text-[#e0554a]'
+
+/** A tournament card. */
+export const WAR_CUPS = 'grid grid-cols-2 gap-14 max-[860px]:grid-cols-1'
+export const WAR_CUP =
+  'flex flex-col gap-11 border border-[#2e2733] bg-[#1b1622]/80 px-20 pt-20 pb-20 [clip-path:polygon(0_16px,16px_0,100%_0,100%_calc(100%-16px),calc(100%-16px)_100%,0_100%)]'
+export const WAR_CUP_HEAD = 'flex flex-wrap items-center gap-10'
+export const WAR_CUP_NAME = 'text-[16px] font-bold tracking-[0.04em] text-[#efe7de]'
+export const WAR_CUP_STATE =
+  'ml-auto border px-10 py-4 text-[9.5px] font-bold tracking-[0.18em] uppercase'
+export const WAR_CUP_STATE_TONE: Record<string, string> = {
+  open: 'border-[#2f7d5a] bg-[rgba(47,125,90,0.14)] text-[#54c48d]',
+  running: 'border-[#b83a09] bg-[rgba(255,106,26,0.12)] text-[#ff6a1a]',
+  finished: 'border-[#3b3243] bg-[#241d2e] text-[#7e7488]',
+}
+export const WAR_CUP_META = 'flex flex-wrap gap-x-16 gap-y-4 text-[11.5px] text-[#7e7488]'
+
+/** The arena's own buttons — the app's PILL is the wrong language here. */
+export const WAR_BTN =
+  'inline-flex items-center justify-center gap-8 border px-16 py-10 text-[11.5px] font-bold tracking-[0.14em] uppercase transition-[color,border-color,background-color] duration-150 disabled:cursor-not-allowed disabled:opacity-45'
+export const WAR_BTN_HOT =
+  'border-[#ff6a1a] bg-[#ff6a1a] text-[#140f18] hover:bg-[#ff7f3c] hover:border-[#ff7f3c]'
+export const WAR_BTN_COLD =
+  'border-[#3b3243] bg-transparent text-[#a99fb3] hover:border-[#5a4d64] hover:text-[#e9e2da]'
+
+export const WAR_EMPTY =
+  'border border-dashed border-[#332b3a] px-24 py-30 text-center text-[13px] text-[#7e7488]'
+
+/* ---- the battle ---- */
+
+export const WAR_ARENA =
+  'relative flex flex-col items-center gap-18 border border-[#332b3a] bg-[#1c1724]/90 px-26 pt-30 pb-30 text-center [clip-path:polygon(0_22px,22px_0,100%_0,100%_calc(100%-22px),calc(100%-22px)_100%,0_100%)]'
+export const WAR_CLOCK =
+  'text-[56px] leading-none font-black tabular-nums tracking-[-0.03em] text-[#ff6a1a] [text-shadow:0_0_40px_rgba(255,106,26,0.35)] max-[560px]:text-[40px]'
+export const WAR_ARENA_LABEL =
+  'text-[11px] font-bold tracking-[0.3em] text-[#867b91] uppercase'
+export const WAR_VERSUS = 'flex flex-wrap items-center justify-center gap-20'
+export const WAR_SIDE = 'flex min-w-120 flex-col items-center gap-9'
+export const WAR_SIDE_NAME = 'text-[14px] font-bold text-[#ece4dc]'
+export const WAR_VS =
+  'text-[20px] font-black tracking-[0.1em] text-[#5a4d64] uppercase'
+/** A pulsing dot while the queue is being searched. */
+export const WAR_SEEKING =
+  'inline-block size-10 animate-pulse rounded-full bg-[#ff6a1a]'
+export const WAR_RESULT =
+  'text-[34px] font-black tracking-[-0.02em] uppercase max-[560px]:text-[26px]'
+export const WAR_RESULT_WIN = 'text-[#54c48d]'
+export const WAR_RESULT_LOSS = 'text-[#e0554a]'
+export const WAR_DELTA = 'text-[18px] font-black tabular-nums'
