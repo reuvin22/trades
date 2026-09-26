@@ -6,6 +6,7 @@ import {
   SpinnerIcon,
   TrashIcon,
 } from '../components/Icons'
+import { ConfirmDialog, type ConfirmRequest } from '../components/ConfirmDialog'
 import { QuestionBuilder } from '../components/QuestionBuilder'
 import { RichTextEditor } from '../components/RichTextEditor'
 import {
@@ -249,6 +250,7 @@ function Editor({
 }) {
   const [draft, setDraft] = useState(document)
   const [saving, setSaving] = useState(false)
+  const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
   const toast = useToast()
 
   function edit(patch: Partial<UniversityDocument>) {
@@ -273,19 +275,28 @@ function Editor({
     }
   }
 
-  async function remove() {
+  function remove() {
     if (draft.id === '') {
       onClose()
       return
     }
 
-    try {
-      await deleteDocument(draft.id)
-      toast.success('Deleted.')
-      onSaved()
-    } catch (cause) {
-      toast.error('Could not delete that', readableApiError(cause))
-    }
+    setConfirming({
+      title: `Delete “${draft.title || 'Untitled'}”?`,
+      body:
+        draft.kind === 'agreement'
+          ? 'Students will no longer see this agreement.'
+          : 'Students will no longer see this form.',
+      consequence:
+        draft.kind === 'agreement'
+          ? 'Every signature on it is deleted too — including the record of what each person signed.'
+          : 'Every answer anybody has given is deleted too.',
+      onConfirm: async () => {
+        await deleteDocument(draft.id)
+        toast.success('Deleted.')
+        onSaved()
+      },
+    })
   }
 
   return (
@@ -418,6 +429,8 @@ function Editor({
           </div>
         </div>
       </section>
+
+      <ConfirmDialog request={confirming} onClose={() => setConfirming(null)} />
     </>
   )
 }

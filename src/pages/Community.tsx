@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChatIcon, HeartIcon, SendIcon, TrashIcon } from '../components/Icons'
+import { ConfirmDialog, type ConfirmRequest } from '../components/ConfirmDialog'
 import { accentFor, displayNameFor, initialsFor } from '../data/messages'
 import {
   CARD,
@@ -74,6 +75,7 @@ export function Community({ profile }: { profile: Profile | null }) {
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
   const [replies, setReplies] = useState<Record<string, string>>({})
+  const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
 
   const me = useMemo(
     () => ({
@@ -136,14 +138,17 @@ export function Community({ profile }: { profile: Profile | null }) {
     }
   }
 
-  async function remove(post: Post) {
-    try {
-      await deletePost(post.id)
-      feed.reload()
-      toast.success('Post deleted.')
-    } catch (cause) {
-      toast.error('Could not delete that', readableApiError(cause))
-    }
+  function remove(post: Post) {
+    setConfirming({
+      title: 'Delete this post?',
+      body: 'It disappears from the feed for everyone.',
+      consequence: 'Its likes and comments go with it.',
+      onConfirm: async () => {
+        await deletePost(post.id)
+        feed.reload()
+        toast.success('Post deleted.')
+      },
+    })
   }
 
   return (
@@ -234,6 +239,8 @@ export function Community({ profile }: { profile: Profile | null }) {
           />
         ))}
       </div>
+
+      <ConfirmDialog request={confirming} onClose={() => setConfirming(null)} />
     </>
   )
 }

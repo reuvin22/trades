@@ -29,6 +29,7 @@ import { readableApiError } from '../lib/api'
 import type { AuthUser } from '../lib/useAuth'
 import { accentFor, displayNameFor, initialsFor } from '../data/messages'
 import { groupInitials, groupTint, useGroups, type ChatGroup } from '../lib/groups'
+import { ConfirmDialog, type ConfirmRequest } from './ConfirmDialog'
 import { RoomMembers } from './RoomMembers'
 import { hasFeature } from '../lib/entitlements'
 import {
@@ -472,6 +473,7 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
   const [picked, setPicked] = useState<string[]>([])
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [showingMembers, setShowingMembers] = useState(false)
+  const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
   const [draft, setDraft] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
   const threadBox = useRef<HTMLDivElement>(null)
@@ -553,7 +555,17 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
     setDraft('')
   }
 
-  async function remove(messageId: string) {
+  function remove(messageId: string) {
+    setHeld(null)
+    setConfirming({
+      title: 'Delete this message?',
+      body: 'It is removed for both of you.',
+      consequence: 'The other person may already have read it.',
+      onConfirm: () => reallyRemove(messageId),
+    })
+  }
+
+  async function reallyRemove(messageId: string) {
     setHeld(null)
     if (me === null || activeId === null) return
 
@@ -1188,6 +1200,8 @@ export function ChatDock({ user }: { user: AuthUser | null }) {
       )}
 
       {/* A native <dialog>, so it sits above the dock without a z-index race. */}
+      <ConfirmDialog request={confirming} onClose={() => setConfirming(null)} />
+
       <RoomMembers
         room={showingMembers ? activeRoom : null}
         meUid={me}

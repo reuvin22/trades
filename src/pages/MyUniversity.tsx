@@ -82,6 +82,7 @@ import {
   type Student,
 } from '../lib/university'
 import { readableApiError } from '../lib/api'
+import { ConfirmDialog, type ConfirmRequest } from '../components/ConfirmDialog'
 import { useDocuments } from '../lib/documents'
 import { useInbox, type Inbox } from '../lib/university'
 import type { Profile } from '../lib/profile'
@@ -176,10 +177,13 @@ function CoachView({
   state: State
   inbox: Inbox
 }) {
-  const [tab, setTab] = useState<'students' | 'applications' | 'invites'>('students')
+  const [tab, setTab] = useState<
+    'students' | 'applications' | 'signing' | 'invites'
+  >('students')
   const [applications, setApplications] = useState<Application[]>([])
   const [inviting, setInviting] = useState(false)
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
+  const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
   const toast = useToast()
 
   const { students, sent } = state
@@ -234,16 +238,39 @@ function CoachView({
   // the stat that describes where it moved to.
   const pending = sent.filter((invite) => invite.status === 'pending').length
 
-  async function drop(student: Student) {
-    try {
-      await endEnrolment(student.uid)
-      toast.success(
-        `${nameOf(student.displayName, student.email)} is no longer enrolled.`,
-      )
-      state.reload()
-    } catch (cause) {
-      toast.error('Could not end that enrolment', readableApiError(cause))
-    }
+  function drop(student: Student) {
+    const who = nameOf(student.displayName, student.email)
+
+    setConfirming({
+      title: `Remove ${who}?`,
+      body: 'They leave your University and you stop being able to read their journal.',
+      consequence:
+        'Their own journal is untouched — this ends the enrolment, not their account. You can invite them again.',
+      action: 'Remove',
+      onConfirm: async () => {
+        await endEnrolment(student.uid)
+        toast.success(`${who} is no longer enrolled.`)
+        state.reload()
+      },
+    })
+  }
+
+  /** The same, for somebody who was approved but has not finished signing. */
+  function dropApplicant(application: Application) {
+    const who = nameOf(application.studentName, application.studentEmail)
+
+    setConfirming({
+      title: `Withdraw ${who}?`,
+      body: 'They stop being able to see or sign your documents.',
+      consequence:
+        'Anything they have already signed is kept, but the enrolment ends and they do not join.',
+      action: 'Withdraw',
+      onConfirm: async () => {
+        await endEnrolment(application.studentUid)
+        toast.success(`${who} withdrawn.`)
+        state.reload()
+      },
+    })
   }
 
   return (
@@ -337,6 +364,13 @@ function CoachView({
         </button>
         <button
           type="button"
+          className={`${UNI_TAB} ${tab === 'signing' ? UNI_TAB_ACTIVE : ''}`}
+          onClick={() => setTab('signing')}
+        >
+          Signing ({inbox.signing.length})
+        </button>
+        <button
+          type="button"
           className={`${UNI_TAB} ${tab === 'invites' ? UNI_TAB_ACTIVE : ''}`}
           onClick={() => setTab('invites')}
         >
@@ -352,9 +386,13 @@ function CoachView({
         <Roster students={students} money={money} onDrop={drop} />
       ) : tab === 'applications' ? (
         <Applications applications={applications} onDecide={decide} />
+      ) : tab === 'signing' ? (
+        <Signing signing={inbox.signing} onRemove={dropApplicant} />
       ) : (
         <SentInvites invites={sent} />
       )}
+
+      <ConfirmDialog request={confirming} onClose={() => setConfirming(null)} />
 
       <InviteStudent
         open={inviting}
@@ -905,6 +943,70 @@ function Applications({
                 onClick={() => onDecide(application, true)}
               >
                 Approve
+              </button>
+            </span>
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Approved, and working through their documents.
+ *
+ * Its own tab rather than a number on a card, because the useful thing to do
+ * with somebody stuck here is act on it — chase them, or withdraw them. A
+ * count told a coach that somebody existed and gave them no way to reach it.
+ */
+function Signing({
+  signing,
+  onRemove,
+}: {
+  signing: Application[]
+  onRemove: (application: Application) => void
+}) {
+  if (signing.length === 0) {
+    return (
+      <section className={`${CARD} ${EMPTY_BLOCK}`}>
+        <p>Nobody is mid-signing.</p>
+        <p className={MUTED_NOTE}>
+          Approved students appear here until every required document is signed.
+          They join the roster the moment the last one is done.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <div className={DOC_LIST}>
+      {signing.map((application) => (
+        <section key={application.studentUid} className={CARD}>
+          <div className={DOC_ROW}>
+            <Face
+              uid={application.studentUid}
+              name={nameOf(application.studentName, application.studentEmail)}
+            />
+
+            <span className={DOC_BODY}>
+              <span className={UNI_STUDENT_NAME}>
+                {nameOf(application.studentName, application.studentEmail)}
+              </span>
+              <span className={UNI_STUDENT_MAIL}>
+                {application.studentEmail} · waiting on their signatures
+              </span>
+            </span>
+
+            <span className={DOC_TAIL}>
+              <span className={`${UNI_STATUS} ${UNI_STATUS_TONE.documents}`}>
+                Signing
+              </span>
+              <button
+                type="button"
+                className={UNI_GHOST}
+                onClick={() => onRemove(application)}
+              >
+                Remove
               </button>
             </span>
           </div>

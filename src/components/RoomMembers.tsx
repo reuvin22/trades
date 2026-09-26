@@ -3,6 +3,8 @@ import { CloseIcon } from './Icons'
 import { accentFor, initialsFor } from '../data/messages'
 import { memberLabel, type ChatGroup } from '../lib/groups'
 import {
+  ASK_ROW,
+  ASK_ROW_TEXT,
   MEMBER_ACTION,
   MEMBER_ACTIONS,
   MEMBER_BODY,
@@ -60,6 +62,14 @@ export function RoomMembers({
   /** The uid whose nickname is being edited, and the text so far. */
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  /**
+   * The uid being removed, while the row asks whether to.
+   *
+   * Confirmed on the row rather than in a second dialog. This list is already
+   * a modal, and a modal over a modal hides the thing being confirmed — which
+   * here is the name of the person about to be removed.
+   */
+  const [removing, setRemoving] = useState<string | null>(null)
 
   // <dialog> gives us the focus trap, backdrop and Esc handling for free.
   useEffect(() => {
@@ -80,6 +90,7 @@ export function RoomMembers({
   function dismiss() {
     setEditing(null)
     setDraft('')
+    setRemoving(null)
     onClose()
   }
 
@@ -210,33 +221,56 @@ export function RoomMembers({
 
                       {isMe && <span className={MEMBER_YOU}>You</span>}
 
-                      <span className={MEMBER_ACTIONS}>
-                        <button
-                          type="button"
-                          className={MEMBER_ACTION}
-                          onClick={() =>
-                            startEdit(member.uid, member.nickname ?? '')
-                          }
-                        >
-                          {nicknamed ? 'Edit nickname' : 'Nickname'}
-                        </button>
-
-                        {/*
-                          You cannot remove yourself. Leaving a room is a
-                          different act with a different consequence — it ends
-                          your access rather than someone else's — and it needs
-                          its own confirmation rather than sharing this button.
-                        */}
-                        {!isMe && (
+                      {removing === member.uid ? (
+                        <span className={ASK_ROW}>
+                          <span className={ASK_ROW_TEXT}>Remove {label}?</span>
+                          <button
+                            type="button"
+                            className={MEMBER_ACTION}
+                            onClick={() => setRemoving(null)}
+                          >
+                            Cancel
+                          </button>
                           <button
                             type="button"
                             className={`${MEMBER_ACTION} ${MEMBER_DANGER}`}
-                            onClick={() => onRemove(member.uid)}
+                            onClick={() => {
+                              setRemoving(null)
+                              onRemove(member.uid)
+                            }}
                           >
                             Remove
                           </button>
-                        )}
-                      </span>
+                        </span>
+                      ) : (
+                        <span className={MEMBER_ACTIONS}>
+                          <button
+                            type="button"
+                            className={MEMBER_ACTION}
+                            onClick={() =>
+                              startEdit(member.uid, member.nickname ?? '')
+                            }
+                          >
+                            {nicknamed ? 'Edit nickname' : 'Nickname'}
+                          </button>
+
+                          {/*
+                            You cannot remove yourself. Leaving a room is a
+                            different act with a different consequence — it ends
+                            your access rather than someone else's — and it needs
+                            its own confirmation rather than sharing this button.
+                          */}
+                          {!isMe && (
+                            <button
+                              type="button"
+                              className={`${MEMBER_ACTION} ${MEMBER_DANGER}`}
+                              onClick={() => setRemoving(member.uid)}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </span>
+                      )}
                     </div>
                   )
                 })}

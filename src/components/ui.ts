@@ -2967,3 +2967,23 @@ export const DOC_PROSE =
 export const SUB_ANSWER = 'flex flex-col gap-4 border-b border-line py-12 last:border-b-0'
 export const SUB_Q = 'text-[12px] font-medium text-fg-muted'
 export const SUB_A = 'text-[13.5px] whitespace-pre-line text-fg'
+
+/* ------------------------------------------------- destructive confirms */
+
+/*
+ * The standalone version. `CONFIRM_CARD` above is the other one — a footer
+ * replaced in place, for a dialog that is already open and whose contents are
+ * the thing being confirmed. This is for a destructive action taken from a
+ * page, where there is nothing to bury.
+ */
+export const ASK_BODY = 'flex flex-col gap-12 px-26 pt-22 pb-24'
+export const ASK_TEXT = 'text-[13.5px] leading-[1.6] text-fg-dim'
+/** What will be lost, stated apart from what is being asked — running the two
+ *  together is how the second gets skimmed past. */
+export const ASK_CONSEQUENCE =
+  'rounded-sm border border-[color-mix(in_srgb,var(--color-red)_34%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_9%,transparent)] px-14 py-11 text-[12.5px] leading-[1.55] text-fg-dim'
+
+/** An inline confirmation on one row, for a list already inside a dialog —
+ *  a modal over a modal buries what is being confirmed. */
+export const ASK_ROW = 'ml-auto flex flex-none items-center gap-8'
+export const ASK_ROW_TEXT = 'text-[12px] font-medium text-red'
