@@ -2814,6 +2814,10 @@ export const UNI_STATUS =
   'inline-block rounded-full px-10 py-3 text-[10.5px] font-semibold tracking-[0.06em]'
 export const UNI_STATUS_TONE: Record<string, string> = {
   pending: 'bg-[color-mix(in_srgb,var(--color-amber)_18%,transparent)] text-amber',
+  applied: 'bg-[color-mix(in_srgb,var(--color-cyan)_16%,transparent)] text-cyan',
+  documents:
+    'bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)] text-accent-strong',
+  active: 'bg-[color-mix(in_srgb,var(--color-green)_16%,transparent)] text-green',
   declined: 'bg-[color-mix(in_srgb,var(--color-red)_14%,transparent)] text-red',
 }
 

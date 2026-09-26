@@ -44,7 +44,15 @@ export type SentInvite = {
   studentName: string
   studentEmail: string
   studentPhoto: string
-  status: 'pending' | 'active' | 'declined'
+  /**
+   * The real state, not a two-way guess.
+   *
+   * This used to collapse to 'pending' | 'declined', which made a student
+   * part-way through signing show on the coach's screen as "Waiting" — the
+   * coach could see a Signing count of 1 and an invitation that looked
+   * unanswered, describing the same person.
+   */
+  status: EnrolmentStatus
   note: string
   invitedAt: Date | null
   /** When they answered — so a refusal from months ago is not news. */
@@ -165,7 +173,7 @@ export function useUniversity(uid: string | null): UniversityState {
             studentName: String(wire.student_name ?? ''),
             studentEmail: String(wire.student_email ?? ''),
             studentPhoto: String(wire.student_photo ?? ''),
-            status: wire.status === 'declined' ? 'declined' : 'pending',
+            status: (wire.status as EnrolmentStatus) ?? 'pending',
             note: String(wire.note ?? ''),
             invitedAt: date(wire.invited_at),
             respondedAt: date(wire.responded_at),
@@ -548,7 +556,7 @@ export function useInbox(uid: string | null): Inbox {
             studentName: String(entry.student_name ?? ''),
             studentEmail: String(entry.student_email ?? ''),
             studentPhoto: String(entry.student_photo ?? ''),
-            status: 'declined' as const,
+            status: 'declined' as EnrolmentStatus,
             note: String(entry.note ?? ''),
             invitedAt: date(entry.invited_at),
             respondedAt: date(entry.responded_at),

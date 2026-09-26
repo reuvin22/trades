@@ -83,7 +83,7 @@ import {
 } from '../lib/university'
 import { readableApiError } from '../lib/api'
 import { useDocuments } from '../lib/documents'
-import { useInbox } from '../lib/university'
+import { useInbox, type Inbox } from '../lib/university'
 import type { Profile } from '../lib/profile'
 
 /**
@@ -102,6 +102,7 @@ import type { Profile } from '../lib/profile'
 export function MyUniversity({ profile }: { profile: Profile | null }) {
   const accountType = profile?.accountType ?? 'individual'
   const state = useUniversity(profile?.uid ?? null)
+  const inbox = useInbox(profile?.uid ?? null)
   const toast = useToast()
 
   /** Declining only. Joining goes through the join screen. */
@@ -147,10 +148,17 @@ export function MyUniversity({ profile }: { profile: Profile | null }) {
         />
       ))}
 
-      {accountType !== 'coach' && <Waiting uid={profile?.uid ?? null} />}
+      {accountType !== 'coach' && (
+        <Waiting
+          uid={profile?.uid ?? null}
+          signing={inbox.intake.status === 'documents'}
+        />
+      )}
 
-      {accountType === 'coach' && <CoachView profile={profile} state={state} />}
-      {accountType !== 'coach' && <TraderView state={state} />}
+      {accountType === 'coach' && (
+        <CoachView profile={profile} state={state} inbox={inbox} />
+      )}
+      {accountType !== 'coach' && <TraderView state={state} intake={inbox.intake} />}
     </>
   )
 }
@@ -159,10 +167,17 @@ type State = ReturnType<typeof useUniversity>
 
 /* ------------------------------------------------------------- coach view */
 
-function CoachView({ profile, state }: { profile: Profile | null; state: State }) {
+function CoachView({
+  profile,
+  state,
+  inbox,
+}: {
+  profile: Profile | null
+  state: State
+  inbox: Inbox
+}) {
   const [tab, setTab] = useState<'students' | 'applications' | 'invites'>('students')
   const [applications, setApplications] = useState<Application[]>([])
-  const inbox = useInbox(profile?.uid ?? null)
   const [inviting, setInviting] = useState(false)
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
   const toast = useToast()
@@ -215,6 +230,8 @@ function CoachView({ profile, state }: { profile: Profile | null; state: State }
             graded.length,
         )
   const cohortPl = students.reduce((total, student) => total + student.netPl, 0)
+  // Only genuinely unanswered ones. A row that has moved on is counted by
+  // the stat that describes where it moved to.
   const pending = sent.filter((invite) => invite.status === 'pending').length
 
   async function drop(student: Student) {
@@ -461,6 +478,22 @@ function Roster({
   )
 }
 
+/**
+ * What each state is called on the invitations tab.
+ *
+ * Every one of these used to read "Waiting", because the wire status was
+ * flattened to pending-or-declined on the way in. A coach could see a Signing
+ * count of one and an invitation that looked unanswered, both describing the
+ * same person.
+ */
+const INVITE_LABEL: Record<string, string> = {
+  pending: 'Waiting',
+  applied: 'Answered — to approve',
+  documents: 'Signing documents',
+  active: 'Enrolled',
+  declined: 'Declined',
+}
+
 function SentInvites({ invites }: { invites: SentInvite[] }) {
   if (invites.length === 0) {
     return (
@@ -505,7 +538,7 @@ function SentInvites({ invites }: { invites: SentInvite[] }) {
                 <td className={TD}>{invite.note || '—'}</td>
                 <td className={TD}>
                   <span className={`${UNI_STATUS} ${UNI_STATUS_TONE[invite.status]}`}>
-                    {invite.status === 'pending' ? 'Waiting' : 'Declined'}
+                    {INVITE_LABEL[invite.status]}
                   </span>
                 </td>
                 <td className={TD}>
@@ -527,8 +560,52 @@ function SentInvites({ invites }: { invites: SentInvite[] }) {
 
 /* ------------------------------------------------ student and solo traders */
 
-function TraderView({ state }: { state: State }) {
+function TraderView({ state, intake }: { state: State; intake: Inbox['intake'] }) {
   const { coach, loading, invitations } = state
+
+  /*
+   * Approved, and still signing.
+   *
+   * `/university/coach` only answers for an *active* enrolment, deliberately —
+   * it is the roster relationship. So somebody part-way through signing had a
+   * null coach here and was told they were in no program at all, which is the
+   * opposite of true. The enrolment status is what this screen turns on.
+   */
+  if (intake.status === 'documents') {
+    return (
+      <section className={`${CARD} ${UNI_INVITE}`}>
+        <div className={UNI_INVITE_BODY}>
+          <span className={UNI_INVITE_WHO}>
+            {intake.universityName.trim() || nameOf(intake.coachName, intake.coachEmail)}{' '}
+            approved you
+          </span>
+          <p className={UNI_INVITE_NOTE}>
+            {intake.outstanding === 0
+              ? 'Finishing up — refresh in a moment.'
+              : `Sign ${intake.outstanding} of ${intake.requiredTotal} document${
+                  intake.requiredTotal === 1 ? '' : 's'
+                } below and you are enrolled. Nothing else is waiting on you.`}
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  if (intake.status === 'applied') {
+    return (
+      <section className={`${CARD} ${UNI_INVITE}`}>
+        <div className={UNI_INVITE_BODY}>
+          <span className={UNI_INVITE_WHO}>Waiting on your coach</span>
+          <p className={UNI_INVITE_NOTE}>
+            You have answered{' '}
+            {intake.universityName.trim() || nameOf(intake.coachName, intake.coachEmail)}
+            &rsquo;s form. They review it before you join — nothing else is needed
+            from you.
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   if (loading && coach === null) {
     return (
@@ -667,10 +744,32 @@ function Face({ uid, name, size = 36 }: { uid: string; name: string; size?: numb
  * the list — "I already signed that" is a question people ask, and a list that
  * hid the answer would not answer it.
  */
-function Waiting({ uid }: { uid: string | null }) {
-  const { documents, loading } = useDocuments(uid)
+function Waiting({ uid, signing }: { uid: string | null; signing: boolean }) {
+  const { documents, loading, error } = useDocuments(uid)
 
-  if (loading || documents.length === 0) return null
+  if (loading) return null
+
+  /*
+   * Silence was the bug here.
+   *
+   * This used to render nothing whenever the list came back empty — so a
+   * student the coach could see under "Signing", with two published documents
+   * waiting, got a blank screen and no way to tell whether the problem was
+   * them, the coach, or the app. If the enrolment says there is signing to do,
+   * this says so even when the list is empty.
+   */
+  if (documents.length === 0) {
+    if (!signing) return null
+
+    return (
+      <section className={`${CARD} ${EMPTY_BLOCK}`}>
+        <p>Your coach has documents for you, but none came back.</p>
+        <p className={MUTED_NOTE}>
+          {error ?? 'Try reloading. If it persists, your coach may have unpublished them.'}
+        </p>
+      </section>
+    )
+  }
 
   const outstanding = documents.filter((entry) => entry.submittedAt === null)
 
