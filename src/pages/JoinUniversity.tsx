@@ -25,8 +25,8 @@ import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import { navigate } from '../lib/useHashRoute'
 import {
-  acceptInvitation,
   declineInvitation,
+  startEnrolment,
   fetchIntake,
   nameOf,
   type Intake,
@@ -77,31 +77,44 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
   }, [])
 
   async function answer(accept: boolean) {
-    if (intake === null) return
+    if (intake === null || accept) return
 
     setBusy(true)
     try {
-      if (!accept) {
-        await declineInvitation(intake.coachUid)
-        toast.info('Invitation declined.')
-        navigate('university')
-        return
-      }
+      await declineInvitation(intake.coachUid)
+      toast.info('Invitation declined.')
+      navigate('university')
+    } catch (cause) {
+      toast.error('Could not decline that', readableApiError(cause))
+    } finally {
+      setBusy(false)
+    }
+  }
 
-      /*
-       * The API decides what accepting meant and says so.
-       *
-       * This used to announce "You have joined" and drop the reader on My
-       * University — which was wrong whenever documents were outstanding, and
-       * left them looking for something nobody had told them to find. The
-       * message comes back from the same call that settled the enrolment, and
-       * the signing run takes it from there.
-       */
-      const result = await acceptInvitation(intake.coachUid)
-      toast.success(String(result.message ?? 'Accepted.'))
+  /**
+   * Open the way in.
+   *
+   * With a form, that is the form. Without one, the program's documents — and
+   * the API has to be told to open them, because an invitation nobody has
+   * acted on does not yet permit reading them.
+   */
+  async function begin() {
+    if (intake === null) return
+
+    if (intake.documentId !== '') {
+      navigate(`university/doc/${intake.documentId}`)
+      return
+    }
+
+    setBusy(true)
+    try {
+      // The message comes back from the call that settled the enrolment, so
+      // it says what actually happened rather than asserting "you joined".
+      const result = await startEnrolment(intake.coachUid)
+      toast.success(String(result.message ?? 'Opened.'))
       navigate('university/next')
     } catch (cause) {
-      toast.error('Could not answer that', readableApiError(cause))
+      toast.error('Could not open that', readableApiError(cause))
     } finally {
       setBusy(false)
     }
@@ -234,7 +247,9 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
     )
   }
 
-  // pending: either the coach's form, or a plain accept.
+  // pending: the form if there is one, otherwise straight to the documents.
+  // There is no "accept" — finishing what the program asks for is what
+  // joining means, and the enrolment completes on the last signature.
   return (
     <>
       <Head
@@ -262,54 +277,41 @@ export function JoinUniversity({ profile }: { profile: Profile | null }) {
       </section>
 
       <section className={`${CARD} ${SET_SECTION}`}>
-        {intake.documentId !== '' ? (
-          <>
-            <p className={UNI_INVITE_NOTE}>
-              Before you join, {nameOf(intake.coachName, intake.coachEmail)} would
-              like you to answer a few questions. Your answers go to them for
-              approval — you are not enrolled until they say so.
-            </p>
+        <p className={UNI_INVITE_NOTE}>
+          {intake.documentId !== ''
+            ? `${nameOf(intake.coachName, intake.coachEmail)} asks everyone a few questions first. Your answers go to them for review — you join once they have approved you and you have signed what ${where} asks for.`
+            : `${where} asks every member to sign a few documents. You join the moment the last one is signed.`}
+        </p>
 
-            <p style={{ marginTop: 14 }}>
-              <button
-                type="button"
-                className={`${PILL} ${PILL_ACCENT}`}
-                onClick={() => navigate(`university/doc/${intake.documentId}`)}
-              >
-                <CheckCircleIcon size={15} />
-                Answer the form
-              </button>
-            </p>
-          </>
-        ) : (
-          <>
-            <p className={UNI_INVITE_NOTE}>
-              Accepting lets them read your journal so they can review your trades
-              with you. It does not let them change anything, and you can end it
-              whenever you like.
-            </p>
+        <p style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={`${PILL} ${PILL_ACCENT}`}
+            onClick={begin}
+            disabled={busy}
+          >
+            {busy ? (
+              <SpinnerIcon size={14} className="animate-spin" />
+            ) : (
+              <CheckCircleIcon size={15} />
+            )}
+            {intake.documentId !== '' ? 'Answer the form' : 'Review the documents'}
+          </button>
 
-            <p style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className={`${PILL} ${PILL_ACCENT}`}
-                onClick={() => answer(true)}
-                disabled={busy}
-              >
-                {busy && <SpinnerIcon size={14} className="animate-spin" />}
-                Accept and join
-              </button>
-              <button
-                type="button"
-                className={`${PILL} ${PILL_IDLE}`}
-                onClick={() => answer(false)}
-                disabled={busy}
-              >
-                Decline
-              </button>
-            </p>
-          </>
-        )}
+          {/*
+            Declining stays. Removing the accept step does not mean somebody
+            has to join — it means joining is the result of finishing, rather
+            than of a button that skipped it.
+          */}
+          <button
+            type="button"
+            className={`${PILL} ${PILL_IDLE}`}
+            onClick={() => answer(false)}
+            disabled={busy}
+          >
+            Decline
+          </button>
+        </p>
       </section>
     </>
   )

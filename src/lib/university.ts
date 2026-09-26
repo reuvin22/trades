@@ -247,16 +247,22 @@ export function inviteStudent(email: string, note: string): Promise<unknown> {
 }
 
 /**
- * `uid` names the coach who invited you — the API derives the row from that
- * plus your own session, so it can only ever answer your own invitation.
+ * Open the documents for a program with no form in front of them.
  *
- * Answers with a message, because what accepting *did* depends on the
- * program: with documents outstanding it is "approved, now sign these", and
- * without any it is "you have joined". The caller shows what came back rather
- * than guessing which.
+ * Not "accept" any more. Joining is no longer a button — it is what finishing
+ * the program's form and documents amounts to — so this only opens the way
+ * in. With documents outstanding it leaves the enrolment in `documents`, and
+ * the last signature is what completes it.
+ *
+ * Answers with a message, because what it did depends on the program: with
+ * documents it is "approved, now sign these", with none it is "you have
+ * joined". The caller shows what came back rather than guessing.
+ *
+ * `uid` names the coach who invited you — the API derives the row from that
+ * plus your own session, so it can only ever act on your own invitation.
  */
-export function acceptInvitation(coachUid: string): Promise<{ message?: string }> {
-  return apiFetch(`/api/v1/university/invitations/${coachUid}/accept`, {
+export function startEnrolment(coachUid: string): Promise<{ message?: string }> {
+  return apiFetch(`/api/v1/university/invitations/${coachUid}/start`, {
     method: 'POST',
   })
 }
