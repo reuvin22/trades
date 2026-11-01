@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { readCache, writeCache } from './cache'
 import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
-import { SESSIONS } from '../data/tradeForm'
+import { SESSIONS, netProfit } from '../data/tradeForm'
 import type { TradeEntry, TradingSession } from '../data/tradeForm'
 
 /**
@@ -149,8 +149,8 @@ function toNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-/** The form entry as the API expects it. No derived figures: those are the
- *  server's to decide, and it refuses a body that tries to set them. */
+/** The form entry as the API expects it. Risk/reward is the server's to
+ *  decide; P&L is the trader's, and a blank one is worked out from prices. */
 function toWire(trade: TradeEntry): Record<string, unknown> {
   return {
     ticker: trade.ticker.trim(),
@@ -167,6 +167,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     stop_loss: toNumber(trade.stopLoss),
     take_profit: toNumber(trade.takeProfit),
     screenshots: trade.screenshots,
+    net_pl: toNumber(trade.netPl),
     complied_entry: trade.compliedEntry,
     complied_exit: trade.compliedExit,
     complied_management: trade.compliedManagement,
@@ -243,7 +244,7 @@ export function deleteTrade(id: string): Promise<null> {
 export function toEntry(trade: StoredTrade): TradeEntry {
   const text = (value: number | null) => (value === null ? '' : String(value))
 
-  return {
+  const entry: TradeEntry = {
     ticker: trade.ticker,
     direction: trade.direction,
     size: text(trade.size),
@@ -267,6 +268,16 @@ export function toEntry(trade: StoredTrade): TradeEntry {
     mistakes: trade.mistakes,
     notes: trade.notes,
   }
+
+  // A P&L that is just the price arithmetic was the server's, not the
+  // trader's, so it reopens blank: editing the exit then recomputes it
+  // instead of leaving the old figure stuck on the trade.
+  const derived = netProfit(entry)
+  if (derived !== null && trade.netPl !== null && Math.abs(derived - trade.netPl) < 0.005) {
+    entry.netPl = ''
+  }
+
+  return entry
 }
 
 export type TradesState = {

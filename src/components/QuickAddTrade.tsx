@@ -12,6 +12,7 @@ import {
   SETUPS,
   inconsistencies,
   missingRequired,
+  netProfit,
   type Compliance,
   type Direction,
   type SizeUnit,
@@ -106,6 +107,23 @@ function sessionHint(sessions: TradingSession[]): string {
 
   const names = sessions.map((entry) => SESSION_LABELS[entry]).join(' and ')
   return `Held across ${names} — this trade counts towards both.`
+}
+
+/**
+ * What to say under the P&L box.
+ *
+ * Blank is a real choice: the server fills it from the prices. But that is
+ * only right where a point is worth one unit, so the hint shows the figure it
+ * would use — a futures or forex trader sees at once that it is not theirs.
+ */
+function plHint(trade: TradeEntry): string {
+  if (trade.netPl.trim() !== '') return 'Your figure. This is what the calendar and statistics count.'
+
+  const derived = netProfit(trade)
+  if (derived === null) return 'After fees, as your broker booked it. Blank works it out from entry, exit and size.'
+
+  const sign = derived > 0 ? '+' : ''
+  return `Blank uses the price move: ${sign}${derived.toFixed(2)}. Enter your broker's figure if it differs.`
 }
 
 const COMPLIANCE_ROWS: { key: keyof TradeEntry; label: string }[] = [
@@ -464,6 +482,18 @@ export function QuickAddTrade({
                   value={trade.exitAt}
                   onChange={(event) => update('exitAt', event.target.value)}
                 />
+              </label>
+
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Net P&amp;L</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={trade.netPl}
+                  onChange={(event) => update('netPl', event.target.value)}
+                  placeholder={netProfit(trade)?.toFixed(2) ?? '-125.50'}
+                />
+                <span className={FIELD_HINT}>{plHint(trade)}</span>
               </label>
             </div>
           </fieldset>
