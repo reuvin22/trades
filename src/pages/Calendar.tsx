@@ -375,7 +375,10 @@ export function Calendar({ trades, profile }: CalendarProps) {
 
                     {cell.count > 0 && (
                       <>
-                        <span data-pl className={CAL_PL}>{money(cell.netPl)}</span>
+                        <span data-pl className={CAL_PL}>
+                          {/* Only open trades: no result yet, which is not the same as $0. */}
+                          {cell.trades.some((trade) => trade.netPl !== null) ? money(cell.netPl) : 'Open'}
+                        </span>
                         <span className={CAL_COUNT}>
                           {cell.count} {cell.count === 1 ? 'Trade' : 'Trades'}
                         </span>
@@ -386,7 +389,7 @@ export function Calendar({ trades, profile }: CalendarProps) {
               })}
 
               <div className={CAL_WEEK}>
-                <span className={`${CAL_WEEK_PL} ${total.netPl >= 0 ? POS : NEG}`}>
+                <span className={`${CAL_WEEK_PL} ${total.count === 0 ? 'text-fg-muted' : total.netPl >= 0 ? POS : NEG}`}>
                   {total.count === 0 ? '$0' : money(total.netPl)}
                 </span>
                 <span className={CAL_COUNT}>

@@ -1,79 +1,153 @@
-import type { CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { dayKey } from '../lib/stats'
-import { CARD, CARD_HOVER } from './ui'
+import { ChevronLeftIcon, ChevronRightIcon } from './Icons'
+import { CARD, CARD_HOVER, NEG, POS } from './ui'
 
-const WEEKS = 16
+/** Monday first, the same week the Calendar page uses, so a week's total here
+ *  is the same figure as the one beside that week there. */
+const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+const MONTH = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' })
 
-/** Fixed heat colours: these are data values, not theme surfaces, so they hold
- *  the same reading in either theme. */
-const HEAT = [
-  'bg-[#f0484c]',
-  'bg-[#bb2f33]',
-  'bg-[#7c2226]',
-  'bg-tint-2',
-  'bg-[#1f7a45]',
-  'bg-[#2fae5c]',
-  'bg-[#45d97a]',
-]
-
-/** Buckets a day's P&L against the largest absolute day in the window. */
-function heatClass(result: number | null, scale: number) {
-  if (result === null || result === 0) return HEAT[3]
-
-  const share = scale === 0 ? 0 : result / scale
-  if (share > 0.5) return HEAT[6]
-  if (share > 0.2) return HEAT[5]
-  if (share > 0) return HEAT[4]
-  if (share > -0.2) return HEAT[2]
-  if (share > -0.5) return HEAT[1]
-  return HEAT[0]
+/** Monday-based weekday index: Monday is 0, Sunday is 6. */
+function weekdayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7
 }
 
+/** Small cells, so amounts are shortened: $1.2K rather than $1,234.56. */
+function compact(value: number): string {
+  const abs = Math.abs(value)
+  const body =
+    abs >= 1000
+      ? `${(abs / 1000).toFixed(abs >= 10_000 ? 0 : 1)}K`
+      : abs >= 100
+        ? abs.toFixed(0)
+        : abs.toFixed(abs % 1 === 0 ? 0 : 2)
+  return `${value < 0 ? '-' : ''}$${body}`
+}
+
+type Cell = { key: string; date: Date; inMonth: boolean; value: number | null }
+
+/**
+ * The month at a glance: each day's net P&L, and each week's total beside it.
+ *
+ * `dailyPl` comes from the closed trades the dashboard is showing, so a day
+ * with only open trades is blank here, and the range picker above applies.
+ */
 export function PerformanceCalendar({ dailyPl }: { dailyPl: Map<string, number> }) {
-  // Start on the Sunday that opens the window so weekday rows stay aligned.
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  start.setDate(start.getDate() - (WEEKS * 7 - 1))
-  start.setDate(start.getDate() - start.getDay())
+  const [anchor, setAnchor] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+  })
 
-  const cells: { key: string; value: number | null }[] = []
-  for (let index = 0; index < WEEKS * 7; index++) {
-    const day = new Date(start)
-    day.setDate(day.getDate() + index)
-    const key = dayKey(day)
-    cells.push({ key, value: dailyPl.get(key) ?? null })
-  }
+  const weeks = useMemo(() => {
+    const start = new Date(anchor)
+    start.setDate(1 - weekdayIndex(anchor))
+    const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)
+    // Only as many rows as the month needs: five usually, four or six rarely.
+    const count = Math.ceil((weekdayIndex(anchor) + last.getDate()) / 7)
 
-  const scale = Math.max(1, ...cells.map((cell) => Math.abs(cell.value ?? 0)))
+    return Array.from({ length: count }, (_, week) =>
+      Array.from({ length: 7 }, (_, day): Cell => {
+        const date = new Date(start)
+        date.setDate(start.getDate() + week * 7 + day)
+        const key = dayKey(date)
+        return { key, date, inMonth: date.getMonth() === anchor.getMonth(), value: dailyPl.get(key) ?? null }
+      }),
+    )
+  }, [anchor, dailyPl])
+
+  const monthTotal = weeks
+    .flat()
+    .filter((cell) => cell.inMonth)
+    .reduce((sum, cell) => sum + (cell.value ?? 0), 0)
+  const today = dayKey(new Date())
+
+  const shift = (step: number) =>
+    setAnchor((current) => new Date(current.getFullYear(), current.getMonth() + step, 1))
 
   return (
-    <article className={`${CARD} ${CARD_HOVER} px-20 pt-18 pb-16`}>
-      <p className="text-[10.5px] font-medium tracking-[0.13em] text-fg-dim uppercase">
-        Performance Calendar{' '}
-        <span className="ml-6 tracking-[0.04em] text-fg-muted normal-case">
-          Last {WEEKS} Weeks
+    <article className={`${CARD} ${CARD_HOVER} flex flex-col px-16 pt-14 pb-14`}>
+      <div className="flex items-center justify-between gap-8">
+        <p className="text-[10.5px] font-medium tracking-[0.13em] text-fg-dim uppercase">Performance Calendar</p>
+        <span className={`text-[12px] font-semibold tabular-nums ${monthTotal > 0 ? POS : monthTotal < 0 ? NEG : 'text-fg-muted'}`}>
+          {compact(monthTotal)}
         </span>
-      </p>
-
-      <div
-        className="mt-14 mb-12 grid grid-flow-col grid-rows-7 auto-cols-fr gap-3"
-        role="img"
-        aria-label={`Daily profit and loss over the last ${WEEKS} weeks`}
-      >
-        {cells.map((cell, index) => (
-          <span
-            key={cell.key}
-            /* Each cell pops in 5ms after the one before, off its own index. */
-            className={`aspect-square animate-pop rounded-[2px] [animation-delay:calc(var(--i)*5ms)] ${heatClass(cell.value, scale)}`}
-            title={cell.value === null ? cell.key : `${cell.key}: ${cell.value.toFixed(2)}`}
-            style={{ '--i': index } as CSSProperties}
-          />
-        ))}
       </div>
 
-      <div className="flex justify-between text-[9.5px] tracking-[0.13em] text-fg-muted uppercase">
-        <span>Loss</span>
-        <span>Profit</span>
+      <div className="mt-8 flex items-center justify-between">
+        <button
+          type="button"
+          className="grid size-22 place-items-center rounded-sm text-fg-muted hover:bg-tint-2 hover:text-fg-strong"
+          onClick={() => shift(-1)}
+          aria-label="Previous month"
+        >
+          <ChevronLeftIcon size={13} />
+        </button>
+        <span className="text-[12px] font-medium text-fg-strong">{MONTH.format(anchor)}</span>
+        <button
+          type="button"
+          className="grid size-22 place-items-center rounded-sm text-fg-muted hover:bg-tint-2 hover:text-fg-strong"
+          onClick={() => shift(1)}
+          aria-label="Next month"
+        >
+          <ChevronRightIcon size={13} />
+        </button>
+      </div>
+
+      <div className="mt-6 grid grid-cols-[repeat(7,minmax(0,1fr))_minmax(0,1.15fr)] gap-3 text-center">
+        {WEEKDAYS.map((day, index) => (
+          <span key={index} className="py-2 text-[9px] font-semibold tracking-widest text-fg-muted">
+            {day}
+          </span>
+        ))}
+        <span className="py-2 text-[9px] font-semibold tracking-widest text-fg-muted">WEEK</span>
+
+        {weeks.map((week) => {
+          const total = week.reduce((sum, cell) => sum + (cell.value ?? 0), 0)
+          const traded = week.some((cell) => cell.value !== null)
+
+          return [
+            ...week.map((cell) => (
+              <div
+                key={cell.key}
+                title={cell.value === null ? cell.date.toDateString() : `${cell.date.toDateString()}: ${cell.value.toFixed(2)}`}
+                className={`flex min-h-34 flex-col items-center justify-center rounded-[4px] border px-1 ${
+                  cell.value === null
+                    ? 'border-transparent bg-tint-1'
+                    : cell.value >= 0
+                      ? 'border-[color-mix(in_srgb,var(--color-green)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-green)_14%,transparent)]'
+                      : 'border-[color-mix(in_srgb,var(--color-red)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_14%,transparent)]'
+                } ${cell.inMonth ? '' : 'opacity-35'}`}
+              >
+                <span
+                  className={`text-[9px] leading-none ${
+                    cell.key === today ? 'rounded-full bg-accent px-4 py-1 text-accent-ink' : 'text-fg-muted'
+                  }`}
+                >
+                  {cell.date.getDate()}
+                </span>
+                {cell.value !== null && (
+                  <span className={`mt-2 max-w-full truncate text-[9.5px] font-semibold tabular-nums leading-none ${cell.value >= 0 ? POS : NEG}`}>
+                    {compact(cell.value)}
+                  </span>
+                )}
+              </div>
+            )),
+            <div
+              key={`${week[0].key}-week`}
+              className="flex min-h-34 flex-col items-center justify-center rounded-[4px] bg-tint-2 px-1"
+            >
+              <span className="text-[8.5px] leading-none text-fg-muted">Total</span>
+              <span
+                className={`mt-2 max-w-full truncate text-[10px] font-semibold tabular-nums leading-none ${
+                  !traded ? 'text-fg-muted' : total >= 0 ? POS : NEG
+                }`}
+              >
+                {compact(total)}
+              </span>
+            </div>,
+          ]
+        })}
       </div>
     </article>
   )

@@ -805,7 +805,9 @@ export const CAL_COUNT = 'mb-auto text-[11px] text-fg-muted'
 
 export const CAL_WEEK =
   'flex flex-col items-end justify-center gap-3 rounded-sm bg-tint-1 px-12 py-9'
-export const CAL_WEEK_PL = 'text-[14px] font-semibold tabular-nums text-fg-muted'
+/* No colour of its own: the caller adds POS or NEG, and a grey here competed
+   with them on specificity and sometimes won. */
+export const CAL_WEEK_PL = 'text-[14px] font-semibold tabular-nums'
 
 /* ------------------------------------------------------------------ admin */
 
