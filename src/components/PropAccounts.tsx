@@ -10,6 +10,7 @@ import {
   type PropAccountKind,
   type PropAccountStatus,
 } from '../lib/profile'
+import { ConfirmDialog, type ConfirmRequest } from './ConfirmDialog'
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
 import {
   ACCOUNT_CARD,
@@ -91,6 +92,7 @@ function KindGroup({
   onAdd,
   onStatus,
   onRemove,
+  onClear,
 }: {
   kind: PropAccountKind
   label: string
@@ -102,6 +104,8 @@ function KindGroup({
   onAdd: (added: PropAccount[]) => Promise<boolean>
   onStatus: (id: string, status: PropAccountStatus) => void
   onRemove: (id: string) => void
+  /** Removes the rows on the page shown, or the whole group, after confirming. */
+  onClear: (doomed: PropAccount[], scope: 'page' | 'all') => void
 }) {
   const [draft, setDraft] = useState<Draft>(BLANK)
   const [gap, setGap] = useState('')
@@ -183,11 +187,34 @@ function KindGroup({
         </ul>
       )}
 
-      {pages > 1 && (
-        <nav className="flex items-center justify-between gap-10" aria-label={`${label} pages`}>
-          <span className="text-[11.5px] tabular-nums text-fg-muted">
-            {current * PAGE_SIZE + 1}–{Math.min((current + 1) * PAGE_SIZE, rows.length)} of {rows.length}
-          </span>
+      {rows.length > 0 && (
+        <nav className="flex flex-wrap items-center justify-between gap-10" aria-label={`${label} pages`}>
+          <div className="flex items-center gap-10">
+            <span className="text-[11.5px] tabular-nums text-fg-muted">
+              {current * PAGE_SIZE + 1}–{Math.min((current + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+            </span>
+            <button
+              type="button"
+              disabled={busy}
+              className="inline-flex items-center gap-5 rounded-sm px-8 py-4 text-[11.5px] font-medium text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
+              onClick={() => onClear(visible, 'page')}
+            >
+              <TrashIcon size={13} />
+              Clear page
+            </button>
+            {pages > 1 && (
+              <button
+                type="button"
+                disabled={busy}
+                className="inline-flex items-center gap-5 rounded-sm px-8 py-4 text-[11.5px] font-medium text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
+                onClick={() => onClear(rows, 'all')}
+              >
+                <TrashIcon size={13} />
+                Clear all
+              </button>
+            )}
+          </div>
+          {pages > 1 && (
           <div className="flex items-center gap-8">
             <button
               type="button"
@@ -211,6 +238,7 @@ function KindGroup({
               <ChevronRightIcon size={14} />
             </button>
           </div>
+          )}
         </nav>
       )}
 
@@ -294,6 +322,7 @@ export function PropAccounts({ profile, onSaved }: Props) {
   const [rows, setRows] = useState<PropAccount[]>([])
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
 
   if (profile && seededFor !== profile.uid) {
     setSeededFor(profile.uid)
@@ -349,9 +378,29 @@ export function PropAccounts({ profile, onSaved }: Props) {
               )
             }
             onRemove={(id) => void commit(rows.filter((row) => row.id !== id), 'Account removed')}
+            onClear={(doomed, scope) => {
+              const ids = new Set(doomed.map((row) => row.id))
+              const name = group.label.toLowerCase()
+              const count = `${doomed.length} ${doomed.length === 1 ? 'account' : 'accounts'}`
+              setConfirming({
+                title: scope === 'all' ? `Clear all ${name}?` : 'Clear this page?',
+                body:
+                  scope === 'all'
+                    ? `All ${count} in ${name} will be removed.`
+                    : `The ${count} shown on this page of ${name} will be removed.`,
+                consequence: 'They drop out of your dashboard totals, and this cannot be undone.',
+                action: scope === 'all' ? 'Clear all' : 'Clear page',
+                onConfirm: async () => {
+                  const saved = await commit(rows.filter((row) => !ids.has(row.id)), `${count} removed`)
+                  if (!saved) throw new Error('Nothing was removed. Try again.')
+                },
+              })
+            }}
           />
         ))}
       </div>
+
+      <ConfirmDialog request={confirming} onClose={() => setConfirming(null)} />
 
       {busy && (
         <p className={`${FIELD_HINT} mt-12 inline-flex items-center gap-6`}>
