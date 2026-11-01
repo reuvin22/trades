@@ -17,6 +17,8 @@ export type TradeEntry = {
   rationale: string
   stopLoss: string
   takeProfit: string
+  /** Reward per unit of risk: "2" is 1 : 2. Blank is worked out from stop and target. */
+  riskReward: string
   screenshots: string[]
 
   netPl: string
@@ -125,6 +127,7 @@ export const EMPTY_TRADE: TradeEntry = {
   rationale: '',
   stopLoss: '',
   takeProfit: '',
+  riskReward: '',
   screenshots: [],
   netPl: '',
   compliedEntry: '',

@@ -13,6 +13,7 @@ import {
   inconsistencies,
   missingRequired,
   netProfit,
+  riskReward,
   type Compliance,
   type Direction,
   type SizeUnit,
@@ -124,6 +125,16 @@ function plHint(trade: TradeEntry): string {
 
   const sign = derived > 0 ? '+' : ''
   return `Blank uses the price move: ${sign}${derived.toFixed(2)}. Enter your broker's figure if it differs.`
+}
+
+/** What to say under the ratio box. Same idea as plHint: blank is worked out. */
+function rrHint(trade: TradeEntry): string {
+  if (trade.riskReward.trim() !== '') return 'Your planned ratio. This is what the journal records.'
+
+  const derived = riskReward(trade)
+  if (derived === null) return 'Reward per unit of risk. Blank works it out from entry, stop-loss and take-profit.'
+
+  return `Blank uses your stop and target: 1 : ${derived.toFixed(2)}.`
 }
 
 const COMPLIANCE_ROWS: { key: keyof TradeEntry; label: string }[] = [
@@ -513,6 +524,24 @@ export function QuickAddTrade({
                   options={setups.length > 0 ? setups : SETUPS}
                   placeholder="Pick one or name your own"
                 />
+              </label>
+
+              <label className={`${FIELD} col-span-2`}>
+                <span className={FIELD_LABEL}>Risk : Reward ratio</span>
+                <span className="flex items-center gap-8">
+                  <span className="shrink-0 text-[13px] font-medium tabular-nums text-fg-dim">1 :</span>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    max="100"
+                    value={trade.riskReward}
+                    onChange={(event) => update('riskReward', event.target.value)}
+                    placeholder={riskReward(trade)?.toFixed(2) ?? '2'}
+                    aria-label="Reward per unit of risk"
+                  />
+                </span>
+                <span className={FIELD_HINT}>{rrHint(trade)}</span>
               </label>
 
               <div className={`${FIELD} col-span-full`}>

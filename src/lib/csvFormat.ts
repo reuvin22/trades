@@ -587,6 +587,8 @@ export function formatCsv(text: string, override?: Mapping): FormatResult {
       // size, so a broker's own figure — which quietly folds in commission and
       // swap — never becomes the number the statistics are built on.
       netPl: '',
+      // Worked out by the server from the stop and target above.
+      riskReward: '',
       // The session follows from the entry time, and the server works it out.
       sessions: [],
     })

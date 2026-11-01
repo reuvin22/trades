@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { readCache, writeCache } from './cache'
 import { apiFetch, date, fromIso, num, readableApiError, toIso } from './api'
-import { SESSIONS, netProfit } from '../data/tradeForm'
+import { SESSIONS, netProfit, riskReward } from '../data/tradeForm'
 import type { TradeEntry, TradingSession } from '../data/tradeForm'
 
 /**
@@ -149,8 +149,8 @@ function toNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-/** The form entry as the API expects it. Risk/reward is the server's to
- *  decide; P&L is the trader's, and a blank one is worked out from prices. */
+/** The form entry as the API expects it. P&L and risk/reward are the
+ *  trader's; a blank one is worked out from the prices on the server. */
 function toWire(trade: TradeEntry): Record<string, unknown> {
   return {
     ticker: trade.ticker.trim(),
@@ -168,6 +168,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
     take_profit: toNumber(trade.takeProfit),
     screenshots: trade.screenshots,
     net_pl: toNumber(trade.netPl),
+    risk_reward: toNumber(trade.riskReward),
     complied_entry: trade.compliedEntry,
     complied_exit: trade.compliedExit,
     complied_management: trade.compliedManagement,
@@ -258,6 +259,7 @@ export function toEntry(trade: StoredTrade): TradeEntry {
     rationale: trade.rationale,
     stopLoss: text(trade.stopLoss),
     takeProfit: text(trade.takeProfit),
+    riskReward: text(trade.riskReward),
     screenshots: trade.screenshots,
     netPl: text(trade.netPl),
     compliedEntry: trade.compliedEntry as TradeEntry['compliedEntry'],
@@ -269,13 +271,15 @@ export function toEntry(trade: StoredTrade): TradeEntry {
     notes: trade.notes,
   }
 
-  // A P&L that is just the price arithmetic was the server's, not the
-  // trader's, so it reopens blank: editing the exit then recomputes it
+  // A figure that is just the price arithmetic was the server's, not the
+  // trader's, so it reopens blank: editing the prices then recomputes it
   // instead of leaving the old figure stuck on the trade.
-  const derived = netProfit(entry)
-  if (derived !== null && trade.netPl !== null && Math.abs(derived - trade.netPl) < 0.005) {
-    entry.netPl = ''
-  }
+  const same = (derived: number | null, stored: number | null) =>
+    derived !== null && stored !== null && Math.abs(derived - stored) < 0.005
+  if (same(netProfit(entry), trade.netPl)) entry.netPl = ''
+  // The server rounds the ratio to two places, so compare it rounded too.
+  const planned = riskReward(entry)
+  if (same(planned === null ? null : Math.round(planned * 100) / 100, trade.riskReward)) entry.riskReward = ''
 
   return entry
 }

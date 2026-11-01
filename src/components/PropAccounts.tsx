@@ -59,6 +59,18 @@ const PAGE_SIZE = 5
 /** Most accounts one Add creates. Firms cap simultaneous accounts well below this. */
 const MAX_QUANTITY = 50
 
+/**
+ * One group's page of rows. Clamped on read rather than reset in an effect: a
+ * delete that empties the last page lands on the one before, not on a blank.
+ */
+function pageOf(rows: PropAccount[], page: number) {
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const current = Math.min(page, pages - 1)
+  return { pages, current, visible: rows.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE) }
+}
+
+const CLEAR_BUTTON = `${PILL} ${PILL_IDLE} px-11! py-6! text-[12px]! hover:text-red!`
+
 function newId(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 16)
 }
@@ -92,7 +104,8 @@ function KindGroup({
   onAdd,
   onStatus,
   onRemove,
-  onClear,
+  page,
+  onPage,
 }: {
   kind: PropAccountKind
   label: string
@@ -104,21 +117,17 @@ function KindGroup({
   onAdd: (added: PropAccount[]) => Promise<boolean>
   onStatus: (id: string, status: PropAccountStatus) => void
   onRemove: (id: string) => void
-  /** Removes the rows on the page shown, or the whole group, after confirming. */
-  onClear: (doomed: PropAccount[], scope: 'page' | 'all') => void
+  /** Held by the section, whose Clear page needs to know what each group shows. */
+  page: number
+  onPage: (page: number) => void
 }) {
   const [draft, setDraft] = useState<Draft>(BLANK)
   const [gap, setGap] = useState('')
-  const [page, setPage] = useState(0)
   const listId = useId()
   const priced = kind !== 'funded'
   const spent = rows.reduce((sum, row) => sum + (row.price ?? 0), 0)
-
-  // Clamped on read rather than reset in an effect: a delete that empties the
-  // last page should land on the one before it, not on a blank page.
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
-  const current = Math.min(page, pages - 1)
-  const visible = rows.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE)
+  const { pages, current, visible } = pageOf(rows, page)
+  const setPage = onPage
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -187,34 +196,11 @@ function KindGroup({
         </ul>
       )}
 
-      {rows.length > 0 && (
+      {pages > 1 && (
         <nav className="flex flex-wrap items-center justify-between gap-10" aria-label={`${label} pages`}>
-          <div className="flex items-center gap-10">
-            <span className="text-[11.5px] tabular-nums text-fg-muted">
-              {current * PAGE_SIZE + 1}–{Math.min((current + 1) * PAGE_SIZE, rows.length)} of {rows.length}
-            </span>
-            <button
-              type="button"
-              disabled={busy}
-              className="inline-flex items-center gap-5 rounded-sm px-8 py-4 text-[11.5px] font-medium text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
-              onClick={() => onClear(visible, 'page')}
-            >
-              <TrashIcon size={13} />
-              Clear page
-            </button>
-            {pages > 1 && (
-              <button
-                type="button"
-                disabled={busy}
-                className="inline-flex items-center gap-5 rounded-sm px-8 py-4 text-[11.5px] font-medium text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
-                onClick={() => onClear(rows, 'all')}
-              >
-                <TrashIcon size={13} />
-                Clear all
-              </button>
-            )}
-          </div>
-          {pages > 1 && (
+          <span className="text-[11.5px] tabular-nums text-fg-muted">
+            {current * PAGE_SIZE + 1}–{Math.min((current + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+          </span>
           <div className="flex items-center gap-8">
             <button
               type="button"
@@ -238,7 +224,6 @@ function KindGroup({
               <ChevronRightIcon size={14} />
             </button>
           </div>
-          )}
         </nav>
       )}
 
@@ -323,6 +308,36 @@ export function PropAccounts({ profile, onSaved }: Props) {
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
+  const [pages, setPages] = useState<Record<PropAccountKind, number>>({ eval: 0, reset: 0, funded: 0 })
+
+  const groups = PROP_ACCOUNT_KINDS.map((group) => {
+    const own = rows.filter((row) => row.kind === group.value)
+    return { ...group, rows: own, visible: pageOf(own, pages[group.value]).visible }
+  })
+
+  function clear(scope: 'page' | 'all') {
+    const doomed = scope === 'all' ? rows : groups.flatMap((group) => group.visible)
+    const ids = new Set(doomed.map((row) => row.id))
+    const count = `${doomed.length} ${doomed.length === 1 ? 'account' : 'accounts'}`
+    const where = groups
+      .filter((group) => (scope === 'all' ? group.rows : group.visible).length > 0)
+      .map((group) => group.label.toLowerCase())
+      .join(', ')
+
+    setConfirming({
+      title: scope === 'all' ? 'Clear all prop firm accounts?' : 'Clear the pages shown?',
+      body:
+        scope === 'all'
+          ? `Every account you have recorded — ${count} across ${where} — will be removed.`
+          : `The ${count} on the page each group is showing (${where}) will be removed.`,
+      consequence: 'They drop out of your dashboard totals, and this cannot be undone.',
+      action: scope === 'all' ? 'Clear all' : 'Clear page',
+      onConfirm: async () => {
+        const saved = await commit(rows.filter((row) => !ids.has(row.id)), `${count} removed`)
+        if (!saved) throw new Error('Nothing was removed. Try again.')
+      },
+    })
+  }
 
   if (profile && seededFor !== profile.uid) {
     setSeededFor(profile.uid)
@@ -350,19 +365,35 @@ export function PropAccounts({ profile, onSaved }: Props) {
 
   return (
     <section className={`${CARD} ${ACCOUNT_CARD}`}>
-      <h3 className={SECTION_TITLE}>Prop firm accounts</h3>
-      <p className={`${FIELD_HINT} -mt-10 mb-16`}>
-        Each entry saves straight away and is summed on your dashboard.
-      </p>
+      <div className="mb-16 flex flex-wrap items-start justify-between gap-12">
+        <div>
+          <h3 className={`${SECTION_TITLE} mb-6!`}>Prop firm accounts</h3>
+          <p className={FIELD_HINT}>Each entry saves straight away and is summed on your dashboard.</p>
+        </div>
+        {rows.length > 0 && (
+          <div className="flex items-center gap-8">
+            <button type="button" className={CLEAR_BUTTON} disabled={busy} onClick={() => clear('page')}>
+              <TrashIcon size={13} />
+              Clear page
+            </button>
+            <button type="button" className={CLEAR_BUTTON} disabled={busy} onClick={() => clear('all')}>
+              <TrashIcon size={13} />
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-14">
-        {PROP_ACCOUNT_KINDS.map((group) => (
+        {groups.map((group) => (
           <KindGroup
             key={group.value}
             kind={group.value}
             label={group.label}
             blurb={group.blurb}
-            rows={rows.filter((row) => row.kind === group.value)}
+            rows={group.rows}
+            page={pages[group.value]}
+            onPage={(page) => setPages((current) => ({ ...current, [group.value]: page }))}
             room={MAX_PROP_ACCOUNTS - rows.length}
             busy={busy || !profile}
             onAdd={(added) =>
@@ -378,24 +409,6 @@ export function PropAccounts({ profile, onSaved }: Props) {
               )
             }
             onRemove={(id) => void commit(rows.filter((row) => row.id !== id), 'Account removed')}
-            onClear={(doomed, scope) => {
-              const ids = new Set(doomed.map((row) => row.id))
-              const name = group.label.toLowerCase()
-              const count = `${doomed.length} ${doomed.length === 1 ? 'account' : 'accounts'}`
-              setConfirming({
-                title: scope === 'all' ? `Clear all ${name}?` : 'Clear this page?',
-                body:
-                  scope === 'all'
-                    ? `All ${count} in ${name} will be removed.`
-                    : `The ${count} shown on this page of ${name} will be removed.`,
-                consequence: 'They drop out of your dashboard totals, and this cannot be undone.',
-                action: scope === 'all' ? 'Clear all' : 'Clear page',
-                onConfirm: async () => {
-                  const saved = await commit(rows.filter((row) => !ids.has(row.id)), `${count} removed`)
-                  if (!saved) throw new Error('Nothing was removed. Try again.')
-                },
-              })
-            }}
           />
         ))}
       </div>
