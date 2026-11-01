@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from 'react'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import {
+  MAX_PROP_ACCOUNTS,
   PROP_ACCOUNT_KINDS,
   savePropAccounts,
   type Profile,
@@ -9,7 +10,7 @@ import {
   type PropAccountKind,
   type PropAccountStatus,
 } from '../lib/profile'
-import { PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
 import {
   ACCOUNT_CARD,
   CARD,
@@ -49,8 +50,13 @@ const SIZES = [10000, 25000, 50000, 100000, 150000, 200000, 300000]
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const SIZE = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 })
 
-type Draft = { firm: string; size: string; price: string; status: PropAccountStatus }
-const BLANK: Draft = { firm: '', size: '', price: '', status: 'active' }
+type Draft = { firm: string; size: string; price: string; quantity: string; status: PropAccountStatus }
+const BLANK: Draft = { firm: '', size: '', price: '', quantity: '1', status: 'active' }
+
+/** Rows per page in each group. */
+const PAGE_SIZE = 5
+/** Most accounts one Add creates. Firms cap simultaneous accounts well below this. */
+const MAX_QUANTITY = 50
 
 function newId(): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 16)
@@ -80,6 +86,7 @@ function KindGroup({
   label,
   blurb,
   rows,
+  room,
   busy,
   onAdd,
   onStatus,
@@ -89,36 +96,55 @@ function KindGroup({
   label: string
   blurb: string
   rows: PropAccount[]
+  /** How many more accounts the whole list can take. */
+  room: number
   busy: boolean
-  onAdd: (row: PropAccount) => Promise<boolean>
+  onAdd: (added: PropAccount[]) => Promise<boolean>
   onStatus: (id: string, status: PropAccountStatus) => void
   onRemove: (id: string) => void
 }) {
   const [draft, setDraft] = useState<Draft>(BLANK)
   const [gap, setGap] = useState('')
+  const [page, setPage] = useState(0)
   const listId = useId()
   const priced = kind !== 'funded'
   const spent = rows.reduce((sum, row) => sum + (row.price ?? 0), 0)
+
+  // Clamped on read rather than reset in an effect: a delete that empties the
+  // last page should land on the one before it, not on a blank page.
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const current = Math.min(page, pages - 1)
+  const visible = rows.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE)
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     const size = Number(draft.size)
     const price = Number(draft.price)
+    const quantity = Number(draft.quantity)
 
     if (draft.firm.trim() === '') return setGap('Name the prop firm.')
     if (draft.size.trim() === '' || !Number.isFinite(size) || size <= 0) return setGap('Enter the account size.')
     if (priced && (draft.price.trim() === '' || !Number.isFinite(price) || price < 0)) return setGap('Enter what it cost in USD.')
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) return setGap(`Quantity is a whole number from 1 to ${MAX_QUANTITY}.`)
+    if (quantity > room) return setGap(`Your list holds ${MAX_PROP_ACCOUNTS} accounts; there is room for ${room} more.`)
 
     setGap('')
-    const saved = await onAdd({
+    // One row per account, not one row with a count: accounts bought together
+    // rarely blow together, and each needs its own Active/Blown switch.
+    const added = Array.from({ length: quantity }, () => ({
       id: newId(),
       kind,
       firm: draft.firm.trim(),
       size,
       price: priced ? price : null,
       status: draft.status,
-    })
-    if (saved) setDraft(BLANK)
+    }))
+    const saved = await onAdd(added)
+    if (saved) {
+      setDraft(BLANK)
+      // Show where the new rows landed.
+      setPage(Math.ceil((rows.length + quantity) / PAGE_SIZE) - 1)
+    }
   }
 
   return (
@@ -135,7 +161,7 @@ function KindGroup({
 
       {rows.length > 0 && (
         <ul className="flex flex-col divide-y divide-line">
-          {rows.map((row) => (
+          {visible.map((row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-x-14 gap-y-8 py-9">
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg-strong">{row.firm}</span>
               <span className="w-64 text-[12.5px] tabular-nums text-fg-dim">{SIZE.format(row.size)}</span>
@@ -157,7 +183,38 @@ function KindGroup({
         </ul>
       )}
 
-      <form className="grid grid-cols-[2fr_1fr_1fr_auto_auto] items-end gap-10 max-[760px]:grid-cols-2" onSubmit={submit}>
+      {pages > 1 && (
+        <nav className="flex items-center justify-between gap-10" aria-label={`${label} pages`}>
+          <span className="text-[11.5px] tabular-nums text-fg-muted">
+            {current * PAGE_SIZE + 1}–{Math.min((current + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+          </span>
+          <div className="flex items-center gap-8">
+            <button
+              type="button"
+              className={`${PILL} ${PILL_IDLE} px-10! py-6!`}
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+              aria-label="Previous page"
+            >
+              <ChevronLeftIcon size={14} />
+            </button>
+            <span className="text-[12px] tabular-nums text-fg-dim">
+              Page {current + 1} of {pages}
+            </span>
+            <button
+              type="button"
+              className={`${PILL} ${PILL_IDLE} px-10! py-6!`}
+              disabled={current >= pages - 1}
+              onClick={() => setPage(current + 1)}
+              aria-label="Next page"
+            >
+              <ChevronRightIcon size={14} />
+            </button>
+          </div>
+        </nav>
+      )}
+
+      <form className="grid grid-cols-[2fr_1fr_1fr_0.7fr_auto_auto] items-end gap-10 max-[760px]:grid-cols-2" onSubmit={submit}>
         <label className={`${FIELD} max-[760px]:col-span-2`}>
           <span className={FIELD_LABEL}>Prop firm</span>
           <input
@@ -201,6 +258,17 @@ function KindGroup({
         ) : (
           <span aria-hidden className="max-[760px]:hidden" />
         )}
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>Quantity</span>
+          <input
+            type="number"
+            min="1"
+            max={MAX_QUANTITY}
+            step="1"
+            value={draft.quantity}
+            onChange={(event) => setDraft({ ...draft, quantity: event.target.value })}
+          />
+        </label>
         <div className={FIELD}>
           <span className={FIELD_LABEL}>Status</span>
           <StatusToggle value={draft.status} onChange={(status) => setDraft({ ...draft, status })} />
@@ -266,8 +334,14 @@ export function PropAccounts({ profile, onSaved }: Props) {
             label={group.label}
             blurb={group.blurb}
             rows={rows.filter((row) => row.kind === group.value)}
+            room={MAX_PROP_ACCOUNTS - rows.length}
             busy={busy || !profile}
-            onAdd={(row) => commit([...rows, row], `${row.firm} added`)}
+            onAdd={(added) =>
+              commit(
+                [...rows, ...added],
+                added.length === 1 ? `${added[0].firm} added` : `${added.length} × ${added[0].firm} added`,
+              )
+            }
             onStatus={(id, status) =>
               void commit(
                 rows.map((row) => (row.id === id ? { ...row, status } : row)),

@@ -73,6 +73,9 @@ export type PropAccount = {
   status: PropAccountStatus
 }
 
+/** Mirrors MAX_PROP_ACCOUNTS on the API, which refuses a longer list. */
+export const MAX_PROP_ACCOUNTS = 300
+
 export const PROP_ACCOUNT_KINDS: { value: PropAccountKind; label: string; blurb: string }[] = [
   { value: 'eval', label: 'Purchased evals', blurb: 'Challenges you bought outright.' },
   { value: 'reset', label: 'Reset evals', blurb: 'Resets bought to retry a challenge.' },
