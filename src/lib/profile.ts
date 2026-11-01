@@ -51,6 +51,8 @@ export type Profile = {
 
   /** Evaluations bought, resets bought, and funded accounts, edited on Profile. */
   propAccounts?: PropAccount[]
+  /** The firms they use, listed on Profile; the account form searches these. */
+  propFirms?: string[]
 
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
@@ -63,9 +65,24 @@ export type Profile = {
 export type PropAccountKind = 'eval' | 'reset' | 'funded'
 export type PropAccountStatus = 'active' | 'blown'
 
+export type PropMarket = 'futures' | 'cfd'
+
+/** The sizes firms sell in each market. The size picker offers only these. */
+export const PROP_SIZES: Record<PropMarket, number[]> = {
+  futures: [25000, 50000, 100000, 150000],
+  cfd: [5000, 10000, 25000, 50000, 100000, 200000],
+}
+
+export const PROP_MARKETS: { value: PropMarket; label: string }[] = [
+  { value: 'futures', label: 'Futures' },
+  { value: 'cfd', label: 'CFD' },
+]
+
 export type PropAccount = {
   id: string
   kind: PropAccountKind
+  /** Null on accounts recorded before the market was asked for. */
+  market: PropMarket | null
   firm: string
   size: number
   /** USD. Null on a funded account: the firm paid for it, not the trader. */
@@ -87,6 +104,7 @@ function toPropAccounts(wire: unknown): PropAccount[] {
   return wire.map((row: Record<string, unknown>) => ({
     id: String(row.id ?? ''),
     kind: row.kind as PropAccountKind,
+    market: row.market === 'futures' || row.market === 'cfd' ? row.market : null,
     firm: String(row.firm ?? ''),
     size: num(row.size) ?? 0,
     price: num(row.price),
@@ -131,6 +149,15 @@ export async function savePropAccounts(accounts: PropAccount[]): Promise<Profile
   const wire = await apiFetch<ProfileWire>('/api/v1/me', {
     method: 'PATCH',
     body: { prop_accounts: accounts },
+  })
+  return toProfile(wire)
+}
+
+/** The firms this trader uses, offered by name when recording an account. */
+export async function savePropFirms(firms: string[]): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: { prop_firms: firms },
   })
   return toProfile(wire)
 }
@@ -337,6 +364,7 @@ function toProfile(wire: ProfileWire): Profile {
     leakCadence: (wire.leak_cadence as LeakCadence) ?? 'daily',
     edgeWindow: (wire.edge_window as Period) ?? 'monthly',
     propAccounts: toPropAccounts(wire.prop_accounts),
+    propFirms: Array.isArray(wire.prop_firms) ? wire.prop_firms.map(String) : [],
     plan: String(wire.plan ?? 'free'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),

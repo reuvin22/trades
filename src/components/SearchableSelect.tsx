@@ -28,6 +28,8 @@ type SearchableSelectProps = {
   heading?: string
   /** Card classes for the shell, when it is drawn as one. */
   className?: string
+  /** Shown, muted, while nothing is chosen. */
+  placeholder?: string
 }
 
 /**
@@ -51,6 +53,7 @@ export function SearchableSelect({
   label,
   heading,
   className,
+  placeholder,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -134,7 +137,7 @@ export function SearchableSelect({
         {heading && <span className={FILTER_LABEL}>{heading}</span>}
 
         <span className={heading ? SELECT_VALUE : 'contents'}>
-          <span className="truncate">{value}</span>
+          <span className={`truncate ${value === '' ? 'text-fg-muted' : ''}`}>{value || placeholder}</span>
           <ChevronDownIcon
             className={`flex-none text-fg-muted transition-transform duration-200 ease-out ${
               open ? 'rotate-180' : ''

@@ -1,17 +1,23 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import {
   MAX_PROP_ACCOUNTS,
   PROP_ACCOUNT_KINDS,
+  PROP_MARKETS,
+  PROP_SIZES,
   savePropAccounts,
+  savePropFirms,
   type Profile,
   type PropAccount,
   type PropAccountKind,
   type PropAccountStatus,
+  type PropMarket,
 } from '../lib/profile'
 import { ConfirmDialog, type ConfirmRequest } from './ConfirmDialog'
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
+import { SearchableSelect } from './SearchableSelect'
+import { Select } from './Select'
 import {
   ACCOUNT_CARD,
   CARD,
@@ -32,27 +38,27 @@ type Props = {
   onSaved: () => void
 }
 
-/** Offered as suggestions; any firm can be typed. */
-const COMMON_FIRMS = [
-  'Topstep',
-  'Apex Trader Funding',
-  'FTMO',
-  'Tradeify',
-  'Take Profit Trader',
-  'MyFundedFutures',
-  'FundedNext',
-  'The5ers',
-  'E8 Markets',
-  'Lucid Trading',
-]
-
-const SIZES = [10000, 25000, 50000, 100000, 150000, 200000, 300000]
+/** Mirrors MAX_PROP_FIRMS on the API. */
+const MAX_FIRMS = 30
 
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const SIZE = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 })
 
-type Draft = { firm: string; size: string; price: string; quantity: string; status: PropAccountStatus }
-const BLANK: Draft = { firm: '', size: '', price: '', quantity: '1', status: 'active' }
+type Draft = {
+  firm: string
+  market: PropMarket
+  size: string
+  price: string
+  quantity: string
+  status: PropAccountStatus
+}
+const BLANK: Draft = { firm: '', market: 'futures', size: '', price: '', quantity: '1', status: 'active' }
+
+/**
+ * A searchable picker drawn as a form input. A plain wrapper rather than a
+ * FIELD, whose input styles would also reach the search box in the panel.
+ */
+const PICKER = 'rounded-sm border border-line px-13 py-10 focus-within:border-accent'
 
 /** Rows per page in each group. */
 const PAGE_SIZE = 5
@@ -94,11 +100,89 @@ function StatusToggle({ value, onChange, disabled }: { value: PropAccountStatus;
   )
 }
 
+/**
+ * The firms this trader uses. What the firm picker in each group searches, so
+ * a firm's name is spelled once here rather than retyped on every account.
+ */
+function FirmList({
+  firms,
+  busy,
+  onChange,
+}: {
+  firms: string[]
+  busy: boolean
+  onChange: (next: string[], done: string) => Promise<boolean>
+}) {
+  const [name, setName] = useState('')
+  const [gap, setGap] = useState('')
+
+  async function add(event: FormEvent) {
+    event.preventDefault()
+    const cleaned = name.trim()
+    if (cleaned === '') return setGap('Type the name of a prop firm.')
+    if (firms.some((firm) => firm.toLowerCase() === cleaned.toLowerCase())) return setGap(`${cleaned} is already on your list.`)
+    if (firms.length >= MAX_FIRMS) return setGap(`Your list holds ${MAX_FIRMS} firms.`)
+
+    setGap('')
+    if (await onChange([...firms, cleaned], `${cleaned} added to your prop firms`)) setName('')
+  }
+
+  return (
+    <div className="mb-14 flex flex-col gap-10 rounded-sm border border-line bg-tint-1 p-14">
+      <div>
+        <h4 className="text-[13.5px] font-semibold text-fg-strong">Your prop firms</h4>
+        <p className={FIELD_HINT}>The firms you trade with. Prop firm name below searches this list.</p>
+      </div>
+
+      {firms.length > 0 && (
+        <ul className="flex flex-wrap gap-8">
+          {firms.map((firm) => (
+            <li
+              key={firm}
+              className="inline-flex items-center gap-6 rounded-full border border-line bg-tint-2 py-4 pr-5 pl-12 text-[12.5px] font-medium text-fg"
+            >
+              {firm}
+              <button
+                type="button"
+                disabled={busy}
+                className="grid size-20 place-items-center rounded-full text-fg-muted hover:bg-tint-3 hover:text-red disabled:opacity-50"
+                aria-label={`Remove ${firm} from your prop firms`}
+                onClick={() => void onChange(firms.filter((entry) => entry !== firm), `${firm} removed from your prop firms`)}
+              >
+                <CloseIcon size={12} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form className="flex items-end gap-10" onSubmit={add}>
+        <label className={`${FIELD} flex-1`}>
+          <span className={FIELD_LABEL}>Add a prop firm</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Topstep, FTMO, Apex…"
+            maxLength={80}
+            autoComplete="off"
+          />
+        </label>
+        <button type="submit" disabled={busy} className={`${PILL} ${PILL_IDLE}`}>
+          <PlusIcon size={14} />
+          Add firm
+        </button>
+      </form>
+      {gap && <p className="text-[12px] text-red" role="alert">{gap}</p>}
+    </div>
+  )
+}
+
 function KindGroup({
   kind,
   label,
   blurb,
   rows,
+  firms,
   room,
   busy,
   onAdd,
@@ -111,6 +195,8 @@ function KindGroup({
   label: string
   blurb: string
   rows: PropAccount[]
+  /** The trader's own firms, which the firm picker searches. */
+  firms: string[]
   /** How many more accounts the whole list can take. */
   room: number
   busy: boolean
@@ -123,7 +209,6 @@ function KindGroup({
 }) {
   const [draft, setDraft] = useState<Draft>(BLANK)
   const [gap, setGap] = useState('')
-  const listId = useId()
   const priced = kind !== 'funded'
   const spent = rows.reduce((sum, row) => sum + (row.price ?? 0), 0)
   const { pages, current, visible } = pageOf(rows, page)
@@ -135,8 +220,8 @@ function KindGroup({
     const price = Number(draft.price)
     const quantity = Number(draft.quantity)
 
-    if (draft.firm.trim() === '') return setGap('Name the prop firm.')
-    if (draft.size.trim() === '' || !Number.isFinite(size) || size <= 0) return setGap('Enter the account size.')
+    if (draft.firm === '') return setGap('Pick the prop firm.')
+    if (!PROP_SIZES[draft.market].includes(size)) return setGap('Pick the account size.')
     if (priced && (draft.price.trim() === '' || !Number.isFinite(price) || price < 0)) return setGap('Enter what it cost in USD.')
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) return setGap(`Quantity is a whole number from 1 to ${MAX_QUANTITY}.`)
     if (quantity > room) return setGap(`Your list holds ${MAX_PROP_ACCOUNTS} accounts; there is room for ${room} more.`)
@@ -147,14 +232,16 @@ function KindGroup({
     const added = Array.from({ length: quantity }, () => ({
       id: newId(),
       kind,
-      firm: draft.firm.trim(),
+      market: draft.market,
+      firm: draft.firm,
       size,
       price: priced ? price : null,
       status: draft.status,
     }))
     const saved = await onAdd(added)
     if (saved) {
-      setDraft(BLANK)
+      // Firm and market stay: the next account is usually from the same firm.
+      setDraft({ ...BLANK, firm: draft.firm, market: draft.market })
       // Show where the new rows landed.
       setPage(Math.ceil((rows.length + quantity) / PAGE_SIZE) - 1)
     }
@@ -177,6 +264,9 @@ function KindGroup({
           {visible.map((row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-x-14 gap-y-8 py-9">
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg-strong">{row.firm}</span>
+              <span className="w-60 text-[11px] font-medium tracking-[0.06em] text-fg-muted uppercase">
+                {PROP_MARKETS.find((market) => market.value === row.market)?.label ?? '—'}
+              </span>
               <span className="w-64 text-[12.5px] tabular-nums text-fg-dim">{SIZE.format(row.size)}</span>
               {priced && <span className="w-80 text-[12.5px] tabular-nums text-fg-dim">{USD.format(row.price ?? 0)}</span>}
               <div className="w-150">
@@ -227,34 +317,57 @@ function KindGroup({
         </nav>
       )}
 
-      <form className="grid grid-cols-[2fr_1fr_1fr_0.7fr_auto_auto] items-end gap-10 max-[760px]:grid-cols-2" onSubmit={submit}>
-        <label className={`${FIELD} max-[760px]:col-span-2`}>
-          <span className={FIELD_LABEL}>Prop firm</span>
-          <input
-            list={`${listId}-firms`}
-            value={draft.firm}
-            onChange={(event) => setDraft({ ...draft, firm: event.target.value })}
-            placeholder="Topstep"
-            autoComplete="off"
-          />
-          <datalist id={`${listId}-firms`}>
-            {COMMON_FIRMS.map((firm) => <option key={firm} value={firm} />)}
-          </datalist>
-        </label>
+      <form className="grid grid-cols-4 items-end gap-10 max-[760px]:grid-cols-2" onSubmit={submit}>
+        <div className="col-span-2 flex min-w-0 flex-col gap-7">
+          <span className={FIELD_LABEL}>Prop firm name</span>
+          {firms.length > 0 ? (
+            <div className={PICKER}>
+              <SearchableSelect
+                value={draft.firm}
+                onChange={(firm) => setDraft({ ...draft, firm })}
+                options={firms}
+                label="Prop firms"
+                placeholder="Search your prop firms"
+              />
+            </div>
+          ) : (
+            <p className={`${PICKER} text-[13px] text-fg-muted`}>Add your prop firms above first.</p>
+          )}
+        </div>
+        <div className={FIELD}>
+          <span className={FIELD_LABEL}>Market</span>
+          <div className={TOGGLE_GROUP}>
+            {PROP_MARKETS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={draft.market === option.value}
+                className={`${TOGGLE} p-7! text-[12px]! aria-pressed:border-accent aria-pressed:text-fg-strong`}
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    market: option.value,
+                    // A 150K futures account has no CFD twin, so a size the
+                    // new market does not sell is cleared, not carried over.
+                    size: PROP_SIZES[option.value].includes(Number(draft.size)) ? draft.size : '',
+                  })
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <label className={FIELD}>
           <span className={FIELD_LABEL}>Eval size</span>
-          <input
-            type="number"
-            min="0"
-            step="any"
-            list={`${listId}-sizes`}
-            value={draft.size}
-            onChange={(event) => setDraft({ ...draft, size: event.target.value })}
-            placeholder="50000"
-          />
-          <datalist id={`${listId}-sizes`}>
-            {SIZES.map((size) => <option key={size} value={size} />)}
-          </datalist>
+          <Select value={draft.size} onChange={(event) => setDraft({ ...draft, size: event.target.value })}>
+            <option value="">Pick a size</option>
+            {PROP_SIZES[draft.market].map((size) => (
+              <option key={size} value={size}>
+                {SIZE.format(size)}
+              </option>
+            ))}
+          </Select>
         </label>
         {priced ? (
           <label className={FIELD}>
@@ -286,7 +399,7 @@ function KindGroup({
           <span className={FIELD_LABEL}>Status</span>
           <StatusToggle value={draft.status} onChange={(status) => setDraft({ ...draft, status })} />
         </div>
-        <button type="submit" disabled={busy} className={`${PILL} ${PILL_IDLE} justify-center`}>
+        <button type="submit" disabled={busy || firms.length === 0} className={`${PILL} ${PILL_IDLE} justify-center`}>
           <PlusIcon size={14} />
           Add
         </button>
@@ -309,6 +422,7 @@ export function PropAccounts({ profile, onSaved }: Props) {
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
   const [pages, setPages] = useState<Record<PropAccountKind, number>>({ eval: 0, reset: 0, funded: 0 })
+  const [firms, setFirms] = useState<string[]>([])
 
   const groups = PROP_ACCOUNT_KINDS.map((group) => {
     const own = rows.filter((row) => row.kind === group.value)
@@ -342,6 +456,26 @@ export function PropAccounts({ profile, onSaved }: Props) {
   if (profile && seededFor !== profile.uid) {
     setSeededFor(profile.uid)
     setRows(profile.propAccounts ?? [])
+    setFirms(profile.propFirms ?? [])
+  }
+
+  async function commitFirms(next: string[], done: string): Promise<boolean> {
+    const before = firms
+    setFirms(next)
+    setBusy(true)
+    try {
+      const saved = await savePropFirms(next)
+      setFirms(saved.propFirms ?? next)
+      onSaved()
+      toast.success(done)
+      return true
+    } catch (cause) {
+      setFirms(before)
+      toast.error('Could not save your prop firms', readableApiError(cause))
+      return false
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function commit(next: PropAccount[], done: string): Promise<boolean> {
@@ -384,6 +518,10 @@ export function PropAccounts({ profile, onSaved }: Props) {
         )}
       </div>
 
+      {/* Removing a firm leaves its recorded accounts alone: they are history,
+          and the list only decides what the picker offers next time. */}
+      <FirmList firms={firms} busy={busy || !profile} onChange={commitFirms} />
+
       <div className="flex flex-col gap-14">
         {groups.map((group) => (
           <KindGroup
@@ -392,6 +530,7 @@ export function PropAccounts({ profile, onSaved }: Props) {
             label={group.label}
             blurb={group.blurb}
             rows={group.rows}
+            firms={firms}
             page={pages[group.value]}
             onPage={(page) => setPages((current) => ({ ...current, [group.value]: page }))}
             room={MAX_PROP_ACCOUNTS - rows.length}
