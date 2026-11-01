@@ -1205,7 +1205,9 @@
 }
 
 /* ---------------------------------------------------------- journal view */
-.journal-page { max-width: 1120px; margin-inline: auto; }
+/* Full width, like every other page: the cap left a third of a wide screen
+   empty beside a trade panel that was cramming fifteen figures into it. */
+.journal-page { width: 100%; }
 .journal-page-head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .journal-page-head h1 { margin:0; color:var(--color-fg-strong); font-size:23px; font-weight:600; }
 .journal-page-head p { margin:3px 0 0; color:var(--color-fg-muted); font-size:12px; }
@@ -1213,7 +1215,7 @@
 .journal-page-head button { border:1px solid var(--color-line); border-radius:6px; background:var(--color-tint-1); padding:8px 12px; color:var(--color-fg-dim); font-size:11px; }
 .journal-page-head button:last-child { border-color:transparent; background:var(--color-accent); color:var(--color-accent-ink); font-weight:700; }
 .journal-error { border:1px solid color-mix(in srgb,var(--color-red) 35%,transparent); border-radius:7px; padding:9px 12px; color:var(--color-red); font-size:12px; }
-.journal-workspace { display:grid; grid-template-columns:300px minmax(0,1fr); min-height:530px; overflow:hidden; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }
+.journal-workspace { display:grid; grid-template-columns:clamp(280px,26%,380px) minmax(0,1fr); min-height:620px; overflow:hidden; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }
 .journal-log-panel { display:flex; min-width:0; flex-direction:column; border-right:1px solid var(--color-line); background:var(--color-panel-inset); padding:14px; }
 .journal-log-head,.journal-detail-head,.journal-linked > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .journal-log-head h3,.journal-notes h3,.journal-linked h3 { margin:0; color:var(--color-fg-strong); font-size:13px; font-weight:600; }
@@ -1256,6 +1258,20 @@
 .journal-reviews { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:10px; }.journal-review-card > div:first-child { display:flex; justify-content:space-between; color:var(--color-fg-dim); font-size:10px; }.journal-review-card strong { display:block; margin-top:12px; color:var(--color-fg); font-size:11px; }.journal-switch { display:block; width:21px; height:12px; border-radius:99px; background:var(--color-tint-3); }.journal-switch.on { background:var(--color-accent); }.journal-switch.on::after { content:''; display:block; width:8px; height:8px; margin:2px 2px 0 auto; border-radius:50%; background:#fff; }.journal-rule-line { height:4px; margin-top:9px; overflow:hidden; border-radius:99px; background:var(--color-tint-3); }.journal-rule-line span { display:block; height:100%; border-radius:inherit; background:var(--color-fg-muted); }.journal-rule-line span.good { background:var(--color-green); }.journal-rule-line span.bad { background:var(--color-red); }
 .journal-linked { margin-top:10px; }.journal-linked .flex { margin-top:9px; }.journal-empty { padding:18px; color:var(--color-fg-muted); font-size:12px; text-align:center; }
 @media (max-width:700px) { .journal-page-head { align-items:stretch; flex-direction:column; }.journal-page-head > div:last-child > * { flex:1 1 auto; }.journal-workspace { grid-template-columns:1fr; }.journal-log-panel { max-height:310px; border-right:0; border-bottom:1px solid var(--color-line); }.journal-detail-panel { padding:12px; }.journal-notes,.journal-reviews { grid-template-columns:1fr; }.journal-notes p { min-height:auto; }.journal-log-list { min-height:170px; }.journal-log-item { flex:none; } }
+/* Tablet: the workspace still splits, but the three grade cards are too
+   narrow side by side once the log column takes its share. */
+@media (max-width:1000px) and (min-width:701px) { .journal-reviews { grid-template-columns:1fr; } .journal-notes { grid-template-columns:1fr; } }
+/* Phone: the trade header stacks, its button spans the width, and the facts
+   pair up two to a row so a long label is not cut to an ellipsis. */
+@media (max-width:700px) {
+  .journal-workspace { min-height:0; }
+  .journal-detail-head { align-items:flex-start; flex-direction:column; }
+  .journal-detail-head > div:last-child { width:100%; justify-content:space-between; }
+  .journal-detail-head h2 { font-size:14px; }
+  .journal-facts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px 12px; }
+  .journal-facts dd { white-space:normal; overflow-wrap:anywhere; }
+  .journal-log-item { padding-right:70px; }
+}
 
 /* -------------------------------------------------------- analytics board */
 .analytics-board { display:grid; grid-template-columns:1.05fr 1fr; gap:10px; padding:10px; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { readableApiError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import {
@@ -116,7 +116,7 @@ function FirmList({
   const [name, setName] = useState('')
   const [gap, setGap] = useState('')
 
-  async function add(event: FormEvent) {
+  async function add(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const cleaned = name.trim()
     if (cleaned === '') return setGap('Type the name of a prop firm.')
@@ -156,8 +156,8 @@ function FirmList({
         </ul>
       )}
 
-      <form className="flex items-end gap-10" onSubmit={add}>
-        <label className={`${FIELD} flex-1`}>
+      <form className="flex flex-wrap items-end gap-10" onSubmit={add}>
+        <label className={`${FIELD} min-w-180 flex-1`}>
           <span className={FIELD_LABEL}>Add a prop firm</span>
           <input
             value={name}
@@ -214,7 +214,7 @@ function KindGroup({
   const { pages, current, visible } = pageOf(rows, page)
   const setPage = onPage
 
-  async function submit(event: FormEvent) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const size = Number(draft.size)
     const price = Number(draft.price)
@@ -248,7 +248,7 @@ function KindGroup({
   }
 
   return (
-    <div className="flex flex-col gap-12 rounded-sm border border-line bg-tint-1 p-14">
+    <div className="flex flex-col gap-12 rounded-sm border border-line bg-tint-1 p-14 max-[560px]:p-11">
       <div className="flex flex-wrap items-baseline justify-between gap-8">
         <div>
           <h4 className="text-[13.5px] font-semibold text-fg-strong">{label}</h4>
@@ -263,13 +263,13 @@ function KindGroup({
         <ul className="flex flex-col divide-y divide-line">
           {visible.map((row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-x-14 gap-y-8 py-9">
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg-strong">{row.firm}</span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-fg-strong max-[560px]:basis-full">{row.firm}</span>
               <span className="w-60 text-[11px] font-medium tracking-[0.06em] text-fg-muted uppercase">
                 {PROP_MARKETS.find((market) => market.value === row.market)?.label ?? '—'}
               </span>
               <span className="w-64 text-[12.5px] tabular-nums text-fg-dim">{SIZE.format(row.size)}</span>
               {priced && <span className="w-80 text-[12.5px] tabular-nums text-fg-dim">{USD.format(row.price ?? 0)}</span>}
-              <div className="w-150">
+              <div className="w-150 max-[560px]:ml-auto max-[560px]:w-132">
                 <StatusToggle value={row.status} disabled={busy} onChange={(next) => onStatus(row.id, next)} />
               </div>
               <button

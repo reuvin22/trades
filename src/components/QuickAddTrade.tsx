@@ -437,16 +437,16 @@ export function QuickAddTrade({
                     min="0"
                     value={trade.size}
                     onChange={(event) => update('size', event.target.value)}
-                    placeholder="150"
+                    placeholder="1.00"
                   />
                   <Select
                     value={trade.sizeUnit}
                     onChange={(event) => update('sizeUnit', event.target.value as SizeUnit)}
                     aria-label="Size unit"
                   >
-                    <option>Shares</option>
                     <option>Lots</option>
                     <option>Contracts</option>
+                    <option>Shares</option>
                   </Select>
                 </span>
               </label>

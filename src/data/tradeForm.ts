@@ -117,7 +117,8 @@ export const EMPTY_TRADE: TradeEntry = {
   ticker: '',
   direction: 'Long',
   size: '',
-  sizeUnit: 'Shares',
+  // Lots, because most traders logging here are on forex and CFD prop accounts.
+  sizeUnit: 'Lots',
   entryPrice: '',
   exitPrice: '',
   entryAt: '',

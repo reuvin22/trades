@@ -30,7 +30,7 @@ export const PAGE_HEAD =
   'flex items-start justify-between gap-20 px-2 pt-6 pb-2 max-shell:flex-col'
 export const PAGE_TITLE = 'text-[27px] font-semibold tracking-[-0.02em] text-fg-strong'
 export const PAGE_SUB = 'mt-3 text-[13px] text-fg-muted'
-export const PAGE_ACTIONS = 'flex flex-none gap-10'
+export const PAGE_ACTIONS = 'flex flex-none flex-wrap items-center gap-10 max-[560px]:w-full max-[560px]:flex-1'
 
 /*
  * Shape only. Colour belongs to exactly one of the two state classes below,
@@ -416,19 +416,19 @@ export const MODAL_SHELL = 'flex max-h-[inherit] flex-col'
 
 export const MODAL_FORM = MODAL_SHELL
 export const MODAL_HEAD =
-  'flex items-start justify-between gap-20 border-b border-line px-26 pt-22 pb-18'
-export const MODAL_TITLE = 'text-[21px] font-semibold tracking-[-0.02em] text-fg-strong'
+  'flex items-start justify-between gap-20 border-b border-line px-26 pt-22 pb-18 max-[560px]:gap-12 max-[560px]:px-16 max-[560px]:pt-16 max-[560px]:pb-14'
+export const MODAL_TITLE = 'text-[21px] font-semibold tracking-[-0.02em] text-fg-strong max-[560px]:text-[18px]'
 export const MODAL_SUB = 'mt-4 max-w-[52ch] text-[12.5px] text-fg-muted'
 /** No rotation: this used to be a PlusIcon turned 45 degrees into an X, which
  *  quietly renders as a plus for anything passing a real CloseIcon. */
 export const MODAL_CLOSE =
   'grid size-32 flex-none place-items-center rounded-full text-fg-muted transition-[color,background-color] duration-150 hover:bg-tint-2 hover:text-fg-strong'
-export const MODAL_BODY = 'flex flex-col gap-22 overflow-y-auto px-26 pt-22 pb-26'
+export const MODAL_BODY = 'flex flex-col gap-22 overflow-y-auto px-26 pt-22 pb-26 max-[560px]:gap-16 max-[560px]:px-16 max-[560px]:pt-16 max-[560px]:pb-20'
 export const MODAL_FOOT =
-  'flex flex-wrap items-center justify-between gap-16 border-t border-line bg-tint-1 px-26 py-15'
+  'flex flex-wrap items-center justify-between gap-16 border-t border-line bg-tint-1 px-26 py-15 max-[560px]:gap-10 max-[560px]:px-16'
 /** Turns red when it carries an alert, the way the old selector did. */
 export const MODAL_NOTE = 'text-[11.5px] text-fg-muted [&[role=alert]]:text-red'
-export const MODAL_BUTTONS = 'flex gap-10'
+export const MODAL_BUTTONS = 'flex gap-10 max-[560px]:w-full max-[560px]:[&>*]:flex-1 max-[560px]:[&>*]:justify-center'
 
 /* ---------------------------------------------------------- field groups */
 
@@ -440,7 +440,9 @@ export const GROUP_GLYPH =
 /** Four up, two on a tablet, one on a phone — two columns of inputs inside a
  *  360px screen leaves each about 150px, which is not an input. */
 export const FIELD_GRID =
-  'grid grid-cols-4 gap-14 max-[760px]:grid-cols-2 max-[480px]:grid-cols-1'
+  // The span reset matters: a col-span-2 field in a one-column grid makes the
+  // browser invent a second column, and the form runs off the side of a phone.
+  'grid grid-cols-4 gap-14 max-[760px]:grid-cols-2 max-[480px]:grid-cols-1 max-[480px]:[&>*]:col-span-1'
 
 /* ---------------------------------------------------------------- toggles */
 
@@ -533,7 +535,7 @@ export const ACCOUNT_DANGER =
 /* --------------------------------------------------------- profile forms */
 
 export const ACCOUNT_GRID = 'flex flex-col gap-16'
-export const ACCOUNT_CARD = 'px-24 pt-22 pb-24'
+export const ACCOUNT_CARD = 'px-24 pt-22 pb-24 max-[560px]:px-14 max-[560px]:pt-16 max-[560px]:pb-16'
 /* CARD is surface only — border, background, shadow — and every page that uses
    it supplies its own padding (see CHART_CARD, SUMMARY_CARD). A form section
    needs the same, or its labels and inputs sit flush against the card edge. */
@@ -897,7 +899,7 @@ export const CRUMBS =
 /* ------------------------------------------------------------ day detail */
 
 /** The trade form, which needs room for a four-column field grid. */
-export const MODAL_WIDE = 'w-[min(920px,calc(100vw-32px))]'
+export const MODAL_WIDE = 'w-[min(920px,calc(100vw-32px))] max-[560px]:w-[calc(100vw-16px)] max-[560px]:max-h-[94vh]'
 
 /** Narrower than the trade form: this one reads rather than collects. */
 export const MODAL_NARROW = 'w-[min(560px,calc(100vw-32px))]'
