@@ -49,11 +49,87 @@ export type Profile = {
   /** How far back "what is working" looks. */
   edgeWindow?: Period
 
+  /** Evaluations bought, resets bought, and funded accounts, edited on Profile. */
+  propAccounts?: PropAccount[]
+
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
 
   plan?: string
   planSince?: Date | null
+}
+
+/** A challenge bought, a reset bought to retry one, or an account the firm funded. */
+export type PropAccountKind = 'eval' | 'reset' | 'funded'
+export type PropAccountStatus = 'active' | 'blown'
+
+export type PropAccount = {
+  id: string
+  kind: PropAccountKind
+  firm: string
+  size: number
+  /** USD. Null on a funded account: the firm paid for it, not the trader. */
+  price: number | null
+  status: PropAccountStatus
+}
+
+export const PROP_ACCOUNT_KINDS: { value: PropAccountKind; label: string; blurb: string }[] = [
+  { value: 'eval', label: 'Purchased evals', blurb: 'Challenges you bought outright.' },
+  { value: 'reset', label: 'Reset evals', blurb: 'Resets bought to retry a challenge.' },
+  { value: 'funded', label: 'Funded accounts', blurb: 'Accounts a firm funded after a pass.' },
+]
+
+function toPropAccounts(wire: unknown): PropAccount[] {
+  if (!Array.isArray(wire)) return []
+  return wire.map((row: Record<string, unknown>) => ({
+    id: String(row.id ?? ''),
+    kind: row.kind as PropAccountKind,
+    firm: String(row.firm ?? ''),
+    size: num(row.size) ?? 0,
+    price: num(row.price),
+    status: row.status === 'blown' ? 'blown' : 'active',
+  }))
+}
+
+export type PropSummary = {
+  evals: { total: number; active: number; blown: number }
+  resets: { total: number; active: number; blown: number }
+  funded: { total: number; active: number; blown: number }
+  /** Evals plus resets, in USD. */
+  spent: number
+  /** Sum of the sizes of funded accounts still alive. */
+  fundedCapital: number
+}
+
+export function propSummary(accounts: PropAccount[]): PropSummary {
+  const tally = (kind: PropAccountKind) => {
+    const rows = accounts.filter((row) => row.kind === kind)
+    const active = rows.filter((row) => row.status === 'active').length
+    return { total: rows.length, active, blown: rows.length - active }
+  }
+
+  return {
+    evals: tally('eval'),
+    resets: tally('reset'),
+    funded: tally('funded'),
+    spent: accounts.reduce((sum, row) => sum + (row.kind === 'funded' ? 0 : (row.price ?? 0)), 0),
+    fundedCapital: accounts
+      .filter((row) => row.kind === 'funded' && row.status === 'active')
+      .reduce((sum, row) => sum + row.size, 0),
+  }
+}
+
+/**
+ * Replaces the whole list. Saved on each add, flip and delete rather than on
+ * the profile's Save button — each row is a finished fact the moment it is
+ * entered, the same reasoning the photo follows.
+ */
+export async function savePropAccounts(accounts: PropAccount[]): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: { prop_accounts: accounts },
+  })
+  return toProfile(wire)
 }
 
 /** The three kinds of account the app recognises. */
@@ -257,6 +333,7 @@ function toProfile(wire: ProfileWire): Profile {
     tradingRules: String(wire.trading_rules ?? ''),
     leakCadence: (wire.leak_cadence as LeakCadence) ?? 'daily',
     edgeWindow: (wire.edge_window as Period) ?? 'monthly',
+    propAccounts: toPropAccounts(wire.prop_accounts),
     plan: String(wire.plan ?? 'free'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),

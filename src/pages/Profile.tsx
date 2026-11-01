@@ -1,6 +1,7 @@
 import { readableApiError } from '../lib/api'
 import { useState, type FormEvent } from 'react'
 import { Select } from '../components/Select'
+import { PropAccounts } from '../components/PropAccounts'
 import { useToast } from '../lib/toast'
 import type { AuthUser } from '../lib/useAuth'
 import {
@@ -395,6 +396,8 @@ export function Profile({ user, profile, onSaved }: ProfileProps) {
           </button>
         </div>
       </form>
+
+      <PropAccounts profile={profile} onSaved={onSaved} />
 
       <section className={`${CARD} ${ACCOUNT_CARD}`}>
         <h3 className={SECTION_TITLE}>Account</h3>

@@ -17,6 +17,7 @@ import type { Profile } from '../lib/profile'
 import { hasFeature, usePlan } from '../lib/entitlements'
 import { usePreferences } from '../lib/preferences'
 import { ConsistencyCard } from '../components/ConsistencyCard'
+import { PropStrip } from '../components/PropStrip'
 
 type DashboardProps = { trades: StoredTrade[]; profile: Profile | null; onQuickAdd: () => void }
 const SPAN = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
@@ -58,6 +59,9 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
   // score is computed here from trades already loaded, so it costs nothing.
   const { showConsistency } = usePreferences()
 
+  // Recorded on Profile. Not range-filtered: an account has no trade date.
+  const props = profile?.propAccounts ?? []
+
   return <>
     <div className={`${GREETING_ROW} dashboard-heading`}>
       <div><h2 className={GREETING}>{greeting()}{name && `, ${name}`}</h2><p className={GREETING_SUB}>Your trading performance at a glance.</p></div>
@@ -71,6 +75,7 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
       <div className="terminal-equity"><EquityChart equity={stats.equity} opening={opening} spanLabel={label} /></div>
       <div className="terminal-metrics"><StatCards stats={stats} currency={money} opening={opening} /></div>
       <div className={discipline ? 'terminal-side' : 'terminal-side terminal-side-solo'}>{discipline && <DisciplineCard trades={shown} />}<PerformanceCalendar dailyPl={stats.dailyPl} /></div>
+      {props.length > 0 && <PropStrip accounts={props} />}
       {/* `trades`, not `shown`: "best ever" means the whole journal, so the
           range picker above deliberately does not reach this card. */}
       {showConsistency && <div className="terminal-consistency"><ConsistencyCard trades={trades} money={money} /></div>}

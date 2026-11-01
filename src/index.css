@@ -1063,7 +1063,7 @@
 .terminal-dashboard {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(280px, 3.2fr) minmax(270px, 4fr);
-  grid-template-areas: 'equity metrics side' 'consistency consistency consistency' 'trades trades trades' 'strategies strategies strategies';
+  grid-template-areas: 'equity metrics side' 'props props props' 'consistency consistency consistency' 'trades trades trades' 'strategies strategies strategies';
   gap: 12px;
   align-items: stretch;
 }
@@ -1082,6 +1082,11 @@
    content and collapses, which is what switching the card off should look
    like. */
 .terminal-consistency { grid-area: consistency; }
+/* Prop firm tiles: a wrapping flex row, so five tiles sit in one line on a
+   desktop and fold two or three to a line on narrower screens. Absent when
+   nothing has been recorded, and the row collapses like the one below. */
+.terminal-props { grid-area: props; display: flex; flex-wrap: wrap; gap: 8px; }
+.terminal-props > .terminal-stat { flex: 1 1 150px; min-height: 84px; }
 
 .terminal-dashboard .terminal-equity > section { height: 100%; }
 .terminal-dashboard .terminal-equity .text-\[16px\] { font-size: 14px; }
@@ -1104,8 +1109,8 @@
 .terminal-stat strong { margin-top: 3px; color: var(--color-fg-strong); font-size: clamp(17px, 1.5vw, 22px); font-weight: 600; letter-spacing: -.035em; line-height: 1.05; }
 .terminal-stat span { margin-top: 5px; color: var(--color-fg-muted); font-size: 10px; }
 
-@media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'consistency consistency' 'trades trades' 'strategies strategies'; } }
-@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'consistency' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } .terminal-side-solo { grid-template-rows: 220px; } }
+@media (max-width: 1050px) { .terminal-dashboard { grid-template-columns: 1fr 1fr; grid-template-areas: 'equity equity' 'metrics side' 'props props' 'consistency consistency' 'trades trades' 'strategies strategies'; } }
+@media (max-width: 700px) { .terminal-dashboard { grid-template-columns: 1fr; grid-template-areas: 'equity' 'metrics' 'side' 'props' 'consistency' 'trades' 'strategies'; } .terminal-equity, .terminal-metrics, .terminal-side { min-height: auto; } .terminal-side { grid-template-rows: 220px 220px; } .terminal-side-solo { grid-template-rows: 220px; } }
 
 /* The remaining terminal screens share the dashboard's dense, framed surface
    but retain their existing data controls and keyboard interactions. */
