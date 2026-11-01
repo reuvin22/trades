@@ -61,6 +61,7 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
 
   // Recorded on Profile. Not range-filtered: an account has no trade date.
   const props = profile?.propAccounts ?? []
+  const payouts = profile?.propPayouts ?? []
 
   return <>
     <div className={`${GREETING_ROW} dashboard-heading`}>
@@ -75,7 +76,7 @@ export function Dashboard({ trades, profile, onQuickAdd }: DashboardProps) {
       <div className="terminal-equity"><EquityChart equity={stats.equity} opening={opening} spanLabel={label} /></div>
       <div className="terminal-metrics"><StatCards stats={stats} currency={money} opening={opening} /></div>
       <div className={discipline ? 'terminal-side' : 'terminal-side terminal-side-solo'}>{discipline && <DisciplineCard trades={shown} />}<PerformanceCalendar dailyPl={stats.dailyPl} /></div>
-      {props.length > 0 && <PropStrip accounts={props} />}
+      {(props.length > 0 || payouts.length > 0) && <PropStrip accounts={props} payouts={payouts} />}
       {/* `trades`, not `shown`: "best ever" means the whole journal, so the
           range picker above deliberately does not reach this card. */}
       {showConsistency && <div className="terminal-consistency"><ConsistencyCard trades={trades} money={money} /></div>}

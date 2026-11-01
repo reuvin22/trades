@@ -8,14 +8,16 @@ import {
   PROP_SIZES,
   savePropAccounts,
   savePropFirms,
+  savePropPayouts,
   type Profile,
   type PropAccount,
+  type PropPayout,
   type PropAccountKind,
   type PropAccountStatus,
   type PropMarket,
 } from '../lib/profile'
 import { ConfirmDialog, type ConfirmRequest } from './ConfirmDialog'
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, PlusIcon, SpinnerIcon, TrashIcon } from './Icons'
 import { SearchableSelect } from './SearchableSelect'
 import { Select } from './Select'
 import {
@@ -38,8 +40,9 @@ type Props = {
   onSaved: () => void
 }
 
-/** Mirrors MAX_PROP_FIRMS on the API. */
+/** Mirrors MAX_PROP_FIRMS and MAX_PROP_PAYOUTS on the API. */
 const MAX_FIRMS = 30
+const MAX_PAYOUTS = 500
 
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const SIZE = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 })
@@ -101,17 +104,144 @@ function StatusToggle({ value, onChange, disabled }: { value: PropAccountStatus;
 }
 
 /**
- * The firms this trader uses. What the firm picker in each group searches, so
- * a firm's name is spelled once here rather than retyped on every account.
+ * One firm the trader uses, with the payouts it has made.
+ *
+ * Payouts live under their firm rather than in a list of their own: "what has
+ * Topstep paid me" is the question, and the answer belongs beside the name.
+ */
+function FirmRow({
+  firm,
+  payouts,
+  busy,
+  onPayouts,
+  onRemove,
+}: {
+  firm: string
+  payouts: PropPayout[]
+  busy: boolean
+  onPayouts: (next: PropPayout[], done: string) => Promise<boolean>
+  onRemove: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [paidOn, setPaidOn] = useState(today)
+  const [gap, setGap] = useState('')
+
+  // Newest first: the payout just received is the one being checked.
+  const own = payouts.filter((row) => row.firm === firm).sort((a, b) => b.paidOn.localeCompare(a.paidOn))
+  const total = own.reduce((sum, row) => sum + row.amount, 0)
+
+  async function add(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const value = Number(amount)
+
+    if (amount.trim() === '' || !Number.isFinite(value) || value <= 0) return setGap('Enter the payout amount in USD.')
+    if (paidOn === '') return setGap('Pick the date it was paid.')
+    if (payouts.length >= MAX_PAYOUTS) return setGap(`Your profile holds ${MAX_PAYOUTS} payouts.`)
+
+    setGap('')
+    const saved = await onPayouts(
+      [...payouts, { id: newId(), firm, amount: value, paidOn }],
+      `${USD.format(value)} payout from ${firm} added`,
+    )
+    if (saved) setAmount('')
+  }
+
+  return (
+    <li className="rounded-sm border border-line bg-panel">
+      <div className="flex flex-wrap items-center gap-x-12 gap-y-6 px-12 py-9">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-fg-strong">{firm}</span>
+        <span className="text-[12px] tabular-nums text-fg-muted">
+          {own.length === 0 ? 'No payouts yet' : (
+            <>
+              <b className="font-semibold text-green">{USD.format(total)}</b> · {own.length} {own.length === 1 ? 'payout' : 'payouts'}
+            </>
+          )}
+        </span>
+        <button
+          type="button"
+          className={`${PILL} ${PILL_IDLE} px-10! py-5! text-[12px]!`}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          Payouts
+          <ChevronDownIcon size={13} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          className="grid size-28 place-items-center rounded-sm text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
+          aria-label={`Remove ${firm} from your prop firms`}
+          onClick={onRemove}
+        >
+          <CloseIcon size={13} />
+        </button>
+      </div>
+
+      {open && (
+        <div className="flex flex-col gap-10 border-t border-line px-12 pt-10 pb-12">
+          {own.length > 0 && (
+            <ul className="flex flex-col divide-y divide-line">
+              {own.map((row) => (
+                <li key={row.id} className="flex items-center gap-12 py-7">
+                  <span className="flex-1 text-[12.5px] tabular-nums text-fg-dim">
+                    {row.paidOn ? PAID_ON.format(new Date(`${row.paidOn}T00:00`)) : '—'}
+                  </span>
+                  <span className="text-[13px] font-semibold tabular-nums text-green">+{USD.format(row.amount)}</span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className="grid size-26 place-items-center rounded-sm text-fg-muted hover:bg-tint-2 hover:text-red disabled:opacity-50"
+                    aria-label={`Remove ${USD.format(row.amount)} payout from ${firm}`}
+                    onClick={() => void onPayouts(payouts.filter((entry) => entry.id !== row.id), 'Payout removed')}
+                  >
+                    <TrashIcon size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form className="grid grid-cols-[1fr_1fr_auto] items-end gap-10 max-[480px]:grid-cols-2" onSubmit={add}>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Payout (USD)</span>
+              <input type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="1250.00" />
+            </label>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Paid on</span>
+              <input type="date" value={paidOn} max={today()} onChange={(event) => setPaidOn(event.target.value)} />
+            </label>
+            <button type="submit" disabled={busy} className={`${PILL} ${PILL_IDLE} justify-center max-[480px]:col-span-2`}>
+              <PlusIcon size={14} />
+              Add payout
+            </button>
+          </form>
+          {gap && <p className="text-[12px] text-red" role="alert">{gap}</p>}
+        </div>
+      )}
+    </li>
+  )
+}
+
+/**
+ * The firms this trader uses, each with its payout record. What the firm
+ * picker in each account group searches, so a firm's name is spelled once
+ * here rather than retyped on every account.
  */
 function FirmList({
   firms,
+  payouts,
   busy,
   onChange,
+  onPayouts,
+  onRemove,
 }: {
   firms: string[]
+  payouts: PropPayout[]
   busy: boolean
   onChange: (next: string[], done: string) => Promise<boolean>
+  onPayouts: (next: PropPayout[], done: string) => Promise<boolean>
+  onRemove: (firm: string) => void
 }) {
   const [name, setName] = useState('')
   const [gap, setGap] = useState('')
@@ -128,30 +258,25 @@ function FirmList({
   }
 
   return (
-    <div className="mb-14 flex flex-col gap-10 rounded-sm border border-line bg-tint-1 p-14">
+    <div className="mb-14 flex flex-col gap-10 rounded-sm border border-line bg-tint-1 p-14 max-[560px]:p-11">
       <div>
         <h4 className="text-[13.5px] font-semibold text-fg-strong">Your prop firms</h4>
-        <p className={FIELD_HINT}>The firms you trade with. Prop firm name below searches this list.</p>
+        <p className={FIELD_HINT}>
+          The firms you trade with, and what each has paid you. Payouts count towards Payout total and Total profit on your dashboard.
+        </p>
       </div>
 
       {firms.length > 0 && (
-        <ul className="flex flex-wrap gap-8">
+        <ul className="flex flex-col gap-8">
           {firms.map((firm) => (
-            <li
+            <FirmRow
               key={firm}
-              className="inline-flex items-center gap-6 rounded-full border border-line bg-tint-2 py-4 pr-5 pl-12 text-[12.5px] font-medium text-fg"
-            >
-              {firm}
-              <button
-                type="button"
-                disabled={busy}
-                className="grid size-20 place-items-center rounded-full text-fg-muted hover:bg-tint-3 hover:text-red disabled:opacity-50"
-                aria-label={`Remove ${firm} from your prop firms`}
-                onClick={() => void onChange(firms.filter((entry) => entry !== firm), `${firm} removed from your prop firms`)}
-              >
-                <CloseIcon size={12} />
-              </button>
-            </li>
+              firm={firm}
+              payouts={payouts}
+              busy={busy}
+              onPayouts={onPayouts}
+              onRemove={() => onRemove(firm)}
+            />
           ))}
         </ul>
       )}
@@ -409,6 +534,15 @@ function KindGroup({
   )
 }
 
+const PAID_ON = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+/** Today as YYYY-MM-DD in the trader's own time zone, for the date input. */
+function today(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 /**
  * Every evaluation bought, every reset, and every funded account.
  *
@@ -423,6 +557,7 @@ export function PropAccounts({ profile, onSaved }: Props) {
   const [confirming, setConfirming] = useState<ConfirmRequest | null>(null)
   const [pages, setPages] = useState<Record<PropAccountKind, number>>({ eval: 0, reset: 0, funded: 0 })
   const [firms, setFirms] = useState<string[]>([])
+  const [payouts, setPayouts] = useState<PropPayout[]>([])
 
   const groups = PROP_ACCOUNT_KINDS.map((group) => {
     const own = rows.filter((row) => row.kind === group.value)
@@ -457,6 +592,54 @@ export function PropAccounts({ profile, onSaved }: Props) {
     setSeededFor(profile.uid)
     setRows(profile.propAccounts ?? [])
     setFirms(profile.propFirms ?? [])
+    setPayouts(profile.propPayouts ?? [])
+  }
+
+  /**
+   * A firm with no payouts just goes. One with payouts asks first, and takes
+   * them with it: they are its record, and left behind they would still count
+   * on the dashboard with no row anywhere to see or delete them from.
+   */
+  function removeFirm(firm: string) {
+    const remaining = firms.filter((entry) => entry !== firm)
+    const own = payouts.filter((row) => row.firm === firm)
+    if (own.length === 0) {
+      void commitFirms(remaining, `${firm} removed from your prop firms`)
+      return
+    }
+
+    const total = own.reduce((sum, row) => sum + row.amount, 0)
+    setConfirming({
+      title: `Remove ${firm}?`,
+      body: `${firm} and its ${own.length} ${own.length === 1 ? 'payout' : 'payouts'} (${USD.format(total)}) will be removed.`,
+      consequence: 'Your Payout total and Total profit drop by that amount. Accounts recorded under this firm stay.',
+      action: 'Remove firm',
+      onConfirm: async () => {
+        const saved =
+          (await commitPayouts(payouts.filter((row) => row.firm !== firm), `${firm}'s payouts removed`)) &&
+          (await commitFirms(remaining, `${firm} removed from your prop firms`))
+        if (!saved) throw new Error('Not everything was removed. Try again.')
+      },
+    })
+  }
+
+  async function commitPayouts(next: PropPayout[], done: string): Promise<boolean> {
+    const before = payouts
+    setPayouts(next)
+    setBusy(true)
+    try {
+      const saved = await savePropPayouts(next)
+      setPayouts(saved.propPayouts ?? next)
+      onSaved()
+      toast.success(done)
+      return true
+    } catch (cause) {
+      setPayouts(before)
+      toast.error('Could not save your payouts', readableApiError(cause))
+      return false
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function commitFirms(next: string[], done: string): Promise<boolean> {
@@ -520,7 +703,14 @@ export function PropAccounts({ profile, onSaved }: Props) {
 
       {/* Removing a firm leaves its recorded accounts alone: they are history,
           and the list only decides what the picker offers next time. */}
-      <FirmList firms={firms} busy={busy || !profile} onChange={commitFirms} />
+      <FirmList
+        firms={firms}
+        payouts={payouts}
+        busy={busy || !profile}
+        onChange={commitFirms}
+        onPayouts={commitPayouts}
+        onRemove={removeFirm}
+      />
 
       <div className="flex flex-col gap-14">
         {groups.map((group) => (

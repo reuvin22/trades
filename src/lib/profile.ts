@@ -53,6 +53,8 @@ export type Profile = {
   propAccounts?: PropAccount[]
   /** The firms they use, listed on Profile; the account form searches these. */
   propFirms?: string[]
+  /** Money the firms paid out, recorded on Profile. */
+  propPayouts?: PropPayout[]
 
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
@@ -112,31 +114,55 @@ function toPropAccounts(wire: unknown): PropAccount[] {
   }))
 }
 
+/** Money a prop firm paid out. USD; `paidOn` is YYYY-MM-DD. */
+export type PropPayout = {
+  id: string
+  firm: string
+  amount: number
+  paidOn: string
+}
+
+export async function savePropPayouts(payouts: PropPayout[]): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: {
+      prop_payouts: payouts.map((row) => ({ id: row.id, firm: row.firm, amount: row.amount, paid_on: row.paidOn })),
+    },
+  })
+  return toProfile(wire)
+}
+
 export type PropSummary = {
   evals: { total: number; active: number; blown: number }
   resets: { total: number; active: number; blown: number }
   funded: { total: number; active: number; blown: number }
   /** Evals plus resets, in USD. */
   spent: number
-  /** Sum of the sizes of funded accounts still alive. */
-  fundedCapital: number
+  /** Every payout received, in USD. */
+  payouts: number
+  payoutCount: number
+  /** Payouts less what was spent: what prop firms earned, apart from trading P&L. */
+  profit: number
 }
 
-export function propSummary(accounts: PropAccount[]): PropSummary {
+export function propSummary(accounts: PropAccount[], payouts: PropPayout[] = []): PropSummary {
   const tally = (kind: PropAccountKind) => {
     const rows = accounts.filter((row) => row.kind === kind)
     const active = rows.filter((row) => row.status === 'active').length
     return { total: rows.length, active, blown: rows.length - active }
   }
 
+  const spent = accounts.reduce((sum, row) => sum + (row.kind === 'funded' ? 0 : (row.price ?? 0)), 0)
+  const paid = payouts.reduce((sum, row) => sum + row.amount, 0)
+
   return {
     evals: tally('eval'),
     resets: tally('reset'),
     funded: tally('funded'),
-    spent: accounts.reduce((sum, row) => sum + (row.kind === 'funded' ? 0 : (row.price ?? 0)), 0),
-    fundedCapital: accounts
-      .filter((row) => row.kind === 'funded' && row.status === 'active')
-      .reduce((sum, row) => sum + row.size, 0),
+    spent,
+    payouts: paid,
+    payoutCount: payouts.length,
+    profit: paid - spent,
   }
 }
 
@@ -365,6 +391,14 @@ function toProfile(wire: ProfileWire): Profile {
     edgeWindow: (wire.edge_window as Period) ?? 'monthly',
     propAccounts: toPropAccounts(wire.prop_accounts),
     propFirms: Array.isArray(wire.prop_firms) ? wire.prop_firms.map(String) : [],
+    propPayouts: Array.isArray(wire.prop_payouts)
+      ? wire.prop_payouts.map((row: Record<string, unknown>) => ({
+          id: String(row.id ?? ''),
+          firm: String(row.firm ?? ''),
+          amount: num(row.amount) ?? 0,
+          paidOn: String(row.paid_on ?? ''),
+        }))
+      : [],
     plan: String(wire.plan ?? 'free'),
     planSince: date(wire.plan_since),
     createdAt: date(wire.created_at),
