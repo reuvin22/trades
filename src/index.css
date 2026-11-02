@@ -1217,7 +1217,9 @@
 .journal-error { border:1px solid color-mix(in srgb,var(--color-red) 35%,transparent); border-radius:7px; padding:9px 12px; color:var(--color-red); font-size:12px; }
 .journal-workspace { display:grid; grid-template-columns:clamp(280px,26%,380px) minmax(0,1fr); min-height:620px; overflow:hidden; border:1px solid var(--color-line); border-radius:10px; background:var(--color-panel); box-shadow:var(--shadow-card); }
 .journal-log-panel { display:flex; min-width:0; flex-direction:column; border-right:1px solid var(--color-line); background:var(--color-panel-inset); padding:14px; }
-.journal-log-head,.journal-detail-head,.journal-linked > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+/* :first-child, the heading row only. As a bare `> div` it also caught the
+   thumbnail strip below it and pushed the charts to opposite edges. */
+.journal-log-head,.journal-detail-head,.journal-linked > div:first-child { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .journal-log-head h3,.journal-notes h3,.journal-linked h3 { margin:0; color:var(--color-fg-strong); font-size:13px; font-weight:600; }
 .journal-log-head button,.journal-linked button { border:0; background:transparent; color:var(--color-accent); font-size:10px; }
 .journal-search { display:flex; align-items:center; gap:7px; margin-top:10px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-tint-1); padding:6px 8px; color:var(--color-fg-muted); }

@@ -131,7 +131,9 @@ export function Calendar({ trades, profile }: CalendarProps) {
     return new Date(now.getFullYear(), now.getMonth(), 1)
   })
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
-  const [selected, setSelected] = useState<DaySelection | null>(null)
+  // The day, not a snapshot of its trades: an edit or delete made while it is
+  // open should show in the panel without a page reload.
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null)
 
   // Option lists come from what is actually in the journal, so the dropdowns
   // never offer a value that would return nothing.
@@ -262,6 +264,9 @@ export function Calendar({ trades, profile }: CalendarProps) {
   }
 
   const todayKey = dayKey(new Date())
+  const selected: DaySelection | null = selectedDay
+    ? { date: selectedDay, trades: byDay.get(dayKey(selectedDay))?.trades ?? [] }
+    : null
 
   return (
     <div className="terminal-page terminal-calendar">
@@ -363,7 +368,7 @@ export function Calendar({ trades, profile }: CalendarProps) {
                         : `${cell.count} ${cell.count === 1 ? 'trade' : 'trades'}, ${money(cell.netPl)}`
                     }`}
                     onClick={() =>
-                      setSelected({ date: cell.date, trades: cell.trades })
+                      setSelectedDay(cell.date)
                     }
                     className={`${CAL_DAY} ${CAL_DAY_BUTTON} ${
                       tone === 'pos' ? CAL_DAY_POS : tone === 'neg' ? CAL_DAY_NEG : ''
@@ -401,7 +406,7 @@ export function Calendar({ trades, profile }: CalendarProps) {
         })}
       </div>
 
-      <DayDetail day={selected} onClose={() => setSelected(null)} />
+      <DayDetail day={selected} onClose={() => setSelectedDay(null)} />
     </div>
   )
 }

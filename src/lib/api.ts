@@ -103,7 +103,20 @@ export async function apiFetch<T>(path: string, options: Options = {}): Promise<
       `${API_BASE}${path.split('/').slice(0, 4).join('/')}`,
       window.location.origin,
     )
-    invalidate(`GET ${family.pathname}`)
+    const prefix = `GET ${family.pathname}`
+    invalidate(prefix)
+
+    /*
+     * And again once the write has landed. A read already in flight when the
+     * write started finishes after the clear above and caches what the server
+     * said *before* the write — so the reload that follows a save was served
+     * the old journal, and the edit only appeared after a page refresh.
+     */
+    try {
+      return await send<T>(url, method, body, headersFor(body), signal)
+    } finally {
+      invalidate(prefix)
+    }
   }
 
   if (method === 'GET' && !fresh) {

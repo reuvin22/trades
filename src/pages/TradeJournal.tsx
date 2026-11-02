@@ -88,12 +88,15 @@ function TradeFacts({ trade, money }: { trade: StoredTrade; money: Money }) {
 
 function JournalWorkspace({ trades, loading, money, onOpen }: { trades: StoredTrade[]; loading: boolean; money: Money; onOpen: (trade: StoredTrade) => void }) {
   const [query, setQuery] = useState('')
-  const [current, setCurrent] = useState<StoredTrade | null>(trades[0] ?? null)
+  // The id, not the trade: a copy of the object would keep showing what the
+  // trade said before an edit until the page was reloaded. Looked up from the
+  // list on every render, the panel follows the journal as it refreshes.
+  const [currentId, setCurrentId] = useState<string | null>(null)
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return trades.filter((trade) => `${trade.ticker} ${trade.setup} ${trade.direction} ${trade.emotionBefore} ${trade.emotionDuring} ${trade.mistakes.join(' ')}`.toLowerCase().includes(needle))
   }, [trades, query])
-  const selected = current && visible.some((trade) => trade.id === current.id) ? current : visible[0] ?? null
+  const selected = visible.find((trade) => trade.id === currentId) ?? visible[0] ?? null
   const position = selected ? visible.findIndex((trade) => trade.id === selected.id) + 1 : 0
 
   return <section className="journal-workspace">
@@ -103,7 +106,7 @@ function JournalWorkspace({ trades, loading, money, onOpen }: { trades: StoredTr
       <div className="journal-log-list">
         {visible.map((trade) => {
           const tags = [trade.emotionBefore, trade.emotionDuring].filter((value, index, all) => value && all.indexOf(value) === index)
-          return <button type="button" key={trade.id} onClick={() => setCurrent(trade)} className={`journal-log-item ${selected?.id === trade.id ? 'active' : ''}`}>
+          return <button type="button" key={trade.id} onClick={() => setCurrentId(trade.id)} className={`journal-log-item ${selected?.id === trade.id ? 'active' : ''}`}>
             <span>{stamp(trade)}</span>
             <strong>{trade.ticker || 'Untitled'} · {trade.direction}</strong>
             <small>{trade.setup || 'No setup'}{trade.riskReward !== null && ` · 1 : ${trade.riskReward.toFixed(1)}`}</small>
@@ -139,8 +142,12 @@ export function TradeJournal({ profile, trades, loading, error, reload }: TradeJ
   const money = useMemo(() => moneyIn(profile?.currency ?? 'USD'), [profile?.currency])
   const [custom, setCustom] = useState<DateRange | null>(null)
   const [importing, setImporting] = useState(false)
-  const [active, setActive] = useState<StoredTrade | null>(null)
+  // Ids again, for the same reason: the popup and the edit form read the
+  // trade from the reloaded journal rather than from a copy taken on click.
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [editing, setEditing] = useState<StoredTrade | null>(null)
+  const active = trades.find((trade) => trade.id === activeId) ?? null
+  const setActive = (trade: StoredTrade | null) => setActiveId(trade?.id ?? null)
   const toast = useToast()
   const shown = useMemo(() => trades.filter((trade) => inWindow(trade, windowFor(range, custom))), [trades, range, custom])
 

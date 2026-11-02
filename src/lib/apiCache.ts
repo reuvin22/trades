@@ -82,9 +82,15 @@ export async function through<T>(
     if (hit.until > now) return hit.value as T
   }
 
-  const pending = run()
+  const pending: Promise<T> = run()
     .then((value) => {
-      entries.set(key, { value, until: Date.now() + ttlMs })
+      // Stored only if this request is still the one on file. A write that
+      // cleared the key while it was in flight means the answer predates the
+      // write, and caching it would hand the old data to the reload after a
+      // save.
+      if (entries.get(key)?.pending === pending) {
+        entries.set(key, { value, until: Date.now() + ttlMs })
+      }
       return value
     })
     .catch((cause: unknown) => {
@@ -94,7 +100,7 @@ export async function through<T>(
        * the whole TTL, which is the opposite of what somebody pressing the
        * button again wants.
        */
-      entries.delete(key)
+      if (entries.get(key)?.pending === pending) entries.delete(key)
       throw cause
     })
 
