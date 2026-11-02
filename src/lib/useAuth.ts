@@ -66,10 +66,32 @@ export type AuthState = {
   pending: boolean
 }
 
-/** Reads the session cookie's account, or null. Never throws for "not signed in". */
+/** Waits before each retry of a session read that failed for a passing reason. */
+const SESSION_RETRY_MS = [1_000, 3_000, 7_000]
+
+/** Rate limited, unreachable or a server fault: worth asking again, not a sign-out. */
+function passing(cause: unknown) {
+  return cause instanceof ApiError && (cause.status === 0 || cause.status === 429 || cause.status >= 500)
+}
+
+/**
+ * Reads the session cookie's account, or null. Never throws for "not signed in".
+ *
+ * A 429 or a cold API is retried rather than reported as signed out: showing
+ * the login screen sent people straight to the Google button, which then hit
+ * the same limit and failed too.
+ */
 async function readSession(): Promise<AuthUser | null> {
-  const wire = await apiFetch<SessionWire>('/api/v1/auth/session')
-  return toUser(wire)
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const wire = await apiFetch<SessionWire>('/api/v1/auth/session', { fresh: attempt > 0 })
+      return toUser(wire)
+    } catch (cause) {
+      const wait = SESSION_RETRY_MS[attempt]
+      if (!passing(cause) || wait === undefined) throw cause
+      await new Promise((resolve) => setTimeout(resolve, wait))
+    }
+  }
 }
 
 export function useAuth() {
