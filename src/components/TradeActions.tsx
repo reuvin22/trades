@@ -49,6 +49,10 @@ function money(value: number | null): string {
   return value === null ? '—' : currency.format(value)
 }
 
+/** Free text exactly as typed: line breaks, "-" lists and indents kept, and a
+ *  long unbroken word wrapped rather than pushing the column wide. */
+const WRITTEN = 'whitespace-pre-wrap [overflow-wrap:anywhere]'
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -178,13 +182,13 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
           {trade.rationale && (
             <div className="col-span-full">
               <dt>Rationale</dt>
-              <dd>{trade.rationale}</dd>
+              <dd className={WRITTEN}>{trade.rationale}</dd>
             </div>
           )}
           {trade.notes && (
             <div className="col-span-full">
               <dt>Notes</dt>
-              <dd>{trade.notes}</dd>
+              <dd className={WRITTEN}>{trade.notes}</dd>
             </div>
           )}
         </dl>
