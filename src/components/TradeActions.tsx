@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { StoredTrade } from '../lib/trades'
 import { currency } from '../data/dashboard'
 import { PencilIcon, SpinnerIcon, TrashIcon, CloseIcon } from './Icons'
-import { ChartStrip } from './ChartStrip'
+import { ScreenshotCarousel } from './ScreenshotCarousel'
 import {
   CONFIRM_BODY,
   CONFIRM_CARD,
@@ -21,7 +21,6 @@ import {
   MODAL_SPLIT,
   MODAL_SPLIT_CHART,
   MODAL_SPLIT_DATA,
-  TV_PENDING,
   PILL,
   PILL_ACCENT,
   PILL_DANGER,
@@ -30,19 +29,6 @@ import {
   SIDE_LONG,
   SIDE_SHORT,
 } from './ui'
-import { hasFeature } from '../lib/entitlements'
-
-/*
- * Lightweight Charts is ~175KB, and the journal is the page that pays for it.
- *
- * Imported statically it landed in the TradeJournal chunk, taking it from
- * 31KB to 207KB — the whole library downloaded by everyone who opened the
- * journal, whether or not they ever opened a record. Behind lazy() it arrives
- * with the modal, which is the only moment it can be seen.
- */
-const TradeChart = lazy(() =>
-  import('./TradeChart').then((module) => ({ default: module.TradeChart })),
-)
 
 const stamp = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -92,18 +78,6 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [confirming, setConfirming] = useState(false)
   const [working, setWorking] = useState(false)
-  /*
-   * Whether the dialog is actually on screen, which is not the same as having
-   * a trade to show.
-   *
-   * A closed <dialog> is display:none, and child effects run before the
-   * parent's — so a chart mounted in the same pass would measure its
-   * container before `showModal` below had given it a size, size itself to
-   * zero, and have no coordinates to place the target and stop zones against.
-   * Gating on this mounts it only once the dialog has been opened and laid
-   * out.
-   */
-  const [shown, setShown] = useState(false)
   const open = trade !== null
 
   useEffect(() => {
@@ -114,16 +88,14 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
       setConfirming(false)
       setWorking(false)
       node.showModal()
-      setShown(true)
     } else if (!open && node.open) {
       node.close()
-      setShown(false)
     }
   }, [open])
 
   if (!trade) return <dialog ref={dialog} className={MODAL} aria-hidden="true" />
 
-  const pl = trade.netPl ?? 0
+  const pl = trade.netPl
   const long = trade.direction === 'Long'
 
   return (
@@ -152,9 +124,9 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
             <span className={`${SIDE_BADGE} ${long ? SIDE_LONG : SIDE_SHORT}`}>
               {trade.direction.toUpperCase()}
             </span>
-            <span className={`${DETAIL_PL} ${pl >= 0 ? 'text-green' : 'text-red'}`}>
-              {pl >= 0 ? '+' : ''}
-              {money(trade.netPl)}
+            {/* An open trade has no result yet; "+—" read like a broken number. */}
+            <span className={`${DETAIL_PL} ${pl === null ? 'text-fg-muted' : pl >= 0 ? 'text-green' : 'text-red'}`}>
+              {pl === null ? 'Open' : `${pl >= 0 ? '+' : ''}${money(pl)}`}
             </span>
           </div>
 
@@ -170,10 +142,10 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
         </div>
 
         {/*
-          Two columns: what was recorded on the left, the position drawn from
-          it on the right. Below 900px they stack, data first — the chart is
-          the illustration, and on a phone the reading order should be the
-          numbers and then the picture of them.
+          Two columns: what was recorded on the left, the screenshots on the
+          right. Below 900px they stack, data first — the charts are the
+          illustration, and on a phone the reading order should be the numbers
+          and then the picture of them.
         */}
         <div className={MODAL_SPLIT}>
         {/* min-h-0 as well as overflow: a flex child will not shrink below its
@@ -215,27 +187,13 @@ export function TradeActions({ trade, onClose, onEdit, onDelete }: Props) {
               <dd>{trade.notes}</dd>
             </div>
           )}
-          {/* Last, and full width: it is the tallest thing here, and a row of
-              thumbnails between two text fields breaks the reading order. */}
-          {hasFeature('chartScreenshots') && trade.screenshots.length > 0 && (
-            <div className="col-span-full">
-              <dt>{trade.screenshots.length === 1 ? 'Chart' : 'Charts'}</dt>
-              <dd>
-                <ChartStrip keys={trade.screenshots} />
-              </dd>
-            </div>
-          )}
         </dl>
 
           <div className={MODAL_SPLIT_CHART}>
-            {/* The fallback holds the chart's exact height, so the dialog does
-                not resize under the pointer when the library lands. */}
-            <Suspense fallback={<div className={TV_PENDING} />}>
-              {/* Keyed by id so opening a different record mounts a fresh
-                  chart rather than leaving the previous trade's candles up
-                  while the new ones are still in flight. */}
-              {shown && <TradeChart key={trade.id} trade={trade} />}
-            </Suspense>
+            {/* The trader's own screenshots rather than a redrawn chart: with
+                no market data feed the redraw was one flat line. Keyed by id
+                so another record opens on its first chart, not this one's. */}
+            <ScreenshotCarousel key={trade.id} keys={trade.screenshots} />
           </div>
         </div>
 

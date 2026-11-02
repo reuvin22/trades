@@ -53,7 +53,6 @@ import {
   PILL_IDLE,
   PILL_ACCENT,
   SHOT_DROP,
-  SHOT_FILE,
   SHOT_LIST,
   SHOT_NAME,
   SHOT_ROW,
@@ -181,6 +180,7 @@ export function QuickAddTrade({
    * truth here is a second thing that can disagree with the list.
    */
   const [shotMode, setShotMode] = useState<'upload' | 'link'>('upload')
+  const shotPicker = useRef<HTMLInputElement>(null)
   const [shotBusy, setShotBusy] = useState<'preparing' | 'uploading' | null>(null)
   const [shotError, setShotError] = useState('')
 
@@ -575,20 +575,46 @@ export function QuickAddTrade({
                 <span className={FIELD_LABEL}>Chart screenshots</span>
 
                 <div className={TOGGLE_GROUP}>
-                  {(['upload', 'link'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      className={TOGGLE}
-                      aria-pressed={shotMode === mode}
-                      onClick={() => setShotMode(mode)}
-                    >
-                      {mode === 'upload' ? 'Upload' : 'Paste a link'}
-                    </button>
-                  ))}
+                  {/* Upload opens the file picker itself. It used to only
+                      switch modes, leaving a second "Choose Files" control
+                      underneath as the thing that actually uploaded. */}
+                  <button
+                    type="button"
+                    className={TOGGLE}
+                    aria-pressed={shotMode === 'upload'}
+                    disabled={shotBusy !== null || shotsFull}
+                    onClick={() => {
+                      setShotMode('upload')
+                      shotPicker.current?.click()
+                    }}
+                  >
+                    {shotBusy !== null ? <SpinnerIcon className="animate-spin" size={14} /> : <ImageIcon />}
+                    {shotBusy !== null ? 'Uploading…' : 'Upload image'}
+                  </button>
+                  <button
+                    type="button"
+                    className={TOGGLE}
+                    aria-pressed={shotMode === 'link'}
+                    onClick={() => setShotMode('link')}
+                  >
+                    Paste a link
+                  </button>
                 </div>
 
-                {shotMode === 'link' ? (
+                <input
+                  ref={shotPicker}
+                  type="file"
+                  className="hidden"
+                  aria-label="Chart images"
+                  accept={ACCEPTED}
+                  multiple
+                  onChange={(event) => {
+                    void attachShots(event.target.files)
+                    event.target.value = ''
+                  }}
+                />
+
+                {shotMode === 'link' && (
                   <input
                     type="url"
                     aria-label="Link to a chart"
@@ -608,20 +634,6 @@ export function QuickAddTrade({
                       event.currentTarget.value = ''
                     }}
                   />
-                ) : (
-                  <span className={SHOT_FILE}>
-                    <input
-                      type="file"
-                      aria-label="Chart images"
-                      accept={ACCEPTED}
-                      multiple
-                      disabled={shotBusy !== null || shotsFull}
-                      onChange={(event) => {
-                        void attachShots(event.target.files)
-                        event.target.value = ''
-                      }}
-                    />
-                  </span>
                 )}
 
                 {shots.length > 0 && (
@@ -653,7 +665,9 @@ export function QuickAddTrade({
                         : shotsFull
                           ? `That is the limit of ${MAX_SCREENSHOTS}. Remove one to add another.`
                           : shotMode === 'upload'
-                            ? 'Choose one or more. Up to 10MB each, shrunk before they are sent.'
+                            ? shots.length === 0
+                              ? 'No images yet. Choose one or more — up to 10MB each, shrunk before they are sent.'
+                              : 'Upload image again to add more.'
                             : 'Paste a link and press Enter.'}
                 </span>
               </div>
