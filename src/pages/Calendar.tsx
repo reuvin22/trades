@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { journalLabel } from '../lib/journalAccounts'
 import { DayDetail, type DaySelection } from '../components/DayDetail'
 import { dayKey, tradeDate } from '../lib/stats'
 import type { StoredTrade } from '../lib/trades'
@@ -11,6 +12,7 @@ import {
 } from '../components/Icons'
 import {
   CAL_CLEAR,
+  CAL_ACCOUNT,
   CAL_COUNT,
   CAL_DATE,
   CAL_DAY,
@@ -90,6 +92,11 @@ type DayCell = {
   netPl: number
   count: number
   trades: StoredTrade[]
+}
+
+/** The journals a day's trades came from, in the order they were first traded. */
+function accountsOn(trades: StoredTrade[]): string[] {
+  return [...new Set(trades.map((trade) => journalLabel(trade.account)))]
 }
 
 /** Monday-based weekday index: Monday is 0, Sunday is 6. */
@@ -211,6 +218,10 @@ export function Calendar({ trades, profile }: CalendarProps) {
 
     return totals
   }, [filtered])
+
+  // Every journal is shown together, so each day names whose profit it is —
+  // once there is more than the one unnamed journal to tell apart.
+  const labelled = useMemo(() => trades.some((trade) => trade.account !== ''), [trades])
 
   const weeks = useMemo(() => {
     // The grid always opens on the Monday on or before the 1st.
@@ -380,7 +391,12 @@ export function Calendar({ trades, profile }: CalendarProps) {
 
                     {cell.count > 0 && (
                       <>
-                        <span data-pl className={CAL_PL}>
+                        {labelled && (
+                          <span className={CAL_ACCOUNT} title={accountsOn(cell.trades).join(', ')}>
+                            {accountsOn(cell.trades).join(' · ')}
+                          </span>
+                        )}
+                        <span data-pl className={`${CAL_PL} ${labelled ? 'mt-0!' : ''}`}>
                           {/* Only open trades: no result yet, which is not the same as $0. */}
                           {cell.trades.some((trade) => trade.netPl !== null) ? money(cell.netPl) : 'Open'}
                         </span>

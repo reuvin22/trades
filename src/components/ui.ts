@@ -803,6 +803,9 @@ export const CAL_DAY_TODAY =
 
 export const CAL_DATE = 'text-[11px] font-medium text-fg-muted'
 export const CAL_PL = 'mt-auto text-[14px] font-semibold tabular-nums'
+/** Whose profit the day shows, above the figure. */
+export const CAL_ACCOUNT =
+  'mt-auto max-w-full truncate rounded-full bg-tint-2 px-7 py-1 text-[10.5px] font-medium leading-[1.4] text-fg-dim'
 export const CAL_COUNT = 'mb-auto text-[11px] text-fg-muted'
 
 export const CAL_WEEK =

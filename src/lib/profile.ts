@@ -55,6 +55,8 @@ export type Profile = {
   propFirms?: string[]
   /** Money the firms paid out, recorded on Profile. */
   propPayouts?: PropPayout[]
+  /** Separate journals, one per trading account or challenge phase. */
+  journalAccounts?: string[]
 
   /** Which kind of account this is. Defaults to individual. */
   accountType?: AccountType
@@ -175,6 +177,15 @@ export async function savePropAccounts(accounts: PropAccount[]): Promise<Profile
   const wire = await apiFetch<ProfileWire>('/api/v1/me', {
     method: 'PATCH',
     body: { prop_accounts: accounts },
+  })
+  return toProfile(wire)
+}
+
+/** The trader's separate journals, by name. Trades keep the name they were logged under. */
+export async function saveJournalAccounts(names: string[]): Promise<Profile> {
+  const wire = await apiFetch<ProfileWire>('/api/v1/me', {
+    method: 'PATCH',
+    body: { journal_accounts: names },
   })
   return toProfile(wire)
 }
@@ -391,6 +402,7 @@ function toProfile(wire: ProfileWire): Profile {
     edgeWindow: (wire.edge_window as Period) ?? 'monthly',
     propAccounts: toPropAccounts(wire.prop_accounts),
     propFirms: Array.isArray(wire.prop_firms) ? wire.prop_firms.map(String) : [],
+    journalAccounts: Array.isArray(wire.journal_accounts) ? wire.journal_accounts.map(String) : [],
     propPayouts: Array.isArray(wire.prop_payouts)
       ? wire.prop_payouts.map((row: Record<string, unknown>) => ({
           id: String(row.id ?? ''),

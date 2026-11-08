@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useAuth } from '../lib/useAuth'
 import { AccountMenu } from './AccountMenu'
 import type { Theme } from '../lib/useTheme'
@@ -17,6 +18,8 @@ type TopBarProps = {
      the plan, not fetched from a store that does not exist yet. */
   profile?: Profile | null
   trades?: StoredTrade[]
+  /** The journal picker, beside the bell. */
+  journal?: ReactNode
   /** Desktop only: the sidebar narrowed to a rail. */
 }
 
@@ -95,6 +98,7 @@ export function TopBar({
   photoURL,
   profile,
   trades,
+  journal,
 }: TopBarProps) {
   const { user } = useAuth()
 
@@ -104,7 +108,8 @@ export function TopBar({
     <header className={TOPBAR}>
       <MenuButton open={navOpen} onToggle={onToggleNav} />
 
-      <div className="ml-auto flex items-center gap-16">
+      <div className="ml-auto flex min-w-0 items-center gap-16 max-[560px]:gap-10">
+        {journal}
         <NotificationMenu profile={profile} trades={trades} />
         <span data-tour="theme" className="contents">
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />

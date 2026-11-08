@@ -589,6 +589,7 @@ export function formatCsv(text: string, override?: Mapping): FormatResult {
       netPl: '',
       // Worked out by the server from the stop and target above.
       riskReward: '',
+      account: '',
       // The session follows from the entry time, and the server works it out.
       sessions: [],
     })

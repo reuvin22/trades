@@ -18,6 +18,7 @@ export type StoredTrade = {
   id: string
   ticker: string
   direction: 'Long' | 'Short'
+  account: string
   size: number | null
   sizeUnit: string
   entryPrice: number | null
@@ -117,6 +118,7 @@ export function toStored(wire: TradeWire): StoredTrade {
     id: String(wire.id ?? ''),
     ticker: String(wire.ticker ?? ''),
     direction: wire.direction === 'Short' ? 'Short' : 'Long',
+    account: String(wire.account ?? ''),
     size: num(wire.size),
     sizeUnit: String(wire.size_unit ?? 'Shares'),
     entryPrice: num(wire.entry_price),
@@ -155,6 +157,7 @@ function toWire(trade: TradeEntry): Record<string, unknown> {
   return {
     ticker: trade.ticker.trim(),
     direction: trade.direction,
+    account: trade.account.trim(),
     size: toNumber(trade.size),
     size_unit: trade.sizeUnit,
     entry_price: toNumber(trade.entryPrice),
@@ -248,6 +251,7 @@ export function toEntry(trade: StoredTrade): TradeEntry {
   const entry: TradeEntry = {
     ticker: trade.ticker,
     direction: trade.direction,
+    account: trade.account,
     size: text(trade.size),
     sizeUnit: (trade.sizeUnit || 'Shares') as TradeEntry['sizeUnit'],
     entryPrice: text(trade.entryPrice),

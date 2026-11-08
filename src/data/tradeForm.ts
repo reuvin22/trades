@@ -5,6 +5,8 @@ export type Compliance = 'yes' | 'no' | ''
 export type TradeEntry = {
   ticker: string
   direction: Direction
+  /** Which journal it belongs to: an account or challenge phase. Blank is the default journal. */
+  account: string
   size: string
   sizeUnit: SizeUnit
   entryPrice: string
@@ -116,6 +118,7 @@ export const MISTAKE_TAGS = [
 export const EMPTY_TRADE: TradeEntry = {
   ticker: '',
   direction: 'Long',
+  account: '',
   size: '',
   // Lots, because most traders logging here are on forex and CFD prop accounts.
   sizeUnit: 'Lots',

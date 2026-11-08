@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { currency, signed } from '../data/dashboard'
 import type { StoredTrade } from '../lib/trades'
+import { journalLabel } from '../lib/journalAccounts'
 import { CloseIcon } from './Icons'
 import {
   CHIP,
@@ -106,6 +107,8 @@ export function DayDetail({ day, onClose }: DayDetailProps) {
   }, [day])
 
   const totals = summarise(day?.trades ?? [])
+  // The Calendar mixes journals, so each trade says which one it is from.
+  const labelled = (day?.trades ?? []).some((trade) => trade.account !== '')
 
   return (
     <dialog
@@ -208,6 +211,7 @@ export function DayDetail({ day, onClose }: DayDetailProps) {
                       </div>
 
                       <div className={DAY_TRADE_META}>
+                        {labelled && <span className="font-medium text-fg-dim">{journalLabel(trade.account)}</span>}
                         {entry && <span>In {entry}</span>}
                         {exit && <span>Out {exit}</span>}
                         {trade.entryPrice !== null && (

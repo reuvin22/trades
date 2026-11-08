@@ -7,6 +7,8 @@ import { accountIsNew, markTourSeen, tourSeen } from './lib/tourState'
 import { QuickAddTrade } from './components/QuickAddTrade'
 import { Sidebar } from './components/Sidebar'
 import { TopBar } from './components/TopBar'
+import { JournalSwitcher } from './components/JournalSwitcher'
+import { inJournal, journalsOf, useActiveJournal } from './lib/journalAccounts'
 import { appShell, CONTENT, WORKSPACE } from './components/layout'
 import { PAGE_PENDING, PAGE_PENDING_BAR } from './components/ui'
 import { useNavDrawer } from './lib/useNavDrawer'
@@ -149,7 +151,10 @@ type TraderViewProps = {
   uid: string | null
   user: AuthUser | null
   profile: ProfileRecord | null
+  /** The journal being viewed. */
   trades: StoredTrade[]
+  /** Every journal together, for the Calendar. */
+  allTrades: StoredTrade[]
   loading: boolean
   error: string | null
   reload: () => void
@@ -172,6 +177,7 @@ function TraderView({
   user,
   profile,
   trades,
+  allTrades,
   loading,
   error,
   reload,
@@ -244,7 +250,7 @@ function TraderView({
     case 'analytics':
       return <Analytics trades={trades} profile={profile} />
     case 'calendar':
-      return <Calendar trades={trades} profile={profile} />
+      return <Calendar trades={allTrades} profile={profile} />
     case 'coach':
       return <AiCoach user={user} profile={profile} tradeCount={trades.length} />
     case 'community':
@@ -321,6 +327,10 @@ function App() {
   }, [preview, profile?.plan])
 
   const { trades, loading, error, reload } = useTrades(confirmed ? uid : null)
+  const [journal, setJournal] = useActiveJournal()
+  const journalTrades = useMemo(() => inJournal(trades, journal), [trades, journal])
+  // New trades land in the journal being viewed; from "All accounts", the first one listed.
+  const logTo = journal ?? journalsOf(profile, trades)[0] ?? ''
   // Confirmed, not merely signed in. A Google account arrives with Firebase
   // already calling it verified, so that flag cannot be the gate — this one is.
   const signedIn = (Boolean(user) && confirmed) || preview
@@ -486,6 +496,16 @@ function App() {
           photoURL={profile?.photoURL}
           profile={profile}
           trades={trades}
+          journal={
+            <JournalSwitcher
+              profile={profile}
+              trades={trades}
+              active={journal}
+              onChange={setJournal}
+              onProfileSaved={reloadProfile}
+              onTradesMoved={reload}
+            />
+          }
         />
         <main className={CONTENT} key={route}>
           {/*
@@ -499,7 +519,8 @@ function App() {
             uid={uid}
             user={user}
             profile={profile}
-            trades={trades}
+            trades={journalTrades}
+            allTrades={trades}
             loading={loading}
             error={error}
             reload={reload}
@@ -540,6 +561,8 @@ function App() {
 
       <QuickAddTrade
         open={logging}
+        account={logTo}
+        journals={journalsOf(profile, trades)}
         setups={profile?.strategies ?? []}
         onClose={() => setLogging(false)}
         onSave={async (trade) => {

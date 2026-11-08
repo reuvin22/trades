@@ -13,6 +13,7 @@ import type { DateRange } from '../components/DateRangePicker'
 import type { Profile as ProfileRecord } from '../lib/profile'
 import { moneyIn } from '../lib/journalStats'
 import { SESSION_LABELS } from '../data/tradeForm'
+import { journalLabel, journalsOf } from '../lib/journalAccounts'
 
 type TradeJournalProps = { uid: string | null; trades: StoredTrade[]; loading: boolean; error: string | null; reload: () => void; profile: ProfileRecord | null }
 type Money = (value: number) => string
@@ -59,6 +60,7 @@ function TradeFacts({ trade, money }: { trade: StoredTrade; money: Money }) {
   const facts: [string, string, string?][] = [
     ['Net P&L', signed(pl, money), pl === null ? '' : pl >= 0 ? 'good' : 'bad'],
     ['Risk : Reward', trade.riskReward === null ? '—' : `1 : ${trade.riskReward.toFixed(2)}`],
+    ['Journal', journalLabel(trade.account)],
     ['Direction', trade.direction, trade.direction === 'Long' ? 'good' : 'bad'],
     ['Position size', trade.size === null ? '—' : `${trade.size.toLocaleString('en-US')} ${trade.sizeUnit}`],
     ['Entry price', price(trade.entryPrice)],
@@ -156,7 +158,7 @@ export function TradeJournal({ profile, trades, loading, error, reload }: TradeJ
     {error && <p className="journal-error" role="alert">{error}</p>}
     <JournalWorkspace trades={shown} loading={loading} money={money} onOpen={setActive} />
     <TradeActions trade={active} onClose={() => setActive(null)} onEdit={(trade) => { setActive(null); setEditing(trade) }} onDelete={async (trade) => { try { await deleteTrade(trade.id); setActive(null); reload(); toast.success('Trade deleted', `${trade.ticker || 'Trade'} removed.`) } catch (cause) { toast.error('Could not delete trade', readableApiError(cause)) } }} />
-    <QuickAddTrade open={editing !== null} initial={editing ? toEntry(editing) : null} setups={profile?.strategies ?? []} onClose={() => setEditing(null)} onSave={async (entry) => { if (!editing) return; await updateTrade(editing.id, entry); setEditing(null); reload() }} />
+    <QuickAddTrade open={editing !== null} initial={editing ? toEntry(editing) : null} journals={journalsOf(profile, trades)} setups={profile?.strategies ?? []} onClose={() => setEditing(null)} onSave={async (entry) => { if (!editing) return; await updateTrade(editing.id, entry); setEditing(null); reload() }} />
     <CsvImport open={importing} onClose={() => setImporting(false)} onImported={reload} />
   </div>
 }

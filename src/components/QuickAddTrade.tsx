@@ -66,6 +66,7 @@ import {
   YES_NO,
 } from './ui'
 import { hasFeature } from '../lib/entitlements'
+import { journalLabel } from '../lib/journalAccounts'
 
 type QuickAddTradeProps = {
   open: boolean
@@ -88,6 +89,10 @@ type QuickAddTradeProps = {
    * is still allowed, because that is how a new one gets named.
    */
   setups?: string[]
+  /** The journal a new trade is logged to: the one being viewed. */
+  account?: string
+  /** Every journal, offered on the form. Hidden while there is only the default one. */
+  journals?: string[]
 }
 
 /**
@@ -163,6 +168,8 @@ export function QuickAddTrade({
   onSave,
   initial = null,
   setups = [],
+  account = '',
+  journals = [],
 }: QuickAddTradeProps) {
   const editing = initial !== null
   const dialog = useRef<HTMLDialogElement>(null)
@@ -269,7 +276,7 @@ export function QuickAddTrade({
       // Seeded on open rather than on every render: the trade being edited is
       // a new object each time the journal reloads, and re-seeding mid-edit
       // would throw away whatever had been typed.
-      setTrade(initial ?? EMPTY_TRADE)
+      setTrade(initial ?? { ...EMPTY_TRADE, account })
       setShowGaps(false)
       setSaveError('')
       node.showModal()
@@ -310,7 +317,7 @@ export function QuickAddTrade({
   }
 
   function reset() {
-    setTrade(EMPTY_TRADE)
+    setTrade({ ...EMPTY_TRADE, account })
     setShowGaps(false)
     setSaveError('')
   }
@@ -390,6 +397,20 @@ export function QuickAddTrade({
             </legend>
 
             <div className={FIELD_GRID}>
+              {(journals.length > 1 || journals.some(Boolean)) && (
+                <label className={`${FIELD} col-span-4`}>
+                  <span className={FIELD_LABEL}>Journal / Account</span>
+                  <Select value={trade.account} onChange={(event) => update('account', event.target.value)}>
+                    {/* The trade's own journal stays listed even if it has since been removed. */}
+                    {(journals.includes(trade.account) ? journals : [trade.account, ...journals]).map((name) => (
+                      <option key={name} value={name}>
+                        {journalLabel(name)}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+
               <label className={`${FIELD} col-span-2`}>
                 <span className={FIELD_LABEL}>
                   Instrument / Ticker <b>*</b>
