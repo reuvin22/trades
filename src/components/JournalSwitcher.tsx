@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type SubmitEvent } from 'react'
-import { CloseIcon } from './Icons'
-import { Select } from './Select'
+import { ChevronDownIcon, CloseIcon } from './Icons'
 import {
+  ACTION_MENU,
   FIELD,
   FIELD_HINT,
   MODAL,
@@ -23,8 +23,6 @@ import { saveJournalAccounts, type Profile } from '../lib/profile'
 import type { StoredTrade } from '../lib/trades'
 import { useToast } from '../lib/toast'
 
-const ALL = '\u0000all'
-const MANAGE = '\u0000manage'
 const MAX_JOURNALS = 30
 
 type JournalSwitcherProps = {
@@ -39,42 +37,98 @@ type JournalSwitcherProps = {
 /**
  * Which journal the dashboard, journal and analytics show.
  *
- * "Manage journals" sits in the same list rather than beside it, so the bar
- * stays one control wide on a phone.
+ * A pill and menu like the range control, not a native select: the browser
+ * draws a select's list itself, in its own font and colours, ignoring the
+ * theme. "New / manage" sits in the same menu so the bar stays one control
+ * wide on a phone.
  */
 export function JournalSwitcher(props: JournalSwitcherProps) {
   const { profile, trades, active, onChange } = props
+  const [open, setOpen] = useState(false)
   const [managing, setManaging] = useState(false)
+  const wrapper = useRef<HTMLDivElement>(null)
   const journals = journalsOf(profile, trades)
   // A journal removed elsewhere falls back to all of them rather than an empty view.
-  const value = active !== null && journals.includes(active) ? active : ALL
+  const current = active !== null && journals.includes(active) ? active : null
+
+  useEffect(() => {
+    if (!open) return
+
+    function onPointerDown(event: PointerEvent) {
+      if (!wrapper.current?.contains(event.target as Node)) setOpen(false)
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  function pick(journal: string | null) {
+    onChange(journal)
+    setOpen(false)
+  }
 
   return (
-    <>
-      <label className="flex min-w-0 items-center gap-8 max-[560px]:max-w-[150px]">
-        <span className="text-[11.5px] font-medium text-fg-dim max-[560px]:sr-only">Journal</span>
-        <Select
-          value={value}
-          aria-label="Journal"
-          className="h-34! min-w-[150px] py-0! text-[12.5px]! max-[560px]:min-w-0"
-          onChange={(event) => {
-            const next = event.target.value
-            if (next === MANAGE) setManaging(true)
-            else onChange(next === ALL ? null : next)
-          }}
-        >
-          <option value={ALL}>All accounts</option>
+    <div ref={wrapper} className="relative min-w-0">
+      <button
+        type="button"
+        className={`${PILL} ${PILL_IDLE} max-w-[220px] max-[560px]:max-w-[150px]`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Journal: ${current === null ? 'All accounts' : journalLabel(current)}`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="truncate">{current === null ? 'All accounts' : journalLabel(current)}</span>
+        <ChevronDownIcon
+          size={14}
+          className={`flex-none transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className={`${ACTION_MENU} max-h-[min(360px,70vh)] overflow-y-auto!`} role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            aria-current={current === null ? 'true' : undefined}
+            onClick={() => pick(null)}
+          >
+            All accounts
+          </button>
           {journals.map((name) => (
-            <option key={name} value={name}>
+            <button
+              key={name}
+              type="button"
+              role="menuitem"
+              className="truncate"
+              aria-current={current === name ? 'true' : undefined}
+              onClick={() => pick(name)}
+            >
               {journalLabel(name)}
-            </option>
+            </button>
           ))}
-          <option value={MANAGE}>+ New / manage…</option>
-        </Select>
-      </label>
+          <hr className="mx-4 my-4 border-line" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              setManaging(true)
+            }}
+          >
+            + New / manage journals…
+          </button>
+        </div>
+      )}
 
       <ManageJournals {...props} open={managing} journals={journals} onClose={() => setManaging(false)} />
-    </>
+    </div>
   )
 }
 
